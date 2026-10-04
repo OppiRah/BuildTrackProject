@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { disclosure } from '../src/lib/disclosures.ts';
 
-/** Phrases that would claim verification or publication, which configuration alone cannot prove. */
+/** Phrases claiming delivery or testing, which neither configuration nor publication proves. */
 const UNSUPPORTED_CLAIM =
-  /\b(was|were|has been|have been|is) (received|delivered|verified|tested|confirmed|published|deployed|live)\b|\btest request\b|\bpublished at\b|\bnow live\b/i;
+  /\b(was|were|has been|have been|is|are) (received|delivered|verified|tested|confirmed)\b|\btest request\b/i;
 
 const allText = (formRendered: boolean) => {
   const d = disclosure(formRendered);
@@ -11,15 +11,17 @@ const allText = (formRendered: boolean) => {
 };
 
 describe('disclosure', () => {
-  it.each([true, false])('makes no verification or publication claim (form rendered: %s)', (formRendered) => {
+  it.each([true, false])('makes no delivery or testing claim (form rendered: %s)', (formRendered) => {
     for (const line of allText(formRendered)) expect(line).not.toMatch(UNSUPPORTED_CLAIM);
   });
 
-  it.each([true, false])('keeps publication and production receipt pending whatever the config (form rendered: %s)', (formRendered) => {
-    const { stillToCome, aboutSite } = disclosure(formRendered);
-    expect(stillToCome).toContain('Publication at a public web address');
+  it.each([true, false])('states the human-verified publication and keeps production receipt pending (form rendered: %s)', (formRendered) => {
+    const { working, stillToCome, aboutSite, aboutForm } = disclosure(formRendered);
+    expect(working).toContain('This website, its pages and navigation, published at a public web address');
+    expect(aboutSite).toBe('This website is a working prototype, published at a public web address.');
+    expect(stillToCome).not.toContain('Publication at a public web address');
     expect(stillToCome).toContain('Confirming that requests sent from the published website reach the BuildTrack contact');
-    expect(aboutSite).toMatch(/still to come/);
+    if (formRendered) expect(aboutForm).toMatch(/Confirming that requests from the published website arrive is still to come/);
   });
 
   it('lists the form as working only when it is rendered, without implying it has been tested', () => {

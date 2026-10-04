@@ -25,6 +25,23 @@ Not done: deployment and production delivery verification (Phase 9). The site is
 - Cloudflare Workers static assets preferred, unconfigured (ADR-016).
 - Philippines coverage; seven BMC segments with equal standing; proposed academic PHP pricing set by ADR-025 (ADR-018, ADR-022, ADR-025).
 
+## Verification status (live deployment, 2026-10-04)
+Deployed by Workers Builds from `main` (commit `92908e7`); the new build was live about 50 s after the push. Read-only checks (GET/HEAD only; the form was not submitted):
+
+| Check | Result |
+|---|---|
+| Routes | `/`, `/solutions/`, `/how-it-works/`, `/product-demo/`, `/pricing/`, `/about/`, `/contact/` (also with `?type=service&plan=professional`) return 200 with the right titles |
+| Canonical / Open Graph | Every page's canonical and `og:url` equal `https://buildtrack.sunnydelacruz.workers.dev` + its path; `og:image` absolute and `/og-image.png` returns 200 (`image/png`) |
+| Redirects | `/pricing`, `/pricing/index.html` → 307 `/pricing/`; `/contact` → 307 `/contact/`; `/404.html` → 307 `/404` |
+| 404 | `/no-such-page` and `/no-such-page/` return 404 with the custom page (`noindex`, no canonical); `/_headers`, `/wrangler.jsonc`, `/package.json` return 404 (not published) |
+| HTTPS | Valid certificate (Let's Encrypt via Cloudflare, `*.sunnydelacruz.workers.dev`, valid to 2027-01-02); `Strict-Transport-Security: max-age=31536000` sent. Plain `http://` is answered with 200 rather than a redirect (workers.dev offers no zone "Always Use HTTPS" setting); browsers still use HTTPS because the `.dev` TLD is HSTS-preloaded |
+| Headers | HTML: `public, max-age=0, must-revalidate`, `CF-Cache-Status: HIT`, nosniff, `X-Frame-Options: DENY`, `strict-origin-when-cross-origin`; `/_astro/*` JS and CSS: `public, max-age=31536000, immutable`; font revalidates |
+| Compression | Brotli, Gzip and Zstandard served on request: demo HTML 87.5 KB → 10.3 KB (br); form script 13.5 KB → 5.1 KB; main CSS 11.8 KB → 3.2 KB |
+| Sitemap / robots | `robots.txt` has `Sitemap: …/sitemap-index.xml`; index lists `sitemap-0.xml`; it lists the seven pages (no 404), all returning 200 |
+| Browser smoke (headless Chromium 151, 390 px, off-site requests blocked) | All 8 pages render with one H1, Inter loaded, menu button shown, no horizontal overflow, no console errors, no off-site requests; Contact preselection `?type=service&plan=professional` works ("Send service request"), form posts to the configured Formspree endpoint, no draft marker; demo section switching works |
+
+Publication at the public URL is therefore verified, and the public disclosure was updated accordingly (`src/lib/disclosures.ts`: How It Works lists "This website, its pages and navigation, published at a public web address" as working; About says "This website is a working prototype, published at a public web address."). Still pending: a labelled production test request received by the contact (release gate); production receipt stays "still to come" in the disclosure until then.
+
 ## Verification status (Phase 9 preparation, 2026-10-04)
 Prepared from current Cloudflare docs (ARCHITECTURE §7): `wrangler.jsonc` (assets-only from `./dist`, `not_found_handling: "404-page"`, `html_handling: "auto-trailing-slash"`, no `main`/adapter/SSR), `public/_headers` (immutable caching only for hashed `/_astro/*`; nosniff, `strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, HSTS), 404 page `noindex` with no canonical/`og:url`, `.gitignore` adds `.wrangler/` and `.dev.vars*`.
 
@@ -131,4 +148,4 @@ Method: headless Chromium (pre-existing Playwright build, not a project dependen
 | Delivery evidence: local integration **passed 2026-10-04**; production receipt from the public URL still required (date + pass/fail only) | Human + Phase 9 | Release gate |
 
 ## Next action
-Human: create the Cloudflare account and push `main` to GitHub, then connect the repository as Worker `buildtrack` with the settings in ARCHITECTURE §7.3; after the first deploy, provide the exact URL so `site.productionUrl` can be set and redeployed. Then production checks (routing, headers, compression, HTTPS), a labelled production test request confirmed received by the contact, and only then updating the "still to come" items in `src/lib/disclosures.ts`.
+Human: authorize one labelled production test request from https://buildtrack.sunnydelacruz.workers.dev/contact/ and have the contact confirm receipt (record date and pass/fail only). After the contact confirms receipt and the recipient is verified in Formspree: record the date and pass/fail here, update the production-receipt line in `src/lib/disclosures.ts`, commit and push. Optional: Formspree Restrict to Domain = `buildtrack.sunnydelacruz.workers.dev`; a custom domain; checks on a real phone, Firefox/Safari and a screen reader.

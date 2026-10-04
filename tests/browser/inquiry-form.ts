@@ -593,18 +593,19 @@ async function axNode(selector: string) {
   return { role: node?.role?.value ?? null, name: node?.name?.value ?? '', description: node?.description?.value ?? '' };
 }
 
-const UNSUPPORTED_CLAIM =
-  /\b(was|were|has been|have been|is) (received|delivered|verified|tested|confirmed|published|deployed|live)\b|\btest request\b|\bpublished at\b|\bnow live\b/i;
+// Publication is human-verified (2026-10-04) and stated in the copy; delivery or testing claims are not.
+const UNSUPPORTED_CLAIM = /\b(was|were|has been|have been|is|are) (received|delivered|verified|tested|confirmed)\b|\btest request\b/i;
 
-await scenario('disclosure: an endpoint and production URL do not produce publication or delivery claims', async () => {
+await scenario('disclosure: an endpoint and production URL do not produce delivery claims; receipt stays pending', async () => {
   for (const [label, site] of [['configured (endpoint + production URL)', configured], ['unconfigured', unconfigured]] as const) {
     await open(site, '/how-it-works/');
     const columns = await evaluate<Record<string, string[]>>(
       `Object.fromEntries([...document.querySelectorAll('.card')].filter((c) => c.querySelector('.card-title')).map((c) => [c.querySelector('.card-title').textContent.trim(), [...c.querySelectorAll('li')].map((li) => li.textContent.trim())]))`,
     );
     const pending = columns['Still to come for this website'] ?? [];
-    for (const item of ['Publication at a public web address', 'Confirming that requests sent from the published website reach the BuildTrack contact'])
-      if (!pending.includes(item)) throw new Error(`${label}: How It Works no longer lists "${item}" as still to come`);
+    if (!pending.includes('Confirming that requests sent from the published website reach the BuildTrack contact'))
+      throw new Error(`${label}: How It Works no longer lists production receipt as still to come`);
+    if (pending.includes('Publication at a public web address')) throw new Error(`${label}: verified publication still listed as pending`);
     const howText = Object.values(columns).flat().join(' | ');
     if (UNSUPPORTED_CLAIM.test(howText)) throw new Error(`${label}: How It Works claims verification: ${howText.match(UNSUPPORTED_CLAIM)?.[0]}`);
     const formWorking = (columns['Working in this prototype'] ?? []).some((item) => item.startsWith('An editable request form'));
@@ -613,7 +614,9 @@ await scenario('disclosure: an endpoint and production URL do not produce public
     await open(site, '/about/');
     const about = await text('#disclosure');
     if (UNSUPPORTED_CLAIM.test(about)) throw new Error(`${label}: About claims verification: ${about.match(UNSUPPORTED_CLAIM)?.[0]}`);
-    if (!about.includes('Publication at a public address is still to come')) throw new Error(`${label}: About no longer says publication is pending`);
+    if (!about.includes('published at a public web address')) throw new Error(`${label}: About does not state the verified publication`);
+    if (site === configured && !about.includes('Confirming that requests from the published website arrive is still to come'))
+      throw new Error(`${label}: About no longer says production receipt is pending`);
   }
 });
 
