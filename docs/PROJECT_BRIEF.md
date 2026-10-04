@@ -21,7 +21,7 @@ Value proposition: **Know where your materials and equipment are, how they are b
 ## Confirmed business decisions
 - Philippines-based business and coverage. Overseas expansion may be described only as future vision, never current coverage.
 - Preserve all BMC customer segments equally; do not downgrade government, developers or rental businesses to secondary customers.
-- Proposed peso pricing including Enterprise numeric pricing. Exact amounts remain to be approved.
+- Proposed peso pricing including Enterprise numeric pricing. Amounts approved 2026-10-04 (ADR-025).
 - Friend will supply/input his approved location and contact number.
 - Availing means submitting a request, quotation inquiry or demo request. No monetary checkout.
 - The professor must be able to submit a real request that reaches the designated contact.

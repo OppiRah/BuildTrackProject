@@ -30,11 +30,12 @@ export const fieldLimits = {
 export const otherOrganizationType = { id: 'other', label: 'Other' } as const;
 
 /**
- * DRAFT privacy acknowledgment: requires owner review before release (manual release gate).
+ * Privacy acknowledgment, approved by the owner on 2026-10-04 for initial publication.
+ * Set `status` back to 'draft' while revised wording awaits approval (shows a draft marker).
  * States only what the form does; it makes no promise about the provider's retention or handling.
  */
 export const privacyNotice = {
-  status: 'draft' as 'draft' | 'approved',
+  status: 'approved' as 'draft' | 'approved',
   acknowledgment: `I understand my details will be sent to the BuildTrack contact through ${formProvider.name}, a third-party form service, to respond to this request.`,
   guidance: 'Only include details needed for this request. Do not enter payment or card details.',
 };
