@@ -1,0 +1,91 @@
+---
+import { materials, projects } from '../../data/demo/fixtures.ts';
+import { categoryLabels } from '../../data/demo/labels.ts';
+import type { MaterialCategory } from '../../data/demo/types.ts';
+import { formatNumber, formatPct, isLowStock, materialUsagePct } from '../../lib/demo-metrics.ts';
+import EmptyState from './EmptyState.astro';
+import Panel from './Panel.astro';
+import StatusBadge from './StatusBadge.astro';
+
+const projectName = new Map(projects.map((p) => [p.id, p.name]));
+const categories = Object.entries(categoryLabels) as [MaterialCategory, string][];
+---
+
+<Panel
+  section="inventory"
+  title="Inventory"
+  lead="Stock on hand, reorder levels and usage against planned quantities. Each material keeps one unit throughout."
+>
+  <Fragment slot="filters">
+    <label class="field">
+      <span>Category</span>
+      <select data-filter="materialCategory">
+        <option value="all">All categories</option>
+        {categories.map(([value, label]) => <option value={value}>{label}</option>)}
+      </select>
+    </label>
+    <label class="check">
+      <input type="checkbox" data-filter="lowStockOnly" />
+      <span>Low stock only</span>
+    </label>
+  </Fragment>
+
+  <EmptyState rows="inventory" message="No materials match these filters." clearable />
+
+  <div data-hide-when-empty="inventory">
+    <figure class="chart">
+      <figcaption>Used to date, as a share of the planned quantity</figcaption>
+      <ul class="bars">
+        {
+          materials.map((m) => (
+            <li data-kind="material" data-id={m.id}>
+              <span class="bar-label">
+                {m.name} <span class="muted-dash">· {projectName.get(m.projectId)}</span>
+              </span>
+              <span class="bar-track" aria-hidden="true">
+                <span class="bar-fill" style={`width: ${materialUsagePct(m)}%`} />
+              </span>
+              <span class="bar-value">{formatPct(materialUsagePct(m))}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </figure>
+
+    <div class="dash-table" role="region" aria-labelledby="inventory-caption" tabindex="0">
+      <table>
+        <caption id="inventory-caption">Materials by project</caption>
+        <thead>
+          <tr>
+            <th scope="col">Material</th>
+            <th scope="col">Project</th>
+            <th scope="col" class="num">On hand</th>
+            <th scope="col" class="num">Reorder level</th>
+            <th scope="col" class="num">Used / planned</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody data-rows="inventory">
+          {
+            materials.map((m) => (
+              <tr data-kind="material" data-id={m.id}>
+                <th scope="row">{m.name}</th>
+                <td>{projectName.get(m.projectId)}</td>
+                <td class="num">
+                  {formatNumber(m.onHand)} {m.unit}
+                </td>
+                <td class="num">
+                  {formatNumber(m.reorderLevel)} {m.unit}
+                </td>
+                <td class="num">
+                  {formatNumber(m.usedToDate)} / {formatNumber(m.plannedTotal)} {m.unit}
+                </td>
+                <td>{isLowStock(m) ? <StatusBadge tone="warning" label="Low stock" /> : <StatusBadge tone="ok" label="OK" />}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</Panel>

@@ -1,0 +1,128 @@
+---
+import { contactHref } from '../lib/contact-links.ts';
+import CtaBand from '../components/site/CtaBand.astro';
+import PageHeader from '../components/site/PageHeader.astro';
+import ProcessSteps from '../components/site/ProcessSteps.astro';
+import Section from '../components/site/Section.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formProvider } from '../config/inquiry.ts';
+import { pageMeta } from '../config/site.ts';
+import { disclosure } from '../lib/disclosures.ts';
+
+const meta = pageMeta('/how-it-works/');
+
+const technologies = [
+  {
+    name: 'QR code label',
+    read: 'Scanned with a phone or handheld scanner at close range.',
+    use: 'Material batches, storage bins, tools and documents.',
+  },
+  {
+    name: 'RFID tag',
+    read: 'Read by a reader without line of sight, for example at a site gate.',
+    use: 'Equipment and high-value materials passing checkpoints.',
+  },
+  {
+    name: 'IoT device',
+    read: 'Sends readings automatically, such as location or operating status.',
+    use: 'Heavy equipment and site conditions that need continuous monitoring.',
+  },
+];
+
+// An endpoint only means the form is rendered; it is not evidence of delivery (src/lib/disclosures.ts).
+const status = disclosure(formProvider.endpoint !== null);
+const realityColumns = [
+  { title: 'Working in this prototype', items: status.working },
+  { title: 'Still to come for this website', items: status.stillToCome },
+  {
+    title: 'Simulated in the demo',
+    items: ['Construction projects and their figures', 'Inventory, equipment and deliveries', 'Tracking events and device states'],
+  },
+  {
+    title: 'Concept only',
+    items: ['The operational cloud platform', 'Real QR/RFID/IoT hardware tracking', 'A mobile app and production integrations'],
+  },
+];
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <PageHeader
+    title="How It Works"
+    lead="BuildTrack's proposed flow has four steps: tag resources, capture events, consolidate them in a cloud platform, and act on dashboards."
+  />
+
+  <Section id="steps" eyebrow="The flow" title="From site to dashboard">
+    <ProcessSteps detailed />
+  </Section>
+
+  <Section
+    id="technologies"
+    tone="pale"
+    eyebrow="Technologies explained"
+    title="QR, RFID and IoT at a glance"
+    lead="Each project can use a different mix. Hardware costs vary and are quoted separately."
+  >
+    <div class="table-scroll" role="region" aria-labelledby="tech-caption" tabindex="0">
+      <table>
+        <caption id="tech-caption">Comparison of proposed tracking technologies</caption>
+        <thead>
+          <tr>
+            <th scope="col">Technology</th>
+            <th scope="col">How it is read</th>
+            <th scope="col">Typical use</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            technologies.map((tech) => (
+              <tr>
+                <th scope="row">{tech.name}</th>
+                <td>{tech.read}</td>
+                <td>{tech.use}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </Section>
+
+  <Section id="reality" eyebrow="Honest scope" title="What is real in this prototype">
+    <div class="grid grid-4">
+      {
+        realityColumns.map((column) => (
+          <div class="card">
+            <h3 class="card-title">{column.title}</h3>
+            <ul class="check-list">
+              {column.items.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+  </Section>
+
+  <CtaBand
+    title="See the flow in action"
+    lead="Explore the Interactive Platform Demo with fictional sample projects."
+    primary={{ label: 'Explore the Product Demo', href: '/product-demo/' }}
+    secondary={{ label: 'Request a Demo', href: contactHref({ type: 'demo' }) }}
+  />
+</BaseLayout>
+
+<style>
+
+  th,
+  td {
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--color-border-strong);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  thead th {
+    background: var(--color-bg);
+  }
+</style>

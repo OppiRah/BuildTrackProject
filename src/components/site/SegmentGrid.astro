@@ -1,0 +1,40 @@
+---
+import { customerSegments } from '../../config/business.ts';
+import Icon from './Icon.astro';
+// All seven segments share one card style and the configured order; none is featured.
+---
+
+<ul class="segment-grid">
+  {
+    customerSegments.map((segment) => (
+      <li class="card">
+        <Icon name="building" class="card-icon" />
+        <h3>{segment.label}</h3>
+        <p>{segment.need}</p>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .segment-grid > * {
+    min-width: 0;
+  }
+
+  .segment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+    gap: var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+  }
+
+  p {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+  }
+</style>

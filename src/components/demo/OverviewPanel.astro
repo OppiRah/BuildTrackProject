@@ -1,0 +1,124 @@
+---
+import { events, projects, simulatedEventPool } from '../../data/demo/fixtures.ts';
+import { deriveAlerts, formatDateTime, formatPct, formatPts, overview, type ProjectScope } from '../../lib/demo-metrics.ts';
+import EmptyState from './EmptyState.astro';
+import Panel from './Panel.astro';
+import StatusBadge from './StatusBadge.astro';
+
+const RECENT_LIMIT = 5;
+const scopes: ProjectScope[] = ['all', ...projects.map((p) => p.id)];
+const alerts = deriveAlerts();
+// Newest first: simulated pool (reverse order, revealed from the oldest) above recorded events.
+const recent = [...simulatedEventPool.map((e, i) => ({ e, poolIndex: i })).reverse(), ...events.map((e) => ({ e, poolIndex: -1 }))];
+const projectName = new Map(projects.map((p) => [p.id, p.name]));
+---
+
+<Panel
+  section="overview"
+  title="Overview"
+  lead="Key figures for the selected scope, derived from the same records shown in the other sections."
+>
+  {
+    scopes.map((scope) => {
+      const o = overview(scope);
+      const project = projects.find((p) => p.id === scope);
+      return (
+        <div class="tiles" data-scope={scope} hidden={scope !== 'all'}>
+          <div class="tile">
+            <p class="tile-label">Low-stock materials</p>
+            <p class="tile-value">{o.lowStockCount}</p>
+            <p class="tile-detail">of {o.materialCount} materials at or below reorder level</p>
+          </div>
+          <div class="tile">
+            <p class="tile-label">Equipment utilization, last 7 days</p>
+            <p class="tile-value">{o.utilizationPct === null ? 'n/a' : formatPct(o.utilizationPct)}</p>
+            <p class="tile-detail">hours used ÷ hours available, {o.equipmentCount} units</p>
+          </div>
+          <div class="tile">
+            <p class="tile-label">Deliveries in transit</p>
+            <p class="tile-value">{o.inTransit}</p>
+            <p class="tile-detail">{o.delayed} delayed</p>
+          </div>
+          {project && o.scheduleVariance !== null && (
+            <div class="tile">
+              <p class="tile-label">Schedule variance</p>
+              <p class="tile-value">{formatPts(o.scheduleVariance)}</p>
+              <p class="tile-detail">
+                actual {project.actualProgressPct}% vs planned {project.plannedProgressPct}%
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    })
+  }
+  <p class="tile-note" data-scope="all">Schedule variance is shown when a single project is selected.</p>
+
+  <div class="overview-grid">
+    <div>
+      <h3>Project progress</h3>
+      <ul class="progress-list">
+        {
+          projects.map((p) => (
+            <li data-kind="project" data-id={p.id}>
+              <p class="progress-name">
+                {p.name} <span class="muted-dash">· {p.location}</span>
+              </p>
+              <p class="progress-values">
+                Planned {p.plannedProgressPct}% · Actual {p.actualProgressPct}%
+              </p>
+              <div class="bar-pair" aria-hidden="true">
+                <span class="bar-track">
+                  <span class="bar-fill bar-planned" style={`width: ${p.plannedProgressPct}%`} />
+                </span>
+                <span class="bar-track">
+                  <span class="bar-fill" style={`width: ${p.actualProgressPct}%`} />
+                </span>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="legend" aria-hidden="true">
+        <span class="legend-swatch legend-planned"></span> Planned <span class="legend-swatch"></span> Actual
+      </p>
+    </div>
+
+    <div>
+      <h3>Alerts</h3>
+      <ul class="alert-list" data-rows="alerts">
+        {
+          alerts.map((a) => (
+            <li data-kind="alert" data-id={a.id}>
+              <StatusBadge tone={a.level} label={a.level === 'danger' ? 'Action needed' : 'Check'} />
+              <span>
+                {a.text} <span class="muted-dash">· {projectName.get(a.projectId)}</span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+      <EmptyState rows="alerts" message="No alerts for this project." />
+    </div>
+  </div>
+
+  <h3>Latest tracking events</h3>
+  <ol class="event-list" data-rows="recent" data-limit={RECENT_LIMIT}>
+    {
+      recent.map(({ e, poolIndex }, index) => (
+        <li
+          data-kind="event"
+          data-id={e.id}
+          data-pool-index={poolIndex >= 0 ? poolIndex : undefined}
+          hidden={e.simulated || index - simulatedEventPool.length >= RECENT_LIMIT}
+        >
+          <time datetime={e.timestamp}>{formatDateTime(e.timestamp)}</time>
+          <span>
+            {e.simulated && <span class="sim-badge">Simulated</span>} {e.method}: {e.summary}
+            <span class="muted-dash"> · {projectName.get(e.projectId)}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ol>
+</Panel>

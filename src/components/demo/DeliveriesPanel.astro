@@ -1,0 +1,94 @@
+---
+import { deliveries, materials, projects } from '../../data/demo/fixtures.ts';
+import { deliveryStatusLabels, deliveryTone } from '../../data/demo/labels.ts';
+import type { DeliveryStatus } from '../../data/demo/types.ts';
+import { deliveryCounts, formatDateTime, formatNumber, inScope, type ProjectScope } from '../../lib/demo-metrics.ts';
+import EmptyState from './EmptyState.astro';
+import Panel from './Panel.astro';
+import StatusBadge from './StatusBadge.astro';
+
+const projectName = new Map(projects.map((p) => [p.id, p.name]));
+const materialById = new Map(materials.map((m) => [m.id, m]));
+const statuses = Object.entries(deliveryStatusLabels) as [DeliveryStatus, string][];
+const scopes: ProjectScope[] = ['all', ...projects.map((p) => p.id)];
+---
+
+<Panel
+  section="deliveries"
+  title="Deliveries"
+  lead="Material deliveries by status. Quantities use the material's unit; times are Philippine time."
+>
+  <Fragment slot="filters">
+    <label class="field">
+      <span>Status</span>
+      <select data-filter="deliveryStatus">
+        <option value="all">All statuses</option>
+        {statuses.map(([value, label]) => <option value={value}>{label}</option>)}
+      </select>
+    </label>
+  </Fragment>
+
+  {
+    scopes.map((scope) => {
+      const counts = deliveryCounts(deliveries.filter((d) => inScope(d.projectId, scope)));
+      return (
+        <ul class="count-chips" data-scope={scope} hidden={scope !== 'all'} aria-label="Deliveries by status for the selected project">
+          {statuses.map(([status, label]) => (
+            <li>
+              <StatusBadge tone={deliveryTone[status]} label={`${label}: ${counts[status]}`} />
+            </li>
+          ))}
+        </ul>
+      );
+    })
+  }
+
+  <EmptyState rows="deliveries" message="No deliveries match these filters." clearable />
+
+  <div class="dash-table" role="region" aria-labelledby="deliveries-caption" tabindex="0" data-hide-when-empty="deliveries">
+    <table>
+      <caption id="deliveries-caption">Deliveries</caption>
+      <thead>
+        <tr>
+          <th scope="col">Delivery</th>
+          <th scope="col">Material</th>
+          <th scope="col" class="num">Quantity</th>
+          <th scope="col">Project</th>
+          <th scope="col">Supplier</th>
+          <th scope="col">Scheduled</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody data-rows="deliveries">
+        {
+          deliveries.map((d) => {
+            const m = materialById.get(d.materialId);
+            return (
+              <tr data-kind="delivery" data-id={d.id}>
+                <th scope="row">{d.id}</th>
+                <td>{m?.name}</td>
+                <td class="num">
+                  {formatNumber(d.quantity)} {m?.unit}
+                </td>
+                <td>{projectName.get(d.projectId)}</td>
+                <td>{d.supplierLabel}</td>
+                <td>
+                  <time datetime={d.scheduledAt}>{formatDateTime(d.scheduledAt)}</time>
+                </td>
+                <td>
+                  <StatusBadge tone={deliveryTone[d.status]} label={deliveryStatusLabels[d.status]} />
+                  {d.deliveredAt && (
+                    <span class="cell-note">
+                      at <time datetime={d.deliveredAt}>{formatDateTime(d.deliveredAt)}</time>
+                    </span>
+                  )}
+                </td>
+              </tr>
+            );
+          })
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="panel-note">Suppliers are generic placeholders, not real companies.</p>
+</Panel>

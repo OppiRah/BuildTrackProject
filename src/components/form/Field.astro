@@ -1,0 +1,41 @@
+---
+// One labelled form control with optional hint and an error slot that
+// src/scripts/inquiry.ts fills with textContent. Select options come from the slot.
+import Icon from '../site/Icon.astro';
+
+interface Props {
+  name: string;
+  label: string;
+  control?: 'input' | 'textarea' | 'select';
+  type?: 'text' | 'email' | 'tel';
+  required?: boolean;
+  hint?: string;
+  autocomplete?: string;
+  minlength?: number;
+  maxlength?: number;
+  pattern?: string;
+}
+
+const { name, label, control = 'input', type = 'text', required = false, hint, ...attrs } = Astro.props;
+const id = `inquiry-${name}`;
+const hintId = hint ? `${id}-hint` : undefined;
+---
+
+<div class="field" data-field={name}>
+  <label for={id}>{label} <span class="field-need">{required ? '(required)' : '(optional)'}</span></label>
+  {hint && <p class="field-hint" id={hintId}>{hint}</p>}
+  {
+    control === 'textarea' ? (
+      <textarea id={id} name={name} rows="5" required={required} aria-describedby={hintId} {...attrs} />
+    ) : control === 'select' ? (
+      <select id={id} name={name} required={required} aria-describedby={hintId}>
+        <slot />
+      </select>
+    ) : (
+      <input id={id} name={name} type={type} required={required} aria-describedby={hintId} {...attrs} />
+    )
+  }
+  <p class="field-error" id={`${id}-error`} hidden>
+    <Icon name="alert" size={18} /><span data-error-text></span>
+  </p>
+</div>

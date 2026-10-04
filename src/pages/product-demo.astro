@@ -1,0 +1,65 @@
+---
+import { contactHref } from '../lib/contact-links.ts';
+import DemoDashboard from '../components/demo/DemoDashboard.astro';
+import CtaBand from '../components/site/CtaBand.astro';
+import PageHeader from '../components/site/PageHeader.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { pageMeta } from '../config/site.ts';
+
+const meta = pageMeta('/product-demo/');
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <PageHeader
+    title="Interactive Platform Demo"
+    lead="Explore how the proposed BuildTrack platform would show materials, equipment, deliveries and tracking events for four fictional sample projects."
+  />
+
+  <section class="section demo-section" aria-label="Demo">
+    <div class="container">
+      <p class="notice disclosure">
+        <strong>Demonstration data shown for illustration purposes.</strong> The projects, quantities, suppliers and
+        events are fictional. No real construction site, QR/RFID hardware or IoT device is connected.
+      </p>
+      <DemoDashboard />
+    </div>
+  </section>
+
+  <section class="section tone-pale" aria-labelledby="how-to-heading">
+    <div class="container stack">
+      <h2 id="how-to-heading">How to use this demo</h2>
+      <ol class="how-to">
+        <li>Choose a section: Overview, Inventory, Equipment, Deliveries, Tracking events or Devices.</li>
+        <li>Pick one sample project or keep all four. Schedule variance appears for a single project.</li>
+        <li>Use the filters in each section, such as category, status or low stock only.</li>
+        <li>Press Simulate scan to add up to five labelled example events. They do not change stock or other figures.</li>
+        <li>Press Reset demo, or reload the page, to return to the starting snapshot. Nothing is saved.</li>
+      </ol>
+    </div>
+  </section>
+
+  <CtaBand
+    title="Prefer a guided walkthrough?"
+    lead="Request a demo and BuildTrack will follow up."
+    primary={{ label: 'Request a Demo', href: contactHref({ type: 'demo' }) }}
+  />
+</BaseLayout>
+
+<style>
+  .disclosure {
+    max-width: none;
+    margin-bottom: var(--space-4);
+  }
+
+  .tone-pale {
+    background: var(--color-blue-pale);
+  }
+
+  .how-to {
+    padding-left: 1.25rem;
+  }
+
+  .how-to li + li {
+    margin-top: var(--space-2);
+  }
+</style>

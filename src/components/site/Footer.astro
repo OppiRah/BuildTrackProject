@@ -1,0 +1,111 @@
+---
+import { contact, coverage } from '../../config/business.ts';
+import { pages, site } from '../../config/site.ts';
+import Wordmark from './Wordmark.astro';
+
+const year = new Date().getFullYear();
+const hasContact = contact.location || contact.phone || contact.publicEmail;
+---
+
+<footer class="site-footer on-dark">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <Wordmark />
+      <p class="tagline">{site.tagline}</p>
+      <p>{site.description}</p>
+    </div>
+    <nav aria-label="Footer">
+      <h2>Pages</h2>
+      <ul>
+        {pages.map((page) => <li><a href={page.path}>{page.navLabel}</a></li>)}
+      </ul>
+    </nav>
+    <div>
+      <h2>Contact</h2>
+      {
+        hasContact ? (
+          <ul>
+            {contact.location && <li>Based in {contact.location}</li>}
+            {contact.phone && <li>{contact.phoneHref ? <a href={contact.phoneHref}>{contact.phone}</a> : contact.phone}</li>}
+            {contact.publicEmail && <li><a href={`mailto:${contact.publicEmail}`}>{contact.publicEmail}</a></li>}
+          </ul>
+        ) : (
+          <p class="pending">Contact details pending approval.</p>
+        )
+      }
+    </div>
+    <div>
+      <h2>Coverage</h2>
+      <p>{coverage.current}-based</p>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>
+      BuildTrack is an academic business proposal. Platform features are proposed, prices are proposed academic
+      pricing, and the product demo uses fictional data.
+    </p>
+    <p>&copy; {year} BuildTrack</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    padding-block: var(--space-8) var(--space-6);
+    background: var(--color-navy);
+    color: var(--color-blue-pale);
+    font-size: var(--text-sm);
+  }
+
+  .footer-grid {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .footer-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 48rem) {
+    .footer-grid {
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+    }
+  }
+
+  h2 {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-base);
+    color: #fff;
+  }
+
+  ul {
+    padding: 0;
+    list-style: none;
+  }
+
+  li + li {
+    margin-top: var(--space-2);
+  }
+
+  a {
+    color: #fff;
+  }
+
+  .tagline {
+    margin-block: var(--space-2);
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .pending {
+    color: var(--color-blue-pale);
+  }
+
+  .footer-bottom {
+    display: grid;
+    gap: var(--space-2);
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid rgb(234 246 255 / 0.2);
+  }
+</style>

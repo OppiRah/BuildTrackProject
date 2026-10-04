@@ -1,0 +1,226 @@
+---
+import { pages, primaryCta } from '../../config/site.ts';
+import Wordmark from './Wordmark.astro';
+
+const current = Astro.url.pathname;
+---
+
+<header class="site-header" data-site-header>
+  <div class="container header-bar">
+    <Wordmark />
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" hidden data-menu-toggle>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path class="icon-open" d="M4 7h16M4 12h16M4 17h16"></path>
+        <path class="icon-close" d="M6 6l12 12M18 6L6 18"></path>
+      </svg>
+      <span>Menu</span>
+    </button>
+    <nav id="site-nav" class="site-nav" aria-label="Main">
+      <ul class="nav-list">
+        {
+          pages.map((page) => (
+            <li>
+              <a href={page.path} aria-current={page.path === current ? 'page' : undefined}>
+                {page.navLabel}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <a class="button button-primary nav-cta" href={primaryCta.href}>{primaryCta.label}</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  import { initNav } from '../../scripts/nav.ts';
+  initNav();
+</script>
+
+<style>
+  /* Not sticky in the no-JS mobile fallback: the wrapped link list is tall and
+     would cover in-page targets such as the skip-link destination. */
+  .site-header {
+    position: relative;
+    z-index: 50;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .header-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-5);
+    min-height: var(--header-height);
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--target-min);
+    padding: var(--space-2) var(--space-3);
+    border: 2px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .menu-toggle[hidden] {
+    display: none;
+  }
+
+  .menu-toggle .icon-close,
+  .menu-toggle[aria-expanded='true'] .icon-open {
+    display: none;
+  }
+
+  .menu-toggle[aria-expanded='true'] .icon-close {
+    display: inline;
+  }
+
+  /* Mobile/no-JS default: links wrap visibly below the wordmark. */
+  .site-nav {
+    flex-basis: 100%;
+    padding-bottom: var(--space-3);
+  }
+
+  .nav-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  .nav-list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target-min);
+    color: var(--color-ink);
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .nav-list a:hover {
+    color: var(--color-blue);
+    text-decoration: underline;
+  }
+
+  .nav-list a[aria-current='page'] {
+    font-weight: 600;
+    box-shadow: inset 0 -3px 0 var(--color-blue);
+  }
+
+  .nav-cta {
+    margin-top: var(--space-2);
+  }
+
+  /* With JavaScript below the desktop breakpoint: a disclosure panel. */
+  .site-header.js-nav {
+    position: sticky;
+    top: 0;
+  }
+
+  .js-nav .site-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - var(--header-height));
+    max-height: calc(100dvh - var(--header-height));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--space-2) var(--gutter) var(--space-5);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+  }
+
+  .js-nav .site-nav[data-open] {
+    display: block;
+  }
+
+  .js-nav .nav-list {
+    flex-direction: column;
+  }
+
+  .js-nav .nav-list a {
+    display: flex;
+    min-height: 3rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .js-nav .nav-list a[aria-current='page'] {
+    box-shadow: inset 3px 0 0 var(--color-blue);
+    padding-left: var(--space-3);
+  }
+
+  .js-nav .nav-cta {
+    width: 100%;
+    margin-top: var(--space-4);
+  }
+
+  /* Desktop header breakpoint: set by the header fit check (docs/UX_BRAND.md §3.1).
+     Must match DESKTOP_NAV_QUERY in src/scripts/nav.ts. */
+  @media (min-width: 75rem) {
+    .site-header {
+      position: sticky;
+      top: 0;
+    }
+
+    .header-bar {
+      flex-wrap: nowrap;
+    }
+
+    .menu-toggle {
+      display: none;
+    }
+
+    .site-nav,
+    .js-nav .site-nav {
+      display: flex;
+      position: static;
+      flex-basis: auto;
+      align-items: center;
+      gap: var(--space-5);
+      max-height: none;
+      overflow: visible;
+      padding: 0;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .nav-list,
+    .js-nav .nav-list {
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: var(--space-5);
+    }
+
+    .nav-list a,
+    .js-nav .nav-list a {
+      min-height: var(--header-height);
+      border-bottom: 0;
+    }
+
+    .js-nav .nav-list a[aria-current='page'] {
+      box-shadow: inset 0 -3px 0 var(--color-blue);
+      padding-left: 0;
+    }
+
+    .nav-cta,
+    .js-nav .nav-cta {
+      width: auto;
+      margin-top: 0;
+      white-space: nowrap;
+    }
+  }
+</style>

@@ -1,0 +1,139 @@
+---
+import CoverageNote from '../components/site/CoverageNote.astro';
+import InquiryForm from '../components/form/InquiryForm.astro';
+import PageHeader from '../components/site/PageHeader.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { contact } from '../config/business.ts';
+import { formProvider, requestTypes } from '../config/inquiry.ts';
+import { pageMeta } from '../config/site.ts';
+
+const meta = pageMeta('/contact/');
+const hasContact = Boolean(contact.location || contact.phone || contact.publicEmail);
+const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> = {
+  demo: 'See a walkthrough of the proposed platform.',
+  quotation: 'Get proposed pricing for your project needs.',
+  service: 'Tell BuildTrack you want to avail a plan or service.',
+};
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <PageHeader
+    title="Request a demo, quotation or service"
+    lead="Tell BuildTrack what you need. A request is not a payment, booking or subscription."
+  />
+  <section class="section">
+    <div class="container contact-grid">
+      <div class="stack">
+        <h2>Send a request</h2>
+        {
+          formProvider.endpoint === null ? (
+            <>
+              <div class="notice not-connected" role="status">
+                <p>
+                  <strong>The request form is not yet connected.</strong> Requests cannot be sent from this page yet.
+                </p>
+                {hasContact && <p>In the meantime, you can use the contact details on this page.</p>}
+              </div>
+              <h3>Request types</h3>
+              <ul class="grid request-types">
+                {requestTypes.map((type) => (
+                  <li class="card">
+                    <h4>{type.label}</h4>
+                    <p class="muted">{requestDescriptions[type.id]}</p>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <InquiryForm endpoint={formProvider.endpoint} />
+          )
+        }
+      </div>
+      <aside class="stack aside" aria-labelledby="contact-details-heading">
+        <h2 id="contact-details-heading">Contact details</h2>
+        {
+          hasContact ? (
+            <ul class="details">
+              {contact.location && <li>Based in {contact.location}</li>}
+              {contact.phone && <li>{contact.phoneHref ? <a href={contact.phoneHref}>{contact.phone}</a> : contact.phone}</li>}
+              {contact.publicEmail && (
+                <li>
+                  <a href={`mailto:${contact.publicEmail}`}>{contact.publicEmail}</a>
+                </li>
+              )}
+            </ul>
+          ) : (
+            <p class="pending">Contact details pending approval.</p>
+          )
+        }
+        <h2>Coverage</h2>
+        <CoverageNote />
+        <h2>What happens next</h2>
+        {formProvider.endpoint === null && <p class="muted">Once the request form is connected:</p>}
+        <ol class="next-steps">
+          <li>Your request is sent to the BuildTrack contact through a form service.</li>
+          <li>The contact follows up by email or phone using the details you provide.</li>
+          <li>A request is not a payment, booking or active subscription.</li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact-grid {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .contact-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .contact-grid {
+      grid-template-columns: 7fr 5fr;
+      align-items: start;
+    }
+  }
+
+  .not-connected p + p {
+    margin-top: var(--space-2);
+  }
+
+  h2 {
+    font-size: var(--text-2xl);
+  }
+
+  h3 {
+    font-size: var(--text-xl);
+  }
+
+  h4 {
+    font-size: var(--text-lg);
+  }
+
+  .request-types {
+    grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  }
+
+  .aside {
+    padding: var(--space-5);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .details {
+    padding: 0;
+    list-style: none;
+  }
+
+  .next-steps {
+    padding-left: 1.25rem;
+  }
+
+  .next-steps li + li {
+    margin-top: var(--space-2);
+  }
+</style>

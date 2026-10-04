@@ -1,0 +1,532 @@
+---
+// Inquiry form (docs/ARCHITECTURE.md §6, UX_BRAND.md §5). Rendered only when an
+// endpoint is configured. Without JavaScript it is a plain POST to the provider;
+// src/scripts/inquiry.ts adds preselection, validation messages and fetch submission.
+import Field from './Field.astro';
+import Icon from '../site/Icon.astro';
+import { contact, customerSegments } from '../../config/business.ts';
+import { fieldLimits, formProvider, otherOrganizationType, privacyNotice, requestTypes } from '../../config/inquiry.ts';
+import { planLabel, plans } from '../../config/pricing.ts';
+import { capabilityServices, supportingServices } from '../../config/services.ts';
+import { PHONE_PATTERN } from '../../lib/inquiry-validate.ts';
+
+interface Props {
+  endpoint: string;
+}
+
+const { endpoint } = Astro.props;
+const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> = {
+  demo: 'See a walkthrough of the proposed platform.',
+  quotation: 'Get proposed pricing for your project needs.',
+  service: 'Tell us you want to avail a plan or service.',
+};
+const telHref = contact.phoneHref ?? undefined;
+const hasAlternative = Boolean(contact.phone || contact.publicEmail);
+---
+
+<div class="inquiry" data-inquiry>
+  <form
+    class="inquiry-form"
+    action={endpoint}
+    method="POST"
+    data-inquiry-form
+    data-timeout={formProvider.timeoutMs}
+    aria-describedby="inquiry-required-note"
+  >
+    <!-- A named group: focusing it announces the heading (name) and message (description) once; no live region. -->
+    <div
+      class="error-summary"
+      role="group"
+      tabindex="-1"
+      aria-labelledby="error-summary-heading"
+      aria-describedby="error-summary-message"
+      data-error-summary
+      hidden
+    >
+      <h2 id="error-summary-heading" data-error-heading>Please fix the following</h2>
+      <p id="error-summary-message" data-error-message hidden></p>
+      <ul data-error-list></ul>
+      {
+        hasAlternative && (
+          <p data-error-alternative hidden>
+            You can also contact BuildTrack directly
+            {contact.phone && (
+              <>
+                {' '}by phone at <a href={telHref}>{contact.phone}</a>
+              </>
+            )}
+            {contact.phone && contact.publicEmail && ' or'}
+            {contact.publicEmail && (
+              <>
+                {' '}by email at <a href={`mailto:${contact.publicEmail}`}>{contact.publicEmail}</a>
+              </>
+            )}
+            .
+          </p>
+        )
+      }
+      <button type="button" class="button button-secondary" data-retry hidden>Try again</button>
+    </div>
+
+    <p id="inquiry-required-note" class="muted">Fields marked (required) must be completed.</p>
+
+    <fieldset class="field" data-field="request_type">
+      <legend>What would you like to do? <span class="field-need">(required)</span></legend>
+      <div class="type-options">
+        {
+          requestTypes.map((type) => (
+            <label class="type-option">
+              <input type="radio" id={`inquiry-request_type-${type.id}`} name="request_type" value={type.id} required />
+              <span class="type-check" aria-hidden="true">
+                <Icon name="check" size={16} />
+              </span>
+              <span class="type-label">{type.label}</span>
+              <span class="type-desc">{requestDescriptions[type.id]}</span>
+            </label>
+          ))
+        }
+      </div>
+      <p class="field-error" id="inquiry-request_type-error" hidden>
+        <Icon name="alert" size={18} /><span data-error-text></span>
+      </p>
+    </fieldset>
+
+    <Field name="service" label="Service of interest" control="select">
+      <option value="">Not sure yet</option>
+      <optgroup label="Platform capabilities">
+        {capabilityServices.map((service) => <option value={service.id}>{service.name}</option>)}
+      </optgroup>
+      <optgroup label="Supporting services">
+        {supportingServices.map((service) => <option value={service.id}>{service.name}</option>)}
+      </optgroup>
+    </Field>
+
+    <Field name="plan" label="Plan of interest" control="select">
+      <option value="">Not sure yet</option>
+      {plans.map((plan) => <option value={plan.id}>{planLabel(plan)}</option>)}
+    </Field>
+
+    <Field
+      name="name"
+      label="Full name"
+      required
+      autocomplete="name"
+      minlength={fieldLimits.name.min}
+      maxlength={fieldLimits.name.max}
+    />
+    <Field
+      name="email"
+      label="Work email"
+      type="email"
+      required
+      autocomplete="email"
+      maxlength={fieldLimits.email.max}
+      hint="The BuildTrack contact will reply to this address."
+    />
+    <Field
+      name="organization"
+      label="Organization"
+      required
+      autocomplete="organization"
+      maxlength={fieldLimits.organization.max}
+    />
+    <Field
+      name="phone"
+      label="Phone"
+      type="tel"
+      autocomplete="tel"
+      maxlength={fieldLimits.phone.max}
+      pattern={PHONE_PATTERN}
+      hint="Digits, spaces and + - ( ) only. Include the country code if outside the Philippines."
+    />
+    <Field name="organization_type" label="Organization type" control="select" required>
+      <option value="">Choose your organization type</option>
+      {customerSegments.map((segment) => <option value={segment.id}>{segment.label}</option>)}
+      <option value={otherOrganizationType.id}>{otherOrganizationType.label}</option>
+    </Field>
+    <Field
+      name="project_need"
+      label="Project need"
+      required
+      minlength={fieldLimits.project_need.min}
+      maxlength={fieldLimits.project_need.max}
+      hint="In a few words, for example: tracking cement and rebar across two sites."
+    />
+    <Field
+      name="message"
+      label="Message"
+      control="textarea"
+      maxlength={fieldLimits.message.max}
+      hint={`Anything else the BuildTrack contact should know. Up to ${fieldLimits.message.max} characters.`}
+    />
+
+    <div class="field field-check" data-field="privacy_ack">
+      <p class="field-hint" id="inquiry-privacy_ack-hint">
+        {privacyNotice.guidance}
+        {privacyNotice.status === 'draft' && <em class="pending"> Draft privacy wording pending review.</em>}
+      </p>
+      <label for="inquiry-privacy_ack" class="check-label">
+        <input
+          type="checkbox"
+          id="inquiry-privacy_ack"
+          name="privacy_ack"
+          value="yes"
+          required
+          aria-describedby="inquiry-privacy_ack-hint"
+        />
+        <span>{privacyNotice.acknowledgment} <span class="field-need">(required)</span></span>
+      </label>
+      <p class="field-error" id="inquiry-privacy_ack-error" hidden>
+        <Icon name="alert" size={18} /><span data-error-text></span>
+      </p>
+    </div>
+
+    <div class="hp" aria-hidden="true">
+      <label>Leave this field empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" /></label>
+    </div>
+    <input type="hidden" name="subject" value="BuildTrack: Website request" />
+
+    <p class="visually-hidden" aria-live="polite" data-status></p>
+    <button type="submit" class="button button-primary submit" data-submit>
+      <span class="spinner" aria-hidden="true" hidden data-spinner></span>
+      <span data-submit-label>Send request</span>
+    </button>
+  </form>
+
+  <div class="confirmation" data-confirmation hidden>
+    <h2 tabindex="-1" data-confirmation-heading>Request submitted</h2>
+    <p>
+      Thank you. Our form service has accepted your <span data-confirm-noun>request</span> for the BuildTrack contact,
+      who will follow up using the details you provided.
+    </p>
+    <p>
+      This confirms that the form service received your request. It does not confirm that the request has reached or
+      been read by the contact.
+    </p>
+    {
+      hasAlternative && (
+        <p>
+          If you don't hear back, you can also reach us
+          {contact.phone && (
+            <>
+              {' '}at <a href={telHref}>{contact.phone}</a>
+            </>
+          )}
+          {contact.phone && contact.publicEmail && ' or'}
+          {contact.publicEmail && (
+            <>
+              {' '}at <a href={`mailto:${contact.publicEmail}`}>{contact.publicEmail}</a>
+            </>
+          )}
+          .
+        </p>
+      )
+    }
+    <dl class="summary">
+      <div>
+        <dt>Request type</dt>
+        <dd data-confirm-type></dd>
+      </div>
+      <div>
+        <dt>Service of interest</dt>
+        <dd data-confirm-service></dd>
+      </div>
+      <div>
+        <dt>Plan of interest</dt>
+        <dd data-confirm-plan></dd>
+      </div>
+    </dl>
+    <p><strong>This is a request only. No payment, booking or subscription has been made.</strong></p>
+    <p class="confirmation-links">
+      <a class="text-link" href="/">Back to Home</a>
+      <a class="text-link" href="/product-demo/">Explore the Product Demo</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  import { initInquiry } from '../../scripts/inquiry.ts';
+  initInquiry();
+</script>
+
+<style>
+  /* minmax(0, 1fr) keeps every track within the column when enlarged text
+     makes a select, legend or option wider than the viewport. */
+  .inquiry-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+  }
+
+  /* Field markup also comes from Field.astro, so these rules are global within the form. */
+  .inquiry-form > *,
+  .inquiry-form :global(.field) {
+    min-width: 0;
+  }
+
+  .inquiry-form :global(.field) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    max-width: 36rem;
+    margin: 0;
+    padding: 0 0 0 var(--space-3);
+    border: 0;
+    border-left: 3px solid transparent;
+  }
+
+  .inquiry-form :global(fieldset.field) {
+    max-width: none;
+  }
+
+  .inquiry-form :global(.field.has-error) {
+    border-left-color: var(--color-danger);
+  }
+
+  .inquiry-form :global(.field > label),
+  legend {
+    font-weight: 600;
+  }
+
+  legend {
+    padding: 0;
+    margin-bottom: var(--space-2);
+  }
+
+  .inquiry-form :global(.field-need) {
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+
+  .inquiry-form :global(.field-hint) {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .inquiry-form :global(.field input:not([type='radio'], [type='checkbox'])),
+  .inquiry-form :global(.field select),
+  .inquiry-form :global(.field textarea) {
+    width: 100%;
+    min-width: 0;
+    min-height: var(--target-min);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+  }
+
+  .inquiry-form :global(.field textarea) {
+    resize: vertical;
+  }
+
+  .inquiry-form :global(.field [aria-invalid='true']) {
+    border-color: var(--color-danger);
+  }
+
+  .inquiry-form :global(.field-error) {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    color: var(--color-danger);
+    font-weight: 600;
+    font-size: var(--text-sm);
+  }
+
+  .inquiry-form :global(.field-error .icon) {
+    flex: none;
+    margin-top: 0.1em;
+  }
+
+  .inquiry-form :global(.field-error span),
+  .error-summary li {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .type-options {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  @media (min-width: 48rem) {
+    .type-options {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .type-option {
+    position: relative;
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+    padding: var(--space-4);
+    padding-right: 2.5rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    cursor: pointer;
+  }
+
+  .type-option input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  .type-option:has(input:checked) {
+    border: 2px solid var(--color-blue);
+    background: var(--color-blue-pale);
+  }
+
+  .type-option:has(input:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .type-check {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 50%;
+    color: transparent;
+  }
+
+  .type-option:has(input:checked) .type-check {
+    border-color: var(--color-blue);
+    background: var(--color-blue);
+    color: #fff;
+  }
+
+  .type-label {
+    font-weight: 600;
+  }
+
+  .type-desc {
+    font-size: var(--text-sm);
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+
+  .check-label {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    cursor: pointer;
+  }
+
+  .check-label input {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-top: 0.05em;
+    accent-color: var(--color-blue);
+  }
+
+  .hp {
+    display: none;
+  }
+
+  .submit {
+    justify-self: start;
+  }
+
+  .submit:disabled {
+    cursor: progress;
+    opacity: 0.8;
+  }
+
+  .spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .error-summary,
+  .confirmation {
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    border-left: 4px solid;
+  }
+
+  .error-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    border-color: var(--color-danger);
+    background: var(--color-danger-bg);
+  }
+
+  .error-summary h2,
+  .confirmation h2 {
+    font-size: var(--text-xl);
+  }
+
+  .error-summary ul {
+    padding-left: 1.25rem;
+  }
+
+  .error-summary a {
+    color: var(--color-danger);
+    font-weight: 600;
+  }
+
+  .error-summary .button {
+    justify-self: start;
+  }
+
+  .confirmation {
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
+  }
+
+  .confirmation > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .summary {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .summary div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-2);
+  }
+
+  .summary dt {
+    font-weight: 600;
+  }
+
+  .summary dt::after {
+    content: ':';
+  }
+
+  .summary dd {
+    margin: 0;
+  }
+
+  .confirmation-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+  }
+</style>

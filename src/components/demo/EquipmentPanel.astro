@@ -1,0 +1,86 @@
+---
+import { equipment, projects } from '../../data/demo/fixtures.ts';
+import { equipmentStatusLabels, equipmentTone, YARD_LABEL } from '../../data/demo/labels.ts';
+import type { EquipmentStatus, ProjectId } from '../../data/demo/types.ts';
+import { equipmentUtilizationPct, formatPct } from '../../lib/demo-metrics.ts';
+import EmptyState from './EmptyState.astro';
+import Panel from './Panel.astro';
+import StatusBadge from './StatusBadge.astro';
+
+const projectName = new Map(projects.map((p) => [p.id, p.name]));
+const location = (projectId: ProjectId | null) => (projectId === null ? YARD_LABEL : projectName.get(projectId));
+const statuses = Object.entries(equipmentStatusLabels) as [EquipmentStatus, string][];
+---
+
+<Panel
+  section="equipment"
+  title="Equipment"
+  lead="Where each tagged unit is and how much it worked in the 7 days before the snapshot. Utilization = hours used ÷ hours available."
+>
+  <Fragment slot="filters">
+    <label class="field">
+      <span>Status</span>
+      <select data-filter="equipmentStatus">
+        <option value="all">All statuses</option>
+        {statuses.map(([value, label]) => <option value={value}>{label}</option>)}
+      </select>
+    </label>
+  </Fragment>
+
+  <EmptyState rows="equipment" message="No equipment matches these filters." clearable />
+
+  <div data-hide-when-empty="equipment">
+    <figure class="chart">
+      <figcaption>Utilization over the last 7 days</figcaption>
+      <ul class="bars">
+        {
+          equipment.map((e) => (
+            <li data-kind="equipment" data-id={e.id}>
+              <span class="bar-label">
+                {e.name} <span class="muted-dash">· {equipmentStatusLabels[e.status]}</span>
+              </span>
+              <span class="bar-track" aria-hidden="true">
+                <span class="bar-fill" style={`width: ${equipmentUtilizationPct(e)}%`} />
+              </span>
+              <span class="bar-value">{e.hoursAvailable7d === 0 ? 'Unavailable' : formatPct(equipmentUtilizationPct(e))}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </figure>
+
+    <div class="dash-table" role="region" aria-labelledby="equipment-caption" tabindex="0">
+      <table>
+        <caption id="equipment-caption">Equipment by location</caption>
+        <thead>
+          <tr>
+            <th scope="col">Equipment</th>
+            <th scope="col">Tag</th>
+            <th scope="col">Location</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="num">Hours used / available (7 days)</th>
+            <th scope="col" class="num">Utilization</th>
+          </tr>
+        </thead>
+        <tbody data-rows="equipment">
+          {
+            equipment.map((e) => (
+              <tr data-kind="equipment" data-id={e.id}>
+                <th scope="row">{e.name}</th>
+                <td>{e.tag}</td>
+                <td>{location(e.projectId)}</td>
+                <td>
+                  <StatusBadge tone={equipmentTone[e.status]} label={equipmentStatusLabels[e.status]} />
+                </td>
+                <td class="num">
+                  {e.hoursUsed7d} h / {e.hoursAvailable7d} h
+                </td>
+                <td class="num">{e.hoursAvailable7d === 0 ? 'Unavailable' : formatPct(equipmentUtilizationPct(e))}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</Panel>

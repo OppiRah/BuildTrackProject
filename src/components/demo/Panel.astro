@@ -1,0 +1,27 @@
+---
+import type { DemoSection } from '../../lib/demo-state.ts';
+
+interface Props {
+  section: DemoSection;
+  title: string;
+  lead: string;
+}
+
+const { section, title, lead } = Astro.props;
+---
+
+<section class="demo-panel" id={`demo-panel-${section}`} data-panel={section} aria-labelledby={`demo-heading-${section}`}>
+  <div class="panel-head">
+    <h2 id={`demo-heading-${section}`}>{title}</h2>
+    <span class="sim-badge">Simulated</span>
+  </div>
+  <p class="panel-lead">{lead}</p>
+  {
+    Astro.slots.has('filters') && (
+      <div class="panel-filters" data-demo-controls hidden>
+        <slot name="filters" />
+      </div>
+    )
+  }
+  <slot />
+</section>

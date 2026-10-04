@@ -1,0 +1,73 @@
+---
+import CoverageNote from '../components/site/CoverageNote.astro';
+import CtaBand from '../components/site/CtaBand.astro';
+import PageHeader from '../components/site/PageHeader.astro';
+import Section from '../components/site/Section.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { coverage } from '../config/business.ts';
+import { formProvider } from '../config/inquiry.ts';
+import { disclosure } from '../lib/disclosures.ts';
+import { pageMeta, site } from '../config/site.ts';
+
+const meta = pageMeta('/about/');
+// An endpoint only means the form is rendered; it is not evidence of delivery (src/lib/disclosures.ts).
+const status = disclosure(formProvider.endpoint !== null);
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <PageHeader title="About BuildTrack" lead={`${site.name}: ${site.tagline}`} />
+
+  <Section id="background" eyebrow="Background" title="Where BuildTrack comes from">
+    <div class="stack">
+      <p>
+        BuildTrack is a construction-technology business proposal created for a Technopreneurship course by a Civil
+        Engineering student. It starts from a familiar site problem: teams often cannot say exactly what materials are
+        on hand, where each piece of equipment is, or whether a delivery will arrive in time.
+      </p>
+      <p>
+        The proposal is a smart construction materials and equipment management system for efficient project delivery
+        services. It combines QR, RFID and IoT tracking with a cloud platform, dashboards and alerts.
+      </p>
+    </div>
+  </Section>
+
+  <Section id="mission-vision" tone="pale" eyebrow="Purpose" title="Mission and vision">
+    <div class="grid grid-2">
+      <div class="card">
+        <h3 class="card-title">Mission</h3>
+        <p class="muted">
+          To help construction teams know where their materials and equipment are, how they are used and what each
+          project needs next, so work is delivered with less waste and fewer avoidable delays.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Vision</h3>
+        <p class="muted">
+          To become a trusted resource-management partner for construction projects in the {coverage.current}, with
+          Southeast Asian expansion as a future possibility.
+        </p>
+      </div>
+    </div>
+  </Section>
+
+  <Section id="coverage" eyebrow="Coverage" title={`${coverage.current}-based`}>
+    <CoverageNote />
+  </Section>
+
+  <Section id="disclosure" tone="pale" eyebrow="Academic disclosure" title="What is real and what is proposed">
+    <ul class="check-list">
+      <li>{status.aboutSite}</li>
+      <li>{status.aboutForm}</li>
+      <li>The BuildTrack platform, hardware tracking and mobile app are proposed and not yet operating.</li>
+      <li>The Interactive Platform Demo uses fictional sample data; no real site or device is connected.</li>
+      <li>Prices are proposed academic pricing, not current charges.</li>
+    </ul>
+  </Section>
+
+  <CtaBand
+    title="Questions about BuildTrack?"
+    lead="Get in touch to request a demo, a quotation or a service."
+    primary={{ label: 'Contact us', href: '/contact/' }}
+  />
+</BaseLayout>
+

@@ -1,0 +1,46 @@
+---
+interface Props {
+  title: string;
+  eyebrow?: string;
+  lead?: string;
+  tone?: 'default' | 'pale' | 'dark';
+  id?: string;
+}
+
+const { title, eyebrow, lead, tone = 'default', id } = Astro.props;
+const headingId = id ? `${id}-heading` : undefined;
+---
+
+<section class:list={['section', `tone-${tone}`, { 'on-dark': tone === 'dark' }]} id={id} aria-labelledby={headingId}>
+  <div class="container">
+    <header class="section-heading">
+      {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+      <h2 id={headingId}>{title}</h2>
+      {lead && <p class="lead">{lead}</p>}
+    </header>
+    <slot />
+  </div>
+</section>
+
+<style>
+  .tone-pale {
+    background: var(--color-blue-pale);
+  }
+
+  .tone-dark {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  .tone-dark .lead {
+    color: var(--color-blue-pale);
+  }
+
+  .section-heading {
+    margin-bottom: var(--space-6);
+  }
+
+  .section-heading > * + * {
+    margin-top: var(--space-3);
+  }
+</style>

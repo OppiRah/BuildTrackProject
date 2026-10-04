@@ -1,0 +1,149 @@
+---
+import { contactHref } from '../../lib/contact-links.ts';
+import {
+  formatCount,
+  limitLabels,
+  plans,
+  priceBasis,
+  priceLabel,
+  tierLabels,
+  type Plan,
+  type PlanLimits,
+} from '../../config/pricing.ts';
+
+interface Props {
+  plan: Plan;
+  compact?: boolean;
+}
+
+const { plan, compact = false } = Astro.props;
+const pending = plan.amountPhp === null;
+const base = plans.find((candidate) => candidate.id === plan.buildsOn);
+const limitKeys = Object.keys(limitLabels) as (keyof PlanLimits)[];
+---
+
+<article class="plan card" aria-labelledby={`plan-${plan.id}`}>
+  <p class="tier">{tierLabels[plan.tier]}</p>
+  <h3 id={`plan-${plan.id}`}>{plan.name}</h3>
+  <p class:list={['price', { pending }]}>
+    {priceLabel(plan)}
+    {!pending && <span class="basis">{priceBasis}</span>}
+  </p>
+  <p class="positioning">{plan.positioning}</p>
+  {
+    !compact && (
+      <>
+        <h4>Includes</h4>
+        {plan.includes && plan.includes.length > 0 ? (
+          <>
+            <p class="inherits">{base ? `All ${base.name} capabilities, plus:` : 'All capabilities included in every plan, plus:'}</p>
+            <ul class="check-list">
+              {plan.includes.map((item) => (
+                <li>{item}</li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p class="pending">Inclusions pending approval.</p>
+        )}
+        <h4>Onboarding and support</h4>
+        {plan.onboarding && plan.support ? (
+          <>
+            {base && <p class="inherits">Replaces {base.name}'s onboarding and support; they are not added together.</p>}
+            <ul class="check-list">
+              <li>{plan.onboarding}</li>
+              <li>{plan.support}</li>
+            </ul>
+          </>
+        ) : (
+          <p class="pending">Onboarding and support pending approval.</p>
+        )}
+        <h4>Limits per organization</h4>
+        {plan.limits === null ? (
+          <p class="pending">Limits pending approval.</p>
+        ) : (
+          <ul class="limits">
+            {limitKeys.map((key) => (
+              <li>
+                <strong>{formatCount(plan.limits![key])}</strong> {limitLabels[key].unit}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div class="actions">
+          <a class="button button-primary" href={contactHref({ type: 'service', plan: plan.id })}>
+            Avail {plan.name}
+          </a>
+          <a class="text-link" href={contactHref({ type: 'quotation', plan: plan.id })}>
+            Request a quotation<span class="visually-hidden"> for {plan.name}</span>
+          </a>
+        </div>
+      </>
+    )
+  }
+</article>
+
+<style>
+  .plan {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .tier {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-blue);
+  }
+
+  h3 {
+    font-size: var(--text-2xl);
+  }
+
+  .price {
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  .price.pending {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+
+  .basis {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+
+  .positioning,
+  .inherits {
+    color: var(--color-muted);
+  }
+
+  .limits {
+    padding-left: 1.25rem;
+  }
+
+  .limits li + li {
+    margin-top: var(--space-1);
+  }
+
+  h4 {
+    margin-top: var(--space-3);
+    font-size: var(--text-base);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    margin-top: auto;
+    padding-top: var(--space-4);
+  }
+</style>

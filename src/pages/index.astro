@@ -1,0 +1,324 @@
+---
+import { contactHref } from '../lib/contact-links.ts';
+import HeroIllustration from '../components/graphics/HeroIllustration.astro';
+import CoverageNote from '../components/site/CoverageNote.astro';
+import CtaBand from '../components/site/CtaBand.astro';
+import Icon from '../components/site/Icon.astro';
+import type { IconName } from '../components/site/icons.ts';
+import PlanCard from '../components/site/PlanCard.astro';
+import ProcessSteps from '../components/site/ProcessSteps.astro';
+import Section from '../components/site/Section.astro';
+import SegmentGrid from '../components/site/SegmentGrid.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { coverage } from '../config/business.ts';
+import { plans, pricingNote } from '../config/pricing.ts';
+import { services } from '../config/services.ts';
+import { pageMeta, primaryCta, site } from '../config/site.ts';
+import { formatPct, overview } from '../lib/demo-metrics.ts';
+
+const meta = pageMeta('/');
+// Same derivation as the demo's Overview for "All sample projects".
+const demoOverview = overview('all');
+
+const capabilities: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'materials', title: 'Materials', text: 'Arrivals, stock and usage for every site.' },
+  { icon: 'equipment', title: 'Equipment', text: 'Location, status and utilization of each unit.' },
+  { icon: 'inventory', title: 'Inventory', text: 'Reorder levels and low-stock alerts.' },
+  { icon: 'visibility', title: 'Project visibility', text: 'One view of resources across projects.' },
+];
+
+const problems = [
+  {
+    title: 'Fragmented visibility',
+    text: 'Materials, deliveries and equipment are tracked in notebooks, spreadsheets and messages, so no one sees the whole picture.',
+  },
+  {
+    title: 'Loss and waste',
+    text: 'Materials go missing, are over-ordered or are used without being recorded, and the gap is found too late.',
+  },
+  {
+    title: 'Avoidable delays and costs',
+    text: 'Work waits on stock that ran out, deliveries that slipped or equipment that sat idle on another site.',
+  },
+];
+
+const outcomes: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'waste', title: 'Reduced loss and waste', text: 'Recorded movements make missing or excess materials visible sooner.' },
+  { icon: 'accuracy', title: 'Better inventory accuracy', text: 'Scans replace manual counts as the main source of stock levels.' },
+  { icon: 'visibility', title: 'Clearer project visibility', text: 'Managers see materials, equipment and deliveries in one place.' },
+  { icon: 'clock', title: 'Fewer avoidable delays', text: 'Low-stock and late-delivery alerts give teams time to act.' },
+];
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <section class="hero on-dark">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">{site.tagline}</p>
+        <h1>Know where your materials and equipment are, how they are being used, and what your project needs next.</h1>
+        <p class="hero-lead">{site.description}</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href={primaryCta.href}>{primaryCta.label}</a>
+          <a class="button button-secondary" href="/product-demo/">Explore the Product Demo</a>
+        </div>
+        <p class="hero-note">Academic business proposal. The platform is proposed; the demo uses fictional data.</p>
+      </div>
+      <div class="hero-art">
+        <HeroIllustration />
+      </div>
+    </div>
+  </section>
+
+  <section class="capability-strip" aria-label="What BuildTrack covers">
+    <div class="container">
+      <ul class="grid grid-4">
+        {
+          capabilities.map((item) => (
+            <li class="strip-item">
+              <Icon name={item.icon} class="card-icon" />
+              <div>
+                <h2 class="strip-title">{item.title}</h2>
+                <p>{item.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <Section
+    id="problem"
+    eyebrow="The problem"
+    title="Construction teams lose track of resources"
+    lead="Materials and equipment move constantly between suppliers, yards and sites, yet they are often the hardest resources to keep track of."
+  >
+    <ul class="grid grid-3">
+      {
+        problems.map((problem) => (
+          <li class="card">
+            <h3 class="card-title">{problem.title}</h3>
+            <p class="muted">{problem.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section
+    id="solution"
+    tone="pale"
+    eyebrow="The proposed solution"
+    title="Tag it, scan it, see it"
+    lead="BuildTrack proposes QR, RFID and IoT tracking that feeds a cloud platform with dashboards, alerts and reports."
+  >
+    <ProcessSteps />
+    <p class="after"><a class="text-link" href="/how-it-works/">How it works <Icon name="arrow" size={20} /></a></p>
+  </Section>
+
+  <Section
+    id="demo-preview"
+    tone="dark"
+    eyebrow="Interactive Platform Demo"
+    title="See how the dashboard would work"
+    lead="Explore inventory, equipment, deliveries and tracking events for four fictional sample projects."
+  >
+    <ul class="preview-tiles" aria-label="Sample figures for all four demo projects">
+      <li>
+        <span class="preview-value">{demoOverview.lowStockCount}</span>
+        <span>low-stock materials of {demoOverview.materialCount}</span>
+      </li>
+      <li>
+        <span class="preview-value">{demoOverview.utilizationPct === null ? 'n/a' : formatPct(demoOverview.utilizationPct)}</span>
+        <span>equipment utilization, last 7 days</span>
+      </li>
+      <li>
+        <span class="preview-value">{demoOverview.delayed}</span>
+        <span>delayed deliveries</span>
+      </li>
+    </ul>
+    <p class="notice dark-notice">
+      <strong>Demonstration data only.</strong> The demo uses fictional sample data. No real construction site, hardware or
+      device is connected.
+    </p>
+    <p class="after"><a class="button button-primary" href="/product-demo/">Explore the Product Demo</a></p>
+  </Section>
+
+  <Section
+    id="outcomes"
+    eyebrow="Proposed outcomes"
+    title="What BuildTrack aims to improve"
+    lead="These are intended benefits of the proposed platform, not measured results."
+  >
+    <ul class="grid grid-4">
+      {
+        outcomes.map((item) => (
+          <li class="card">
+            <Icon name={item.icon} class="card-icon" />
+            <h3 class="card-title">{item.title}</h3>
+            <p class="muted">{item.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section id="services" tone="pale" eyebrow="Services" title="Platform features and supporting services">
+    <ul class="grid grid-4">
+      {
+        services.map((service) => (
+          <li class="card">
+            <h3 class="card-title">{service.name}</h3>
+            <p class="muted">{service.summary}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="after"><a class="text-link" href="/solutions/">Explore solutions <Icon name="arrow" size={20} /></a></p>
+  </Section>
+
+  <Section
+    id="segments"
+    eyebrow="Who we serve"
+    title="Built for everyone who manages construction resources"
+  >
+    <SegmentGrid />
+  </Section>
+
+  <Section id="pricing-preview" tone="pale" eyebrow="Pricing" title="Three proposed packages" lead={pricingNote}>
+    <div class="grid grid-3">
+      {plans.map((plan) => <PlanCard plan={plan} compact />)}
+    </div>
+    <p class="after"><a class="text-link" href="/pricing/">See pricing details <Icon name="arrow" size={20} /></a></p>
+  </Section>
+
+  <Section id="coverage" eyebrow="Coverage" title={`${coverage.current}-based`}>
+    <CoverageNote />
+  </Section>
+
+  <CtaBand
+    title="Ready to see BuildTrack?"
+    lead="Request a walkthrough of the proposed platform or a quotation for your project."
+    primary={primaryCta}
+    secondary={{ label: 'Request a Quotation', href: contactHref({ type: 'quotation' }) }}
+  />
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: var(--space-8);
+    background: linear-gradient(180deg, var(--color-ink), var(--color-navy));
+    color: #fff;
+  }
+
+  @media (min-width: 64rem) {
+    .hero {
+      padding-block: var(--space-12);
+    }
+  }
+
+  .hero-grid {
+    display: grid;
+    gap: var(--space-8);
+    align-items: center;
+  }
+
+  .hero-grid > *,
+  .strip-item > div {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .hero-grid {
+      grid-template-columns: 7fr 5fr;
+    }
+  }
+
+  .hero-copy > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .hero h1 {
+    max-width: 22ch;
+  }
+
+  .hero-lead {
+    font-size: var(--text-lg);
+    color: var(--color-blue-pale);
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    padding-top: var(--space-2);
+  }
+
+  .hero-note {
+    font-size: var(--text-sm);
+    color: var(--color-blue-pale);
+  }
+
+  .hero-art {
+    max-width: 32rem;
+  }
+
+  .capability-strip {
+    padding-block: var(--space-6);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .strip-item {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .strip-item .card-icon {
+    flex-shrink: 0;
+    margin: 0.125rem 0 0;
+  }
+
+  .strip-title {
+    font-size: var(--text-lg);
+  }
+
+  .strip-item p {
+    color: var(--color-muted);
+  }
+
+  .preview-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+
+  .preview-tiles li {
+    display: grid;
+    min-width: 0;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--dash-panel);
+    color: var(--dash-muted);
+    font-size: var(--text-sm);
+  }
+
+  .preview-value {
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .dark-notice {
+    background: var(--dash-panel);
+    border-left-color: var(--color-yellow);
+    color: var(--dash-text);
+  }
+
+  .dark-notice strong {
+    color: #fff;
+  }
+</style>

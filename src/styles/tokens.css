@@ -1,0 +1,92 @@
+/* BuildTrack design tokens (docs/UX_BRAND.md §2). Contrast pairs are listed there. */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/InterVariable-latin.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Color */
+  --color-ink: #071a2b;
+  --color-navy: #0b2742;
+  --color-blue: #1268b3;
+  --color-blue-bright: #20a4f3; /* on dark backgrounds only */
+  --color-blue-pale: #eaf6ff;
+  --color-yellow: #ffd43b; /* never text on light backgrounds */
+  --color-yellow-hover: #f5c400;
+  --color-bg: #f7fafc;
+  --color-surface: #ffffff;
+  --color-muted: #475569;
+  --color-border: #cbd5e1; /* decorative only */
+  --color-border-strong: #64748b;
+  --color-success: #166534;
+  --color-success-bg: #dcfce7;
+  --color-warning: #854d0e;
+  --color-warning-bg: #fef9c3;
+  --color-danger: #b91c1c;
+  --color-danger-bg: #fee2e2;
+
+  --dash-bg: #0b2742;
+  --dash-panel: #12304f;
+  --dash-text: #e2e8f0;
+  --dash-muted: #94a3b8;
+  --dash-success: #4ade80;
+  --dash-warning: #ffd43b;
+  --dash-danger: #fca5a5;
+  --dash-info: #7dd3fc;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: clamp(1.5rem, 1.2rem + 1.2vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.4rem + 2vw, 2.5rem);
+  --text-4xl: clamp(2.25rem, 1.6rem + 3vw, 3.5rem);
+  --measure: 68ch;
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 3rem;
+  --space-10: 4rem;
+  --space-12: 6rem;
+
+  /* Sizing and shape */
+  --container-max: 75rem;
+  --gutter: 1rem;
+  --header-height: 3.5rem;
+  --target-min: 2.75rem; /* 44px */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgb(7 26 43 / 0.08);
+  --shadow-md: 0 4px 12px rgb(7 26 43 / 0.1);
+  --focus-ring: 3px solid var(--color-blue);
+
+  /* Motion */
+  --duration-fast: 150ms;
+}
+
+/* Breakpoints are literal in media queries: 40rem, 48rem, 64rem, 75rem. */
+@media (min-width: 40rem) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  :root {
+    --gutter: 2rem;
+    --header-height: 4rem;
+    --text-base: 1.0625rem;
+  }
+}

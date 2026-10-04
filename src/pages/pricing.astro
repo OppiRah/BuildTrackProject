@@ -1,0 +1,225 @@
+---
+import { contactHref } from '../lib/contact-links.ts';
+import CtaBand from '../components/site/CtaBand.astro';
+import PageHeader from '../components/site/PageHeader.astro';
+import PlanCard from '../components/site/PlanCard.astro';
+import Section from '../components/site/Section.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { coverage } from '../config/business.ts';
+import {
+  allPlanInclusions,
+  exclusions,
+  formatCount,
+  limitDefinitions,
+  limitLabels,
+  planInclusions,
+  plans,
+  priceBasis,
+  priceLabel,
+  pricingNote,
+  type Plan,
+  type PlanLimits,
+} from '../config/pricing.ts';
+import { pageMeta } from '../config/site.ts';
+
+const meta = pageMeta('/pricing/');
+const comparisonReady = plans.every(
+  (plan) => plan.includes !== null && plan.includes.length > 0 && plan.limits !== null && plan.onboarding && plan.support,
+);
+// Rows in tier order; the last plan builds on all others, so its inclusions list every capability.
+const capabilityRows = comparisonReady ? planInclusions(plans[plans.length - 1]!) : [];
+const limitKeys = Object.keys(limitLabels) as (keyof PlanLimits)[];
+// Each group is its own <tbody>: its header uses scope="rowgroup", and every data cell lists
+// its plan column, group and feature row in `headers` so the association is explicit.
+const comparisonGroups: { id: string; title: string; rows: { id: string; label: string; value: (plan: Plan) => string }[] }[] =
+  comparisonReady
+    ? [
+        { id: 'price', title: 'Price', rows: [{ id: 'monthly', label: `Monthly, ${priceBasis}`, value: priceLabel }] },
+        {
+          id: 'capabilities',
+          title: 'Capabilities',
+          rows: capabilityRows.map((row, index) => ({
+            id: String(index + 1),
+            label: row,
+            value: (plan: Plan) => (planInclusions(plan).includes(row) ? 'Included' : 'Not included'),
+          })),
+        },
+        {
+          id: 'support',
+          title: 'Onboarding and support',
+          rows: [
+            { id: 'onboarding', label: 'Remote onboarding', value: (plan: Plan) => plan.onboarding ?? '' },
+            { id: 'support', label: 'Support', value: (plan: Plan) => plan.support ?? '' },
+          ],
+        },
+        {
+          id: 'limits',
+          title: 'Limits per organization',
+          rows: limitKeys.map((key) => ({
+            id: key,
+            label: limitLabels[key].label,
+            value: (plan: Plan) => (plan.limits ? formatCount(plan.limits[key]) : ''),
+          })),
+        },
+      ]
+    : [];
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <PageHeader title="Pricing" lead="Proposed Starter, Professional and Enterprise packages, in Philippine pesos.">
+    <p class="notice"><strong>{pricingNote}</strong></p>
+  </PageHeader>
+
+  <section class="section" aria-labelledby="packages-heading">
+    <div class="container stack">
+      <h2 id="packages-heading" class="visually-hidden">Packages</h2>
+      <div class="card every-plan">
+        <h3>Included in every plan</h3>
+        <ul class="check-list">
+          {allPlanInclusions.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+      <div class="grid grid-3 plans">
+        {plans.map((plan) => <PlanCard plan={plan} />)}
+      </div>
+      <p class="muted">
+        Prices are monthly, {priceBasis}, in Philippine pesos. Additional capacity is quoted separately. Choosing a
+        package sends an inquiry only.
+      </p>
+    </div>
+  </section>
+
+  <Section id="comparison" tone="pale" eyebrow="Compare" title="Package comparison">
+    {
+      comparisonReady ? (
+        <div class="table-scroll" role="region" aria-labelledby="compare-caption" tabindex="0">
+          <table>
+            <caption id="compare-caption">
+              What each proposed package includes. Scroll sideways on small screens to see every package.
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" id="cmp-feature">Feature</th>
+                {plans.map((plan) => (
+                  <th scope="col" id={`cmp-${plan.id}`}>
+                    {plan.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            {comparisonGroups.map((group) => (
+              <tbody>
+                <tr class="group">
+                  <th scope="rowgroup" colspan={plans.length + 1} id={`cmp-${group.id}`}>
+                    {group.title}
+                  </th>
+                </tr>
+                {group.rows.map((row) => (
+                  <tr>
+                    <th scope="row" id={`cmp-${group.id}-${row.id}`} headers={`cmp-feature cmp-${group.id}`}>
+                      {row.label}
+                    </th>
+                    {plans.map((plan) => (
+                      <td headers={`cmp-${plan.id} cmp-${group.id} cmp-${group.id}-${row.id}`}>{row.value(plan)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            ))}
+          </table>
+        </div>
+      ) : (
+        <p class="pending">
+          The package comparison will appear here once each package's inclusions, onboarding, support and limits are
+          approved.
+        </p>
+      )
+    }
+  </Section>
+
+  <Section id="limits" eyebrow="Limits" title="How limits are counted">
+    <ul class="check-list">
+      {limitDefinitions.map((item) => <li>{item}</li>)}
+    </ul>
+  </Section>
+
+  <Section id="separately-quoted" tone="pale" eyebrow="Separately quoted" title="Hardware, implementation and integration">
+    <div class="stack">
+      <p>These depend on each project and are quoted separately; they are not part of any package price:</p>
+      {
+        exclusions === null ? (
+          <p class="pending">The full list of exclusions is pending approval.</p>
+        ) : exclusions.length > 0 ? (
+          <ul class="check-list">
+            {exclusions.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        ) : null
+      }
+      <p>Coverage: {coverage.current}-based.</p>
+      <p class="muted">
+        Availing a package sends a request to BuildTrack. It is not a payment, booking or active subscription.
+      </p>
+    </div>
+  </Section>
+
+  <CtaBand
+    title="Interested in a package?"
+    lead="Send a service request or ask for a quotation based on your project."
+    primary={{ label: 'Avail a Service', href: contactHref({ type: 'service' }) }}
+    secondary={{ label: 'Request a Quotation', href: contactHref({ type: 'quotation' }) }}
+  />
+</BaseLayout>
+
+<style>
+  .plans {
+    align-items: stretch;
+  }
+
+  .every-plan h3 {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-xl);
+  }
+
+  @media (min-width: 48rem) {
+    .every-plan .check-list {
+      columns: 2;
+      column-gap: var(--space-6);
+    }
+
+    .every-plan .check-list li {
+      break-inside: avoid;
+    }
+  }
+
+  th,
+  td {
+    padding: var(--space-3) var(--space-4);
+    border-top: 1px solid var(--color-border-strong);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  thead th:not(:first-child),
+  td {
+    min-width: 9rem;
+  }
+
+  tbody th[scope='row'] {
+    position: sticky;
+    left: 0;
+    min-width: 12rem;
+    max-width: 18rem;
+    background: var(--color-surface);
+    font-weight: 600;
+  }
+
+  .group th {
+    background: var(--color-blue-pale);
+    font-size: var(--text-sm);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+  }
+</style>

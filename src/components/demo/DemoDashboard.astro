@@ -1,0 +1,80 @@
+---
+// Interactive Platform Demo shell. Every row, card and chart for every project is
+// rendered at build time from the fixtures; src/scripts/demo.ts only shows/hides
+// them from in-memory state, so figures cannot diverge between views.
+import { DEMO_AS_OF, projects } from '../../data/demo/fixtures.ts';
+import { sectionLabels } from '../../data/demo/labels.ts';
+import { formatDateTime } from '../../lib/demo-metrics.ts';
+import { demoSections, MAX_SIMULATED_EVENTS } from '../../lib/demo-state.ts';
+import '../../styles/demo.css';
+import DeliveriesPanel from './DeliveriesPanel.astro';
+import DevicesPanel from './DevicesPanel.astro';
+import EquipmentPanel from './EquipmentPanel.astro';
+import EventsPanel from './EventsPanel.astro';
+import InventoryPanel from './InventoryPanel.astro';
+import OverviewPanel from './OverviewPanel.astro';
+---
+
+<div class="demo" data-demo>
+  <p class="notice demo-nojs" data-demo-nojs>
+    <strong>Interactive controls need JavaScript.</strong> All sample data for all four projects is shown below.
+  </p>
+
+  <div class="demo-shell">
+    <nav class="demo-nav" aria-label="Demo sections" data-demo-controls hidden>
+      <ul>
+        {
+          demoSections.map((section) => (
+            <li>
+              <button
+                type="button"
+                data-section-button={section}
+                aria-controls={`demo-panel-${section}`}
+                aria-current={section === 'overview' ? 'true' : undefined}
+              >
+                {sectionLabels[section]}
+              </button>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="demo-main">
+      <div class="demo-toolbar">
+        <div class="toolbar-controls" data-demo-controls hidden>
+          <label class="field">
+            <span>Project</span>
+            <select data-project-select>
+              <option value="all">All sample projects</option>
+              {projects.map((p) => <option value={p.id}>{p.name}</option>)}
+            </select>
+          </label>
+          <div class="toolbar-actions">
+            <button type="button" class="demo-button" data-simulate>Simulate scan</button>
+            <button type="button" class="demo-button demo-button-quiet" data-reset>Reset demo</button>
+          </div>
+          <p class="simulate-count" data-simulate-count>0 of {MAX_SIMULATED_EVENTS} simulated scans used</p>
+        </div>
+        <p class="snapshot">
+          <span class="sim-badge">Simulated data</span>
+          <span>Fictional snapshot as of <time datetime={DEMO_AS_OF}>{formatDateTime(DEMO_AS_OF)}</time></span>
+        </p>
+      </div>
+
+      <p class="demo-status" role="status" aria-live="polite" data-demo-status></p>
+
+      <OverviewPanel />
+      <InventoryPanel />
+      <EquipmentPanel />
+      <DeliveriesPanel />
+      <EventsPanel />
+      <DevicesPanel />
+    </div>
+  </div>
+</div>
+
+<script>
+  import { initDemo } from '../../scripts/demo.ts';
+  initDemo();
+</script>

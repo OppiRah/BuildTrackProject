@@ -1,0 +1,34 @@
+---
+import { coverage } from '../../config/business.ts';
+import Icon from './Icon.astro';
+---
+
+<div class="coverage">
+  <Icon name="pin" size={40} class="card-icon" />
+  <div>
+    <p>BuildTrack is proposed as a {coverage.current}-based business serving construction projects in the {coverage.current}.</p>
+    <p class="muted">{coverage.futureVision}</p>
+  </div>
+</div>
+
+<style>
+  .coverage {
+    display: flex;
+    gap: var(--space-4);
+    align-items: flex-start;
+  }
+
+  /* Lets long words wrap instead of widening the page at large text sizes. */
+  .coverage > div {
+    min-width: 0;
+  }
+
+  .coverage :global(.card-icon) {
+    flex-shrink: 0;
+    margin: 0;
+  }
+
+  p + p {
+    margin-top: var(--space-2);
+  }
+</style>

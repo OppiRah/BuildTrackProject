@@ -1,0 +1,50 @@
+---
+import { devices, projects } from '../../data/demo/fixtures.ts';
+import { deviceStatusLabels, deviceTone } from '../../data/demo/labels.ts';
+import { formatDateTime } from '../../lib/demo-metrics.ts';
+import EmptyState from './EmptyState.astro';
+import Panel from './Panel.astro';
+import StatusBadge from './StatusBadge.astro';
+
+const projectName = new Map(projects.map((p) => [p.id, p.name]));
+---
+
+<Panel
+  section="devices"
+  title="Devices"
+  lead="Illustrative states for site readers, trackers and sensor hubs. No real QR/RFID hardware or IoT device is connected."
+>
+  <EmptyState rows="devices" message="No devices for this project." />
+
+  <div class="dash-table" role="region" aria-labelledby="devices-caption" tabindex="0" data-hide-when-empty="devices">
+    <table>
+      <caption id="devices-caption">Illustrative device states</caption>
+      <thead>
+        <tr>
+          <th scope="col">Device</th>
+          <th scope="col">Type</th>
+          <th scope="col">Project</th>
+          <th scope="col">Status</th>
+          <th scope="col">Last seen (PHT)</th>
+        </tr>
+      </thead>
+      <tbody data-rows="devices">
+        {
+          devices.map((d) => (
+            <tr data-kind="device" data-id={d.id}>
+              <th scope="row">{d.label}</th>
+              <td>{d.kind}</td>
+              <td>{projectName.get(d.projectId)}</td>
+              <td>
+                <StatusBadge tone={deviceTone[d.status]} label={deviceStatusLabels[d.status]} />
+              </td>
+              <td>
+                <time datetime={d.lastSeen}>{formatDateTime(d.lastSeen)}</time>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</Panel>

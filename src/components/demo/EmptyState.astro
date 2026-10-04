@@ -1,0 +1,15 @@
+---
+interface Props {
+  /** Matches the `data-rows` key of the list or table it describes. */
+  rows: string;
+  message: string;
+  clearable?: boolean;
+}
+
+const { rows, message, clearable = false } = Astro.props;
+---
+
+<div class="empty-state" data-empty-for={rows} hidden>
+  <p>{message}</p>
+  {clearable && <button type="button" class="demo-button demo-button-quiet" data-clear-filters>Clear filters</button>}
+</div>

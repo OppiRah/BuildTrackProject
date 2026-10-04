@@ -1,0 +1,59 @@
+---
+import { equipment, events, materials, projects, simulatedEventPool } from '../../data/demo/fixtures.ts';
+import { formatDateTime } from '../../lib/demo-metrics.ts';
+import EmptyState from './EmptyState.astro';
+import Panel from './Panel.astro';
+
+const projectName = new Map(projects.map((p) => [p.id, p.name]));
+const subjectName = new Map([...materials.map((m) => [m.id, m.name] as const), ...equipment.map((e) => [e.id, e.name] as const)]);
+// Newest first: simulated pool rows (revealed from S-1 upward) above recorded events.
+const rows = [...simulatedEventPool.map((e, i) => ({ e, poolIndex: i })).reverse(), ...events.map((e) => ({ e, poolIndex: -1 }))];
+---
+
+<Panel
+  section="events"
+  title="Tracking events"
+  lead="QR scans and RFID gate reads as they would be recorded on site. Use Simulate scan to add up to five labelled example events."
+>
+  <EmptyState rows="events" message="No tracking events for this project." />
+
+  <div class="dash-table" role="region" aria-labelledby="events-caption" tabindex="0" data-hide-when-empty="events">
+    <table>
+      <caption id="events-caption">Tracking events, newest first</caption>
+      <thead>
+        <tr>
+          <th scope="col">Time (PHT)</th>
+          <th scope="col">Method</th>
+          <th scope="col">Item</th>
+          <th scope="col">Location</th>
+          <th scope="col">Project</th>
+          <th scope="col">Summary</th>
+        </tr>
+      </thead>
+      <tbody data-rows="events">
+        {
+          rows.map(({ e, poolIndex }) => (
+            <tr
+              data-kind="event"
+              data-id={e.id}
+              data-pool-index={poolIndex >= 0 ? poolIndex : undefined}
+              hidden={e.simulated}
+              class:list={{ 'row-simulated': e.simulated }}
+            >
+              <td>
+                <time datetime={e.timestamp}>{formatDateTime(e.timestamp)}</time>
+              </td>
+              <td>{e.method}</td>
+              <th scope="row">{subjectName.get(e.subject.id)}</th>
+              <td>{e.locationLabel}</td>
+              <td>{projectName.get(e.projectId)}</td>
+              <td>
+                {e.simulated && <span class="sim-badge">Simulated</span>} {e.summary}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+</Panel>

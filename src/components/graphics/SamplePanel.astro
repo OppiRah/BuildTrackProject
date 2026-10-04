@@ -1,0 +1,58 @@
+---
+// Original illustration of a dashboard panel for one capability. Values are
+// illustrative shapes only, not figures, and the panel is labelled as a sample.
+interface Props {
+  /** Selects one of four bar patterns. */
+  pattern: number;
+  label: string;
+}
+
+const { pattern, label } = Astro.props;
+
+const patterns = [
+  { bars: [72, 40, 88, 22, 64], highlight: 3 },
+  { bars: [90, 55, 15, 70, 35], highlight: 2 },
+  { bars: [60, 60, 30, 80, 45], highlight: 2 },
+  { bars: [50, 65, 75, 58, 85], highlight: 4 },
+];
+const { bars, highlight } = patterns[pattern % patterns.length];
+---
+
+<figure class="sample-panel">
+  <svg viewBox="0 0 320 200" aria-hidden="true" focusable="false">
+    <rect width="320" height="200" rx="12" fill="#0b2742"></rect>
+    <rect x="20" y="20" width="110" height="10" rx="5" fill="#e2e8f0"></rect>
+    <rect x="20" y="38" width="70" height="7" rx="3.5" fill="#94a3b8"></rect>
+    <rect x="230" y="18" width="70" height="20" rx="4" fill="#12304f"></rect>
+    <rect x="240" y="25" width="50" height="6" rx="3" fill="#ffd43b"></rect>
+    {
+      bars.map((value, index) => (
+        <g>
+          <rect x="20" y={66 + index * 24} width="280" height="12" rx="6" fill="#12304f" />
+          <rect
+            x="20"
+            y={66 + index * 24}
+            width={(280 * value) / 100}
+            height="12"
+            rx="6"
+            fill={index === highlight ? '#ffd43b' : '#20a4f3'}
+          />
+        </g>
+      ))
+    }
+  </svg>
+  <figcaption>{label} (illustration, not real data)</figcaption>
+</figure>
+
+<style>
+  .sample-panel svg {
+    width: 100%;
+    height: auto;
+  }
+
+  figcaption {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+</style>
