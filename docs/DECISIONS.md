@@ -82,10 +82,10 @@ Rationale: published free tier (50 submissions/month, AJAX on all plans, spam fi
 Consequence: the human created the Formspree form and supplied the public endpoint (set in `src/config/inquiry.ts` on 2026-10-04); the recipient address stays in the Formspree account. A labelled local test request was received by the designated contact on 2026-10-04; production delivery is verified in Phase 9.
 
 ## ADR-016 — Hosting preference
-Status: Accepted direction; unconfigured. Date: 2026-10-04. Refines ADR-013.
+Status: Accepted; configuration prepared 2026-10-04, not deployed. Date: 2026-10-04. Refines ADR-013.
 Decision: Cloudflare Workers static assets serving `dist/` with no Astro adapter. Alternatives: Cloudflare Pages, Vercel, Netlify, GitHub Pages.
 Rationale: Cloudflare recommends Workers for new projects; static asset requests are not billed on the free plan; adds no runtime code.
-Consequence: `wrangler.jsonc` is added only in Phase 9 after current docs (404 handling, trailing slashes, Node version, domains, limits) are checked.
+Consequence: Phase 9 added `wrangler.jsonc` (assets-only, `404-page`, `auto-trailing-slash`) and `public/_headers` (immutable caching for hashed `/_astro/*` only, basic security headers) after checking current docs; the 404 page is `noindex` without a canonical URL. Workers Builds settings: `SKIP_DEPENDENCY_INSTALL=1`, build `npm ci && npm run build`, deploy `npx wrangler@4.147.0 deploy` (pinned through npx rather than added as a dependency, to keep `astro` the only runtime dependency and avoid a large dev dependency for a single command). Details in ARCHITECTURE §7.
 
 ## ADR-017 — Tooling and tests
 Status: Accepted. Date: 2026-10-04.

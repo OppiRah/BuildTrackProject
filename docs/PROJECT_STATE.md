@@ -3,7 +3,7 @@
 Updated: 2026-10-04.
 
 ## Milestone
-**Phase 8 independent review complete 2026-10-04**: its three findings are resolved (evidence below). Pending: deployment and production URL (Phase 9), production delivery verification, and human approval of draft privacy wording, confirmation copy and page copy. **Phase 7 QA and targeted fixes completed 2026-10-04** (evidence below); release still blocked by hosting/production URL, production delivery verification and manual approvals. Phases 0–4 complete; Phase 5 demo implemented, pending human review. **Phase 6 inquiry form implemented 2026-10-04**, with independent-review fixes applied the same day (recognised-success contract, timeout during body reading, configuration-independent browser harness, explicit standalone browser setup). Code is complete and verified with mocked provider responses only. **Formspree endpoint configured 2026-10-04** (`https://formspree.io/f/mljgrgjr`, supplied by the human; the recipient address stays in the Formspree account, not in the repository). The built Contact page now renders the form posting to that endpoint. **Local delivery verification: passed 2026-10-04** (labelled local test request received by the designated contact, as reported by the human). This meets the ROADMAP Phase 6 delivery gate. **Production delivery verification is pending** until deployment (Phase 9). The site is **not release-ready** (see open items and `npm run check:release`).
+**Phase 9 hosting configuration prepared 2026-10-04 (not deployed)**: `wrangler.jsonc`, `public/_headers`, 404 `noindex`; verified locally (below). No Cloudflare account, Worker, production URL, publication or production delivery exists yet. **Phase 8 independent review complete 2026-10-04**: its three findings are resolved (evidence below). Pending: deployment and production URL (Phase 9), production delivery verification, and human approval of draft privacy wording, confirmation copy and page copy. **Phase 7 QA and targeted fixes completed 2026-10-04** (evidence below); release still blocked by hosting/production URL, production delivery verification and manual approvals. Phases 0–4 complete; Phase 5 demo implemented, pending human review. **Phase 6 inquiry form implemented 2026-10-04**, with independent-review fixes applied the same day (recognised-success contract, timeout during body reading, configuration-independent browser harness, explicit standalone browser setup). Code is complete and verified with mocked provider responses only. **Formspree endpoint configured 2026-10-04** (`https://formspree.io/f/mljgrgjr`, supplied by the human; the recipient address stays in the Formspree account, not in the repository). The built Contact page now renders the form posting to that endpoint. **Local delivery verification: passed 2026-10-04** (labelled local test request received by the designated contact, as reported by the human). This meets the ROADMAP Phase 6 delivery gate. **Production delivery verification is pending** until deployment (Phase 9). The site is **not release-ready** (see open items and `npm run check:release`).
 
 ## Repository status
 Local Git repository on `main` with `origin` = GitHub `OppiRah/BuildTrackProject`. First local checkpoint commit ("feat: build BuildTrack website and interactive demo") created 2026-10-04; **not pushed** (the remote is still empty). Local instruction files, tool settings, environment files and private editor state are git-ignored.
@@ -24,6 +24,21 @@ Not done: deployment and production delivery verification (Phase 9). The site is
 - Demo: fixed fictional snapshot (28 Sep 2026, 8:00 AM PHT) of four sample Philippine projects; schedule variance only per project; build-time rendering with in-memory visibility state (ADR-019, ADR-023).
 - Cloudflare Workers static assets preferred, unconfigured (ADR-016).
 - Philippines coverage; seven BMC segments with equal standing; proposed academic PHP pricing set by ADR-025 (ADR-018, ADR-022, ADR-025).
+
+## Verification status (Phase 9 preparation, 2026-10-04)
+Prepared from current Cloudflare docs (ARCHITECTURE §7): `wrangler.jsonc` (assets-only from `./dist`, `not_found_handling: "404-page"`, `html_handling: "auto-trailing-slash"`, no `main`/adapter/SSR), `public/_headers` (immutable caching only for hashed `/_astro/*`; nosniff, `strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, HSTS), 404 page `noindex` with no canonical/`og:url`, `.gitignore` adds `.wrangler/` and `.dev.vars*`.
+
+Found and fixed: with a production URL set, the 404 page would have received the canonical `/404/`, a URL that Cloudflare redirects; it now has none and is `noindex`.
+
+| Check | Result |
+|---|---|
+| `npm run check` / `npm test` / `npm run build` | 0 errors/warnings/hints; 142 tests passed (adds `tests/hosting.test.ts`: assets-only Wrangler config, 404 page and trailing-slash handling, long caching only for `/_astro/*`, Referer/security headers, 404 `noindex` without canonical); 8 pages built and `dist/_headers` present |
+| `npm run test:browser` | 21/21 (headless shell 154) |
+| Local Cloudflare runtime (`npx wrangler@4.147.0 dev --local`, no account) | `/`, `/pricing/`, `/contact/?type=demo` 200; `/pricing` and `/pricing/index.html` 307 → `/pricing/`; unknown paths (with/without slash) 404 with the custom page; `/404.html` 307 → `/404`; `_headers` not served; `/_astro/*.js` immutable for a year; HTML and font revalidate with ETag; security headers on every response |
+| Production-URL rehearsal (throwaway build, URL `https://buildtrack-rehearsal.invalid`, real config untouched) | Canonical, `og:url` and absolute `og:image` on pages; 404 has `noindex` and no canonical; `robots.txt` has the `Sitemap:` line; `sitemap-index.xml` + `sitemap-0.xml` list the seven pages and not the 404 |
+| `npm run check:release` | Exit 1 as expected: `site.productionUrl` unset + 4 manual gates |
+
+Not verifiable before deployment: edge compression, HTTPS certificate and redirect behaviour on the real hostname, `CF-Cache-Status`, Workers Builds itself, Formspree from the production origin, production delivery.
 
 ## Verification status (Phase 8 review findings, 2026-10-04)
 Resolved:
@@ -115,8 +130,8 @@ Method: headless Chromium (pre-existing Playwright build, not a project dependen
 | Owner approval of draft plan positioning lines (part of the page-copy gate) | Human/friend | Before release |
 | Review Formspree spam settings; consider Restrict to Domain once the production domain exists | Human | Before production |
 | Approve or edit draft privacy wording (`privacyNotice` in `src/config/inquiry.ts`) | Human/friend | Before release |
-| Hosting, domain, production URL (enables canonical, sitemap, `og:image`) | Human + Phase 9 | Before production |
+| Cloudflare account, Git-connected Worker `buildtrack`, first deploy, then `site.productionUrl` (enables canonical, sitemap, `og:image`); custom domain optional | Human (account) + Phase 9 | Before production |
 | Delivery evidence: local integration **passed 2026-10-04**; production receipt from the public URL still required (date + pass/fail only) | Human + Phase 9 | Release gate |
 
 ## Next action
-Human review of rendering and approval or edits of the draft privacy wording, confirmation copy and page copy (including plan positioning) — none is approved yet. Optional before release: a check on a real phone and in Firefox/Safari, and a screen-reader pass. Phase 8 findings are resolved; next is Phase 9 hosting (production URL, host compression/caching/trailing-slash redirects), a labelled production test request received by the contact, and then updating the "still to come" disclosure items in `src/lib/disclosures.ts` once production is verified.
+Human: create the Cloudflare account and push `main` to GitHub, then connect the repository as Worker `buildtrack` with the settings in ARCHITECTURE §7.3; after the first deploy, provide the exact URL so `site.productionUrl` can be set and redeployed. Then production checks (routing, headers, compression, HTTPS), a labelled production test request confirmed received by the contact, and only then updating the "still to come" items in `src/lib/disclosures.ts`. Draft privacy wording, confirmation copy and page copy (including plan positioning) remain unapproved.

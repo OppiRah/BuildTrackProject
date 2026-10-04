@@ -1,0 +1,14 @@
+// Cloudflare Workers static assets for the static Astro build (ADR-016, docs/ARCHITECTURE.md §7).
+// No `main`: there is no Worker script, adapter or server; every request is served from dist/.
+// The dashboard Worker name must equal `name` for Git-connected Workers Builds.
+{
+  "name": "buildtrack",
+  "compatibility_date": "2026-10-04",
+  "assets": {
+    "directory": "./dist",
+    // Unknown paths get dist/404.html with status 404.
+    "not_found_handling": "404-page",
+    // Folder pages are canonical with a trailing slash: /pricing redirects (307) to /pricing/.
+    "html_handling": "auto-trailing-slash"
+  }
+}

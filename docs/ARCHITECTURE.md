@@ -238,14 +238,53 @@ Provider acceptance (2xx) proves only that the provider received the request. Fo
 Reasoning: an academic site needs tens of requests, not hundreds, so 50/month is adequate. Formspree's documentation is verifiable, it supports a working no-JS POST, and its JSON responses fit the state machine above. Before Phase 6, re-read current Formspree docs/terms for: free-plan limits, recipient verification, honeypot/spam options, response format, data retention and privacy text, and whether the free tier permits this use.
 
 ## 7. Hosting and deployment
-| Option | Fit | Notes |
-|---|---|---|
-| **Cloudflare Workers static assets (preferred)** | Cloudflare recommends Workers for new projects. A `wrangler.jsonc` with `assets.directory: "./dist"` serves a static Astro build with no adapter. Static asset requests are not billed on the free plan; Git-connected Workers Builds or `npx wrangler deploy`. | Unconfigured. Confirm `not_found_handling` for `404.html`, trailing-slash handling, Node version, custom-domain steps and limits from current docs at Phase 9. |
-| Cloudflare Pages | Still works for static sites | Not preferred for new projects per Cloudflare guidance. |
-| Vercel / Netlify | Mature static hosting with Git deploys | Check current hobby-plan terms on commercial/academic use. |
-| GitHub Pages | Free, simple | Weaker header/redirect control; acceptable minimum. |
+Cloudflare Workers static assets (ADR-016). Configuration prepared 2026-10-04 from current Cloudflare docs (Astro framework guide "If you have a static site", Static Site Generation and custom 404 pages, HTML handling, Headers, Workers Builds configuration and build image, Billing and limitations, workers.dev, Custom Domains, Compression). **Not yet deployed**: no Cloudflare account, Worker or production URL exists.
 
-The repository holds static configuration only (`wrangler.jsonc` added in Phase 9, not before). Deployment: GitHub → host build (`npm ci && npm run build`) → `dist/` → HTTPS URL → custom domain if budget allows. `site` in `astro.config.mjs` is set to the final production URL before release so canonicals and sitemap are correct.
+### 7.1 Repository configuration
+- `wrangler.jsonc`: `name: "buildtrack"`, `compatibility_date: "2026-10-04"`, `assets.directory: "./dist"`, `assets.not_found_handling: "404-page"`, `assets.html_handling: "auto-trailing-slash"`. No `main` (no Worker script), no Astro adapter, no SSR, no bindings.
+- `public/_headers` (copied to `dist/`, applied by Cloudflare, never served): `/_astro/*` gets `Cache-Control: public, max-age=31536000, immutable` (Astro content-hashes those names); every path gets `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` (keeps the origin for Formspree's optional Restrict to Domain), `X-Frame-Options: DENY`, `Strict-Transport-Security: max-age=31536000`. HTML, the font and other unhashed files keep Cloudflare's default `public, max-age=0, must-revalidate` with an ETag, so updates appear immediately. No CSP yet: Astro inlines small scripts, so a CSP would need hashes (deferred).
+- The 404 page uses `BaseLayout noindex`: `<meta name="robots" content="noindex">`, and no canonical or `og:url` (its file URL `/404` would otherwise get a non-canonical `/404/`). The sitemap integration already excludes it.
+- `.gitignore` also ignores `.wrangler/` (local state) and `.dev.vars*` (local secrets; none are used).
+
+### 7.2 Behaviour (from the docs; verified locally with `npx wrangler@4.147.0 dev --local` on 2026-10-04)
+| Request | Result |
+|---|---|
+| `/`, `/pricing/`, `/contact/?type=demo` | 200 |
+| `/pricing`, `/pricing/index.html` | 307 → `/pricing/` |
+| `/no-such-page`, `/no-such-page/` | 404 with the custom "Page not found" page |
+| `/404.html` | 307 → `/404` (200, `noindex`) |
+| `/_headers` | 404 (not served) |
+| `/_astro/*.js` | `Cache-Control: public, max-age=31536000, immutable` |
+| HTML pages, `/fonts/*` | `Cache-Control: public, max-age=0, must-revalidate` + `ETag`; security headers present |
+
+Not verifiable locally (check after deployment): edge compression (Cloudflare serves Gzip/Brotli/Zstandard for HTML, CSS and JavaScript automatically), HTTPS certificate, `CF-Cache-Status`. HTTPS: `workers.dev` and custom domains are served over HTTPS with Cloudflare-managed certificates; the `.dev` TLD is HSTS-preloaded. Free-plan limits: 20,000 asset files and 25 MiB per file per Worker version (the site has about 20 files); static asset requests are free and unlimited.
+
+### 7.3 Build and deploy (Workers Builds, Git-connected)
+| Setting | Value |
+|---|---|
+| Worker / project name | `buildtrack` (must equal `name` in `wrangler.jsonc`, or the build fails) |
+| Production branch | `main` |
+| Root directory | repository root (leave empty) |
+| Build variable | `SKIP_DEPENDENCY_INSTALL` = `1` (so the lockfile install below is the only install) |
+| Build command | `npm ci && npm run build` |
+| Deploy command | `npx wrangler@4.147.0 deploy` (pinned; not a project dependency) |
+| Node | `.nvmrc` = `24` (the build image preinstalls Node 24.18.0 and reads `.nvmrc`; `engines` requires 24.x) |
+| Output | `dist/` (read by `wrangler.jsonc`) |
+
+The first deploy publishes `https://buildtrack.<account-subdomain>.workers.dev`. The subdomain is chosen in the account and is not known yet; it is never guessed in the repository.
+
+### 7.4 Production URL
+After the first successful deploy, set `site.productionUrl` in `src/config/site.ts` to the exact HTTPS origin (workers.dev, or a custom domain if one is added later), commit and push; Workers Builds rebuilds. This turns on canonical links, `og:url`, absolute `og:image`, `@astrojs/sitemap` (`sitemap-index.xml` + `sitemap-0.xml`, seven pages, no 404) and the `Sitemap:` line in `robots.txt`. A throwaway build with a rehearsal URL (2026-10-04) produced exactly that. Setting the URL does not mean the site is deployed or verified (ADR-026).
+
+### 7.5 Custom domain (optional, needs budget)
+Requires a domain that is an active Cloudflare zone (registered or moved to Cloudflare DNS) and no existing CNAME on the hostname. Add it under the Worker's Settings > Domains & Routes > Add Custom Domain; Cloudflare creates the DNS record and certificate. Then change `site.productionUrl` to the custom domain and repeat the production checks. The `workers.dev` URL can stay enabled or be disabled.
+
+### 7.6 Alternatives (unchanged)
+| Option | Notes |
+|---|---|
+| Cloudflare Pages | Still works for static sites; not preferred for new projects per Cloudflare guidance. |
+| Vercel / Netlify | Mature static hosting; check hobby-plan terms. |
+| GitHub Pages | Free; weaker header/redirect control. |
 
 ## 8. Tooling and validation
 | Tool | Kind | Purpose |
