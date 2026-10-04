@@ -9,7 +9,7 @@ export const site = {
   description:
     'BuildTrack is a proposed smart construction materials and equipment management system for efficient project delivery services.',
   /** Final public HTTPS URL, e.g. "https://example.com". Set before release. */
-  productionUrl: null as string | null,
+  productionUrl: 'https://buildtrack.sunnydelacruz.workers.dev' as string | null,
 };
 
 export interface PageMeta {
