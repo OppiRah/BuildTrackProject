@@ -18,7 +18,8 @@
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-  scroll-padding-top: calc(var(--header-height) + var(--space-4));
+  /* --header-rendered is set by src/scripts/nav.ts; without JavaScript the token applies. */
+  scroll-padding-top: calc(var(--header-rendered, var(--header-height)) + var(--space-4));
 }
 
 body {
@@ -90,11 +91,15 @@ legend {
   overflow-wrap: break-word;
 }
 
-h1,
-h2,
-h3,
-h4 {
-  hyphens: auto;
+/* Hyphenate headings only where long words would otherwise not fit
+   (rem-based, so enlarged default text also qualifies). */
+@media (max-width: 40rem) {
+  h1,
+  h2,
+  h3,
+  h4 {
+    hyphens: auto;
+  }
 }
 
 .grid > *,

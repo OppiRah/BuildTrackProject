@@ -1,11 +1,13 @@
 # BuildTrack UX & Brand
 
-Status: Phase 2 specification, 2026-10-04, revised after independent review. The human approved the color direction and self-hosted Inter for foundation work; rendered layouts are not yet reviewed or accepted. Logo artwork is provisional (text wordmark only). Contrast ratios below are calculated (WCAG 2.x relative luminance), not measured in a browser.
+Status: Phase 2 specification, 2026-10-04, revised after independent review. The human approved the color direction and self-hosted Inter for foundation work; rendered layouts are not yet reviewed or accepted. Logo: owner-supplied artwork adopted 2026-10-05 (ADR-027); its emblem appears beside the text wordmark. Contrast ratios below are calculated (WCAG 2.x relative luminance), not measured in a browser.
 
 ## 1. Identity
 Keep BuildTrack and "Smart Construction. Smarter Delivery." Construction + technology + logistics + data. Modern, professional, clean and credible. The blue/yellow direction takes priority over the BMC's green palette. The final logo treatment is open; preserve the concept and do not present an unapproved mark as final.
 
 Proposed logo direction (pending review): a "BuildTrack" wordmark in the brand font, 700 weight, with "Track" in primary blue on light backgrounds and accent yellow on dark ones, plus a simple geometric mark (a stacked-beam/location-pin hybrid) as an inline SVG. Phase 4 may ship the wordmark only until a mark is approved.
+
+**Implemented logo (2026-10-05, ADR-027):** the owner-supplied emblem (`public/buildtrack-mark.webp`, cropped from `design/BuildTrackLogo.jpeg`) is placed left of the live-text wordmark in the header and footer. It is `min(2.5rem, 12vw)` tall with explicit `width`/`height` attributes, which reserve its space before it loads (total page layout shift not independently measured). It is decorative (`alt=""`) because the link is already named "BuildTrack home". On light backgrounds it shows with no frame (its background is near-white, 249–255). On the navy footer it sits in a white tile with a 4px inset and `--radius-md` corners. At very large text on very narrow screens (320 px wide, 32 px text), the name wraps under the emblem instead of being clipped.
 
 ## 2. Design tokens (`src/styles/tokens.css`)
 ### 2.1 Color
@@ -105,11 +107,12 @@ Measure: body text max `68ch`. One H1 per page; headings never skip levels.
 ### 3.1 Header
 - Light: white bg, bottom border `--color-border`. Sticky at top on desktop and when JavaScript has enabled the collapsible mobile menu; **not sticky in the no-JS mobile fallback**, where the wrapped link list is tall enough to cover in-page targets such as the skip-link destination.
 - Desktop (≥ the measured header breakpoint, see below): wordmark left; seven links (Home, Solutions, How It Works, Product Demo, Pricing, About, Contact) right-aligned; "Request a Demo" primary button (→ `/contact/?type=demo`) at far right. Current page: `aria-current="page"`, 600 weight, 3px primary-blue underline.
-- Below the breakpoint: wordmark left; "Menu" button (icon + visible text) right, `aria-expanded`, `aria-controls`. Opens a full-width panel under the header with links stacked (each 48px tall) and the CTA button last. The panel's height is capped to the space below the header and scrolls internally, so all items remain reachable on short/landscape viewports. Escape closes it and returns focus to the Menu button; activating a link navigates. Not a modal: no focus trap, no scroll lock.
+- Below the breakpoint: wordmark left; "Menu" button (icon + visible text) right, `aria-expanded`, `aria-controls`. Opens a full-width panel under the header with links stacked (each 48px tall) and the CTA button last. The panel's height is capped to the space below the header's rendered height (measured by `src/scripts/nav.ts` with a ResizeObserver, since enlarged text can wrap the header far past `--header-height`; the token is the fallback) and scrolls internally, so all items remain reachable on short/landscape viewports. Escape closes it and returns focus to the Menu button; activating a link navigates. Not a modal: no focus trap, no scroll lock.
 - Breakpoint: determined by the header fit check (`ARCHITECTURE.md` §3.1): the desktop header is used only where wordmark + seven links + CTA fit on one line. Measured value is recorded here in Phase 3.
-- **Measured 2026-10-04 (headless Chromium):** one-line header needs 1,054 px with Inter and 1,028 px with the fallback stack (including gutters), so 64rem (1,024 px) fails. **Desktop header from 75rem (1,200 px)**; Menu button below that, including at 1024 px. Re-measure if nav labels or the CTA change.
+- **Measured 2026-10-04 (headless Chromium):** one-line header needs 1,054 px with Inter and 1,028 px with the fallback stack (including gutters), so 64rem (1,024 px) fails. **Desktop header from 75rem (1,200 px)**; Menu button below that, including at 1024 px. Re-measure if nav labels or the CTA change. **Re-measured 2026-10-05 with the logo emblem:** 1,099 px (Inter) and 1,075 px (fallback); 75rem still fits.
 - No-JS: the Menu button is hidden and the link list wraps visibly below the wordmark.
 - First focusable element on every page: "Skip to main content" link, visible on focus.
+- Scroll offsets: `html { scroll-padding-top }` = rendered header height (`--header-rendered`, set by `src/scripts/nav.ts`) + `--space-4`, falling back to `--header-height` without JavaScript, so skip-link, anchor and focus targets land below the sticky header even when large text makes it taller. The form error summary is aligned with `scrollIntoView({ block: "start" })` after focus because it can be taller than the viewport.
 
 ### 3.2 Footer
 Navy bg, white/pale-blue text. ≥ 48rem: four columns: (1) wordmark, tagline, one-sentence description; (2) page links; (3) contact identity (location, phone, email, or "Contact details pending approval" while unset); (4) coverage: "Philippines-based". Mobile: single column in that order. Bottom row: academic disclosure: "BuildTrack is an academic business proposal. Platform features are proposed, prices are proposed academic pricing, and the product demo uses fictional data." Then © year BuildTrack.
@@ -253,7 +256,8 @@ Images: own photos or stock with a licence permitting this use; log each file's 
 | `src/components/graphics/HeroIllustration.astro` | Original SVG created for this project (2026-10-04) | Project-owned; no third-party notice |
 | `src/components/graphics/SamplePanel.astro` | Original SVG created for this project; illustrative shapes, captioned "illustration, not real data" | Project-owned |
 | `src/components/site/icons.ts` (line icons) | Original paths drawn for this project | Project-owned |
-| `public/favicon.svg` | Original provisional "B" mark | Project-owned; provisional pending logo |
+| `public/favicon.svg` | Original provisional "B" mark; kept after the owner logo arrived because the logo is illegible at 16–32 px (ADR-027) | Project-owned |
+| `design/BuildTrackLogo.jpeg` (1254×1254, 70 KB, original, unmodified) → `public/buildtrack-mark.webp` (emblem crop 750×720 at x 262, y 127, scaled ×0.2 to 150×144, WebP q90, 6 KB) | Supplied by the project owner, 2026-10-05 | No licence or authorship terms supplied; none claimed |
 | `design/og-image.svg` → `public/og-image.png` (1200×630, 184 KB) | Original; rendered with headless Chromium using the self-hosted Inter | Project-owned; contains Inter glyphs (OFL permits embedding in documents/images) |
 | `public/fonts/InterVariable-latin.woff2` | Inter 4.1 official release (github.com/rsms/inter, `web/InterVariable.woff2`), subset to Latin + ₱ with fontTools | SIL Open Font License 1.1; notice kept in `public/fonts/OFL.txt`, Copyright (c) 2016 The Inter Project Authors |
 

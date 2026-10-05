@@ -1,12 +1,22 @@
 ---
-// Provisional text wordmark; final logo artwork is not yet approved.
+// Owner-supplied logo emblem (cropped from design/BuildTrackLogo.jpeg) beside the text wordmark.
+// The link's name comes from aria-label, so the image is decorative (alt="").
 ---
 
-<a class="wordmark" href="/" aria-label="BuildTrack home">Build<span>Track</span></a>
+<a class="wordmark" href="/" aria-label="BuildTrack home">
+  <img class="wordmark-mark" src="/buildtrack-mark.webp" width="150" height="144" alt="" decoding="async" />
+  <span class="wordmark-text">Build<span>Track</span></span>
+</a>
 
 <style>
   .wordmark {
-    flex-shrink: 0;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    /* May shrink only so that, at very large text on narrow screens, the name
+       wraps below the emblem instead of being clipped. */
+    min-width: 0;
     font-size: 1.375rem;
     font-weight: 700;
     letter-spacing: -0.01em;
@@ -14,7 +24,13 @@
     text-decoration: none;
   }
 
-  .wordmark span {
+  .wordmark-mark {
+    width: auto;
+    /* Capped by viewport width so enlarged text on a narrow phone keeps the header compact. */
+    height: min(2.5rem, 12vw);
+  }
+
+  .wordmark-text span {
     color: var(--color-blue);
   }
 
@@ -22,7 +38,16 @@
     color: #fff;
   }
 
-  :global(.on-dark) .wordmark span {
+  :global(.on-dark) .wordmark-text span {
     color: var(--color-yellow);
+  }
+
+  /* The JPEG-derived emblem has an opaque white background, so on dark surfaces it
+     sits in a deliberate white tile rather than showing a hard-edged square. */
+  :global(.on-dark) .wordmark-mark {
+    box-sizing: content-box;
+    padding: var(--space-1);
+    border-radius: var(--radius-md);
+    background: #fff;
   }
 </style>

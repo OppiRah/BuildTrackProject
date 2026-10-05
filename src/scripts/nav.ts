@@ -17,6 +17,14 @@ export function initNav(): void {
   header.classList.add('js-nav');
   toggle.hidden = false;
 
+  // The header is sticky from here on and can grow past the --header-height token
+  // (enlarged text wraps the wordmark). Publish its rendered height on the root for the
+  // menu panel's height cap and the page's scroll-padding; the observer follows
+  // resizes, font loading and wrapping.
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--header-rendered', `${header.getBoundingClientRect().height}px`);
+  }).observe(header);
+
   toggle.addEventListener('click', () => {
     setOpen(toggle.getAttribute('aria-expanded') !== 'true');
   });

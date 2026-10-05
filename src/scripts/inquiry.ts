@@ -143,7 +143,10 @@ export function initInquiry(): void {
     summary.querySelector<HTMLElement>('[data-error-alternative]')?.toggleAttribute('hidden', !retry);
     q<HTMLElement>('[data-retry]', summary).hidden = !retry;
     summary.hidden = false;
-    summary.focus();
+    // Align the summary's top below the sticky header (scroll-padding); plain focus()
+    // can leave the heading above the viewport when the summary is taller than it.
+    summary.focus({ preventScroll: true });
+    summary.scrollIntoView({ block: 'start' });
   };
 
   const showFieldErrors = (errors: FieldErrors) => {
