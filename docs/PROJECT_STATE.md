@@ -29,6 +29,19 @@ Published 2026-10-04 at https://buildtrack.sunnydelacruz.workers.dev (live verif
 - Cloudflare Workers static assets preferred, unconfigured (ADR-016).
 - Philippines coverage; seven BMC segments with equal standing; proposed academic PHP pricing set by ADR-025 (ADR-018, ADR-022, ADR-025).
 
+## Verification status (live, 2026-10-05)
+Pushed `eaabf98` (logo, menu height, scroll offsets, heading hyphenation, error-summary scroll) and `8eb5efa` (docs) to `main`. Workers Builds published the new build about 50 s after the push. Read-only checks against https://buildtrack.sunnydelacruz.workers.dev (formspree.io blocked; the only form action was an empty submit stopped by client validation; no inquiry sent):
+
+| Check | Result |
+|---|---|
+| Live vs build | All 7 pages, both CSS files, the form script and `/buildtrack-mark.webp` (200, `image/webp`, 6,032 B) are byte-identical to a local build of `8eb5efa` (the nav script is inlined in the HTML) |
+| Logo | Header and footer emblem load at 150×144 at 320–1440 px × 16/32 px text; the name is never clipped; desktop nav from 1200 px; both home links are named "BuildTrack home" with the image ignored by the accessibility tree; screenshots of the 1200 px header and 390 px footer reviewed |
+| Mobile menu | 12/12 scenarios pass, including 320×560 at 32 px text and resizing while open |
+| Focus targets | 161/161: skip link, anchors and form error links clear of the sticky header at 16/32 px text, 320×560 through 1440×900, JS on and off |
+| Reflow | No horizontal overflow: 8 routes × 8 widths × 16/32 px text |
+
+Still pending (unchanged): Formspree recipient verification and production receipt. No request was sent.
+
 ## Verification status (logo, 2026-10-05)
 Local preview of the built `dist/` in headless Chromium (DPR 2, throttled network, formspree.io blocked, nothing submitted):
 
@@ -206,7 +219,7 @@ Method: headless Chromium (pre-existing Playwright build, not a project dependen
 | Delivery evidence: local integration **passed 2026-10-04**; production receipt from the public URL still required (date + pass/fail only) | Human + Phase 9 | Release gate |
 
 ## Remaining checklist
-- [ ] Commit and push the 2026-10-05 changes (heading CSS fix, owner logo, docs), then confirm the live hero no longer hyphenates and the logo shows in the header and footer (human authorizes)
+- [x] Commit and push the 2026-10-05 changes and verify them live (done 2026-10-05: `eaabf98`, `8eb5efa`)
 - [ ] Owner reviews the logo treatment (emblem only; white tile in the footer); optional: supply an SVG or transparent PNG
 - [ ] Production test: one labelled request from the live Contact page, receipt confirmed by the contact (record date and pass/fail only); then update `src/lib/disclosures.ts` and the handoff answer
 - [ ] Confirm the recipient address is verified in the Formspree account
