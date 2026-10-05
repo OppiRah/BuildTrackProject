@@ -1,12 +1,16 @@
 # BuildTrack Project State
 
-Updated: 2026-10-04.
+Updated: 2026-10-05.
 
 ## Milestone
+**Owner logo integrated 2026-10-05; header-aware menu height and scroll offsets fixed (Codex logo-review finding); pushed for publication 2026-10-05**: the emblem from `design/BuildTrackLogo.jpeg` (owner-supplied original, unmodified) now appears as `public/buildtrack-mark.webp` beside the "BuildTrack" text in the header and footer (ADR-027). The favicon and social card are unchanged because the logo is illegible at those sizes. Evidence is under "Verification status (logo, 2026-10-05)".
+
+**Presentation handoff prepared 2026-10-05**: `docs/PRESENTATION_HANDOFF.md` (five-minute walkthrough, plain-language technology explanation, works vs simulated, inquiry path, where to edit, how to run, limitations, likely questions). Live site re-inspected (evidence below); one presentation fix (desktop heading hyphenation) made; published with the logo changes. Production receipt and Formspree recipient verification remain **pending** (no human confirmation recorded; no request was sent).
+
 **Production URL configured 2026-10-04**: `site.productionUrl = 'https://buildtrack.sunnydelacruz.workers.dev'` (Cloudflare Workers, Git-connected, set up by the human); this enables canonical links, `og:url`/`og:image`, the sitemap and the robots `Sitemap:` line, and `npm run check:release` now meets every automated requirement. Configuration is not verification (ADR-026): live checks are recorded separately; production request delivery is not yet tested. **Human approval recorded 2026-10-04**: the current page copy, proposed pricing and plan descriptions, privacy wording (`privacyNotice.status = 'approved'`, draft marker no longer shown) and confirmation copy are approved by the human on 2026-10-04 for the initial publication of the academic prototype (may be revised later). Academic, proposed-pricing and simulation disclosures are unchanged. Local delivery test (passed 2026-10-04) stands; publication and production delivery verification remain pending. **Phase 9 hosting configuration prepared 2026-10-04 (not deployed)**: `wrangler.jsonc`, `public/_headers`, 404 `noindex`; verified locally (below). No Cloudflare account, Worker, production URL, publication or production delivery exists yet. **Phase 8 independent review complete 2026-10-04**: its three findings are resolved (evidence below). Pending: deployment and production URL (Phase 9) and production delivery verification. **Phase 7 QA and targeted fixes completed 2026-10-04** (evidence below); release still blocked by hosting/production URL and production delivery verification. Phases 0–4 complete; Phase 5 demo implemented, pending human review. **Phase 6 inquiry form implemented 2026-10-04**, with independent-review fixes applied the same day (recognised-success contract, timeout during body reading, configuration-independent browser harness, explicit standalone browser setup). Code is complete and verified with mocked provider responses only. **Formspree endpoint configured 2026-10-04** (`https://formspree.io/f/mljgrgjr`, supplied by the human; the recipient address stays in the Formspree account, not in the repository). The built Contact page now renders the form posting to that endpoint. **Local delivery verification: passed 2026-10-04** (labelled local test request received by the designated contact, as reported by the human). This meets the ROADMAP Phase 6 delivery gate. **Production delivery verification is pending** until deployment (Phase 9). The site is **not release-ready** (see open items and `npm run check:release`).
 
 ## Repository status
-Local Git repository on `main` with `origin` = GitHub `OppiRah/BuildTrackProject`. First local checkpoint commit ("feat: build BuildTrack website and interactive demo") created 2026-10-04; **not pushed** (the remote is still empty). Local instruction files, tool settings, environment files and private editor state are git-ignored.
+Local Git repository on `main` with `origin` = GitHub `OppiRah/BuildTrackProject`. Pushed to `origin/main` (private repository); Cloudflare Workers Builds deploys each push to `main`. Last deployed code commit `92908e7` (`93bc0f7` is docs only). Local instruction files, tool settings, environment files and private editor state are git-ignored.
 
 Implemented: Astro static site; complete content for Home, Solutions, How It Works, Pricing, About and Contact; Interactive Platform Demo (fictional data, six sections, project selection, filters, bounded simulated scans, reset); original graphics and social card; metadata.
 
@@ -16,7 +20,7 @@ Public contact configured 2026-10-04 in `src/config/business.ts`: location "Ling
 
 Proposed academic pricing configured 2026-10-04 (ADR-025) in `src/config/pricing.ts`: Starter ₱2,990, Professional ₱7,990, Enterprise ₱19,990 per organization per month; per-organization limits; cumulative inclusions via `allPlanInclusions` + `buildsOn`; per-plan onboarding/support; limit definitions; five separately quoted exclusions; required disclosure on Home and Pricing. Rendered on Home (preview cards), Pricing (cards, grouped comparison table, limit definitions, exclusions) and the inquiry plan options/confirmation (e.g. "Professional (₱7,990 / month)"). No payments, accounts, activation, overage charges, annual discounts or plan highlight. Competitor benchmarks (Sortly, Fieldwire, EZOfficeInventory) recorded in ADR-025 and kept distinct from BuildTrack's own unvalidated proposal.
 
-Not done: deployment and production delivery verification (Phase 9). The site is not yet published and not release-ready.
+Published 2026-10-04 at https://buildtrack.sunnydelacruz.workers.dev (live verification below). Not done: production delivery verification (Phase 9 release gate).
 
 ## Settled decisions
 - Astro static output, native components, TypeScript, plain CSS; `astro` is the only runtime dependency; Node 24 LTS (ADR-014, ADR-021).
@@ -24,6 +28,60 @@ Not done: deployment and production delivery verification (Phase 9). The site is
 - Demo: fixed fictional snapshot (28 Sep 2026, 8:00 AM PHT) of four sample Philippine projects; schedule variance only per project; build-time rendering with in-memory visibility state (ADR-019, ADR-023).
 - Cloudflare Workers static assets preferred, unconfigured (ADR-016).
 - Philippines coverage; seven BMC segments with equal standing; proposed academic PHP pricing set by ADR-025 (ADR-018, ADR-022, ADR-025).
+
+## Verification status (logo, 2026-10-05)
+Local preview of the built `dist/` in headless Chromium (DPR 2, throttled network, formspree.io blocked, nothing submitted):
+
+| Check | Result |
+|---|---|
+| Image loading / reserved space | Header and footer emblem load at natural 150×144 at 320–1440 px × 16/32 px text. Explicit `width`/`height` reserve the logo's space before the image arrives. A buffered layout-shift observer in one scripted headless run (throttled, measured ~2.5 s after navigation) reported 0, but total startup layout shift (e.g. Lighthouse CLS or field data) was **not independently confirmed** |
+| Proportions | Rendered aspect 1.041–1.042 = source 150:144; crop scaled by exactly 0.2, no stretching |
+| Accessibility | Both home links are named "BuildTrack home"; the image is not in the accessibility tree (`alt=""`), so the name is not repeated |
+| Header fit | Natural one-line width 1,099 px (Inter) / 1,075 px (fallback), previously 1,054 / 1,028; desktop nav still from 1200 px, Menu at 1199 px |
+| Enlarged text | The name is never clipped. At 32 px text the header matches the pre-logo height at 390 px and above (175 / 113 px). At 320 px the name wraps under the emblem (230 px vs 175 px before), the only change from the earlier layout |
+| Reflow | No horizontal overflow: 8 routes × 320–1440 px (8 widths) × 16/32 px text |
+| Visual review | Screenshots of the header at 390/1200 px and the footer at 390/1280 px reviewed: white-on-white header with no visible box; white tile on the navy footer |
+
+**Codex logo-review finding resolved 2026-10-05:** the mobile menu panel's height was capped with the fixed `--header-height` token. At 320×560 with 32 px text, the wrapped header (about 230 px) pushed the panel below the viewport, and Product Demo, Pricing, Contact and the whole "Request a Demo" button could not be fully shown. The same bug already affected 390×844 at 32 px text before the logo (175 px header). Fix: `src/scripts/nav.ts` publishes the header's rendered height as `--header-rendered` from a ResizeObserver (which covers resize, font loading and wrapping); `Header.astro` subtracts it, with the token as the fallback. The no-JS path is unchanged. Evidence (scripted headless Chromium against local `dist/`, real click to open, real Tab key events):
+
+| Scenario | Before | After |
+|---|---|---|
+| 320×560, 32 px text (reproduction) | Fail: panel bottom 677 px in a 560 px viewport; 4 items not fully visible on focus; CTA unreachable by scrolling | Pass: panel bottom 559; all 7 links + full CTA visible on focus and after scrolling to the end |
+| 390×844, 32 px text | Fail: Contact and CTA not fully visible | Pass |
+| Resize while open 390→320 at 32 px text (header 175→230 px) | Fail | Pass: limit follows the header |
+| 320×560 and 390×844 at 16 px; landscape 844×390, 667×375 (16 and 32 px); 1024×768; 1280×800 at 32 px (menu mode) | Pass | Pass |
+| 1280×800 at 16 px (desktop nav) | Pass | Pass: all items inline and visible |
+| No JavaScript, 320×560, 32 px | Pass | Pass: 8/8 items rendered, Menu button hidden |
+| All of the above with the web font blocked (fallback font) | not run | Pass. Header heights were identical to Inter, so a font swap during loading was not directly exercised; the observer handles it by design |
+
+Tab order in every menu-mode case: Home, Solutions, How It Works, Product Demo, Pricing, About, Contact, Request a Demo. Screenshot at the reproduction size reviewed (focused CTA fully visible). **Scroll offsets fixed 2026-10-05:** `nav.ts` now publishes `--header-rendered` on the root element. `html { scroll-padding-top }` uses it plus `--space-4`, with the `--header-height` token as the fallback, so the no-JS behaviour is unchanged and the header stays non-sticky in the no-JS mobile fallback. Found while verifying: at 32 px text, the error summary (up to 2,513 px tall at 320 px) was scrolled so its heading sat above the viewport after `focus()`; `inquiry.ts` now focuses it without scrolling and calls `scrollIntoView({ block: 'start' })`, which honours the scroll padding. This was pre-existing and unrelated to the logo. Evidence (scripted headless Chromium against local `dist/`, real Tab/Enter key events, formspree.io blocked, nothing sent):
+
+| Check | Result |
+|---|---|
+| Sizes | 320×560, 390×844, 667×375 and 1280×800 at 16 and 32 px text; 1024×768 and 1440×900 at 16 px; JavaScript on and off |
+| Skip link (from a scrolled page: Tab, Enter) | Skip link visible on focus; `<main>` focused with its top at or below the header's bottom in every case (e.g. 320×560 at 32 px: top 230, header bottom 230) |
+| Hash navigation to `#inquiry-project_need`, `#inquiry-message`, `#contact-details-heading` | Top of each target clear of the sticky header (e.g. 320×560 at 32 px: 262 vs header bottom 230) |
+| Form errors (empty submit, then Enter on each of the 7 error links after scrolling to the bottom) | Summary focused with its top below the header (320×560 at 32 px: 262 vs 230); each link focuses its field fully below the header, label also visible |
+| Total | 161/161 checks pass; no off-site requests |
+| Same suite with the old fixed-token padding injected | 10 failures at 32 px text (320×560 and 390×844): skip-link target, all three anchors and the error summary landed 31–86 px under the header |
+| Mobile menu re-check (`--header-rendered` now on the root) | 12/12 menu scenarios above still pass |
+
+Note: in the no-JS mobile fallback the token-based padding still applies even though that header is not sticky, which only adds space above targets; it is unchanged.
+
+Found and fixed during this check: at 320 px with 32 px text the first version clipped "BuildTrack" to "BuildTrac". The wordmark now wraps, and the emblem is capped at 12vw.
+
+## Verification status (presentation readiness, 2026-10-05)
+Fixed: headings used `hyphens: auto` at every width, so the desktop Home hero read "mate- / rials". Hyphenation now applies only at `max-width: 40rem` (`src/styles/global.css`; rem-based, so enlarged default text still gets it). Docs reconciled: ARCHITECTURE §7 no longer says "not yet deployed"; Repository status above no longer says "not pushed".
+
+| Check | Result |
+|---|---|
+| `npm run check` / `npm test` / `npm run build` | 0 errors/warnings/hints; 142 passed; 8 pages (before and after the fix) |
+| `npm run test:browser` | 21/21 (headless shell 151) before and after the fix |
+| `npm run check:release` | All automated requirements met; 4 manual gates listed |
+| Live vs build (before the fix) | All 7 live pages byte-identical to a local build of `93bc0f7`; unknown path returns 404 |
+| Live rendered smoke (headless Chromium, 390 and 1280 px, formspree.io blocked, nothing submitted) | 8 routes + preselected Contact: one H1, Inter loaded, menu button only at 390 px, no horizontal overflow, no console errors, no off-site requests; `?type=service&plan=professional` preselects; demo shows six sections, project select, Simulate scan, Reset |
+| Reflow after the fix (local preview) | No horizontal overflow: 8 routes × 320/360/390/640/768/1024/1280/1440 px × 16/32 px default text; hero screenshots at 390/1024/1280 px reviewed (no desktop hyphenation) |
+| Copy review | Disclosures, pricing, contact and demo labelling consistent with recorded approvals and evidence; Enterprise "Custom" tier label with a numeric price kept (REQUIREMENTS basic/advanced/custom; answered in the handoff) |
 
 ## Verification status (live deployment, 2026-10-04)
 Deployed by Workers Builds from `main` (commit `92908e7`); the new build was live about 50 s after the push. Read-only checks (GET/HEAD only; the form was not submitted):
@@ -146,6 +204,13 @@ Method: headless Chromium (pre-existing Playwright build, not a project dependen
 | Review Formspree spam settings; consider Restrict to Domain once the production domain exists | Human | Before production |
 | Custom domain (optional; needs a domain on Cloudflare DNS) | Human | Optional |
 | Delivery evidence: local integration **passed 2026-10-04**; production receipt from the public URL still required (date + pass/fail only) | Human + Phase 9 | Release gate |
+
+## Remaining checklist
+- [ ] Commit and push the 2026-10-05 changes (heading CSS fix, owner logo, docs), then confirm the live hero no longer hyphenates and the logo shows in the header and footer (human authorizes)
+- [ ] Owner reviews the logo treatment (emblem only; white tile in the footer); optional: supply an SVG or transparent PNG
+- [ ] Production test: one labelled request from the live Contact page, receipt confirmed by the contact (record date and pass/fail only); then update `src/lib/disclosures.ts` and the handoff answer
+- [ ] Confirm the recipient address is verified in the Formspree account
+- [ ] Optional: Formspree spam settings and Restrict to Domain; real-phone, Firefox/Safari and screen-reader checks; custom domain
 
 ## Next action
 Human: authorize one labelled production test request from https://buildtrack.sunnydelacruz.workers.dev/contact/ and have the contact confirm receipt (record date and pass/fail only). After the contact confirms receipt and the recipient is verified in Formspree: record the date and pass/fail here, update the production-receipt line in `src/lib/disclosures.ts`, commit and push. Optional: Formspree Restrict to Domain = `buildtrack.sunnydelacruz.workers.dev`; a custom domain; checks on a real phone, Firefox/Safari and a screen reader.
