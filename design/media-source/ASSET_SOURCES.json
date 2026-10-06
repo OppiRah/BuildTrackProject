@@ -1,0 +1,70 @@
+{
+  "checked_date": "2026-10-05",
+  "license": "Pexels License",
+  "license_url": "https://www.pexels.com/license/",
+  "assets": [
+    {
+      "id": 5027559,
+      "creator": "Ilya",
+      "source_page": "https://www.pexels.com/photo/crane-on-a-building-5027559/",
+      "file": "design/media-source/construction-wide-pexels-5027559.jpg",
+      "role": "Wide construction background or static hero"
+    },
+    {
+      "id": 7121536,
+      "creator": "Audrey Walsh",
+      "source_page": "https://www.pexels.com/photo/construction-site-with-big-tower-crane-7121536/",
+      "file": "design/media-source/tower-crane-pexels-7121536.jpg",
+      "role": "Portrait section image; visible equipment branding, no implied endorsement"
+    },
+    {
+      "id": 31009581,
+      "creator": "David Pickup | Advertising & Marketing 🇬🇧",
+      "source_page": "https://www.pexels.com/video/construction-site-with-crane-and-framework-31009581/",
+      "file": "design/media-source/crane-framework-pexels-31009581-720p.mp4",
+      "role": "Candidate construction background video; 720p source rendition"
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2623,
+      "sha256": "4ea4da9a7c3b3dde5a0361a2f48afa64ec9227b69d999514b20e1e56f35684f8"
+    },
+    {
+      "path": "design/media-source/construction-wide-pexels-5027559.jpg",
+      "bytes": 305033,
+      "sha256": "a0103058f34ecaa4a0afc7b2d71be1a6bdfa7b16e2347087ed58ca4520cd18e2"
+    },
+    {
+      "path": "design/media-source/crane-framework-pexels-31009581-720p.mp4",
+      "bytes": 23038202,
+      "sha256": "dcff78601ec9447fde0441f464dca7e776f66655183373f85c776e6ce81cb7f7"
+    },
+    {
+      "path": "design/media-source/tower-crane-pexels-7121536.jpg",
+      "bytes": 189333,
+      "sha256": "774d2e40743b5e4705733fed1ca63b22029a5fafcf97f07a886dc94b77f514b6"
+    },
+    {
+      "path": "public/media/construction-hero-candidate.mp4",
+      "bytes": 1965582,
+      "sha256": "a5f63e30dcbe7057d60dcfea6b3a08263c6ca99b4a2d3b5c8a918a09b2782842"
+    },
+    {
+      "path": "public/media/construction-hero-poster.jpg",
+      "bytes": 100879,
+      "sha256": "e87b6a5f13ac36dcf19cfb69c26c29368d0274e2327934633a54033e50306806"
+    },
+    {
+      "path": "public/media/construction-wide.webp",
+      "bytes": 195562,
+      "sha256": "4902211b03e1e0cab4db26e021f476551bc7d94d4923629a9bc34469b20a7f4e"
+    },
+    {
+      "path": "public/media/tower-crane.webp",
+      "bytes": 117168,
+      "sha256": "c1593a4efb58ab205ed53ba930af0413bcc51d1e31e363833fa5bab2c24fdc51"
+    }
+  ]
+}

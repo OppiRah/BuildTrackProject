@@ -27,6 +27,7 @@ package.json            # scripts in section 8; "engines" for Node
 public/
   favicon.svg
   buildtrack-mark.webp  # 150×144 logo emblem cropped from design/BuildTrackLogo.jpeg (owner-supplied original)
+  media/                # ui-redesign prototype: stock hero clip/stills (Pexels) and demo/ screenshots; see UX_BRAND §9.1
   og-image.png          # 1200×630 social card rendered from design/og-image.svg
   fonts/                # InterVariable-latin.woff2 + OFL.txt (licence)
 src/
@@ -55,14 +56,20 @@ src/
   components/
     site/               # Header (incl. mobile nav), Footer, Wordmark, PageHeader, Section, CtaBand,
                         # Icon (+ icons.ts), ProcessSteps, SegmentGrid, PlanCard, CoverageNote (Phase 4)
-    graphics/           # original SVG artwork: HeroIllustration, SamplePanel
+    graphics/           # original SVG artwork: SamplePanel (HeroIllustration removed by the ui-redesign prototype)
     demo/               # DemoDashboard (shell, nav, toolbar), Panel, Overview/Inventory/
                         # Equipment/Deliveries/Events/DevicesPanel, StatusBadge, EmptyState
     form/               # InquiryForm (form, error summary, status, confirmation), Field
   scripts/
     nav.ts              # mobile menu toggle
-    demo.ts             # in-memory state; shows/hides build-time markup
+    demo.ts             # in-memory state; shows/hides build-time markup; opens #demo-panel-<section> entry points
     inquiry.ts          # preselection, validation display, submission
+    reveal.ts           # Home prototype: hero entrance completion and one-time section reveals; follows reduced-motion changes
+    scrolly.ts          # Home prototype: desktop pinned capability section driven by native vertical scrolling; re-measured on live text-size changes
+    collage.ts          # Home prototype: "Who we serve" desktop photo collage, selection and static fallback
+    stable-position.ts  # Home prototype: keeps the visible content in place when a section switches layout
+    demo-layout.ts      # Demo: mobile sidebar drawer and sticky-when-fits sidebar
+    hero-video.ts       # Home prototype: optional background video and its pause/play control
   styles/
     tokens.css          # all design tokens (UX_BRAND §Tokens)
     global.css          # reset, base typography, utilities used across pages
@@ -96,7 +103,7 @@ Trailing-slash directory URLs (Astro `build.format: 'directory'`, `trailingSlash
 - **Progressive enhancement:** without JavaScript, nav links render as a visible wrapped list; the Menu button is hidden until `nav.ts` runs.
 
 ## 4. Boundaries
-- **Marketing pages** read only from `src/config/*` (plus `contact-links.ts` for CTA URLs). They render to static HTML and need no JavaScript except `nav.ts`.
+- **Marketing pages** read only from `src/config/*` (plus `contact-links.ts` for CTA URLs). They render to static HTML and need no JavaScript except `nav.ts` (the Home prototype adds `reveal.ts`, `hero-video.ts`, `scrolly.ts`, `collage.ts` and `stable-position.ts`, all optional enhancements; the demo adds `demo-layout.ts`). `BaseLayout` takes `stickyHeader={false}` for the application-style demo page.
 - **Demo** reads only `src/data/demo/*`, `src/lib/demo-metrics.ts` and `src/lib/demo-state.ts`. It never imports pricing/contact config and makes no network requests. Only `/product-demo/` loads `demo.ts`. Home's "demo preview" is a static, build-time render from the same fixtures (no script).
 - **Inquiry** reads `src/config/inquiry.ts`, `services.ts` and `pricing.ts` (for allowlists and labels). Only `/contact/` loads `inquiry.ts`. The only network call in the whole site is the form POST to the provider.
 - **Pure logic** in `src/lib/` has no DOM access, so it is unit-testable; scripts in `src/scripts/` wire it to the DOM.
@@ -306,7 +313,7 @@ npm run build          astro build
 npm run preview        astro preview
 npm run check          astro check
 npm test               vitest run
-npm run test:browser   node tests/browser/inquiry-form.ts   (form behaviour in headless Chromium; mocked provider; needs CHROME_PATH)
+npm run test:browser   node tests/browser/inquiry-form.ts && node tests/browser/home-demo-ui.ts   (form behaviour with a mocked provider, then Home/demo interaction regressions; headless Chromium; needs CHROME_PATH)
 npm run check:release  node scripts/check-release.ts   (separate release gate)
 ```
 Ordinary phase completion requires `npm run check`, `npm test` and `npm run build` to pass **with intentionally incomplete config**. `npm run check:release` is a separate release gate: it prints every unmet requirement (section 5) and the manual gates, and exits non-zero until all automated requirements are met. A failing release check before release is expected and is not a foundation failure. It runs the TypeScript script with Node's built-in type stripping (Node 24 LTS), so no extra runner dependency is needed.
@@ -326,6 +333,7 @@ Required unit tests:
 - `inquiry-validate`: each required/limit rule; trimming; optional fields.
 - `inquiry-submit`: response classification (2xx, 4xx with errors, 5xx, network, timeout) to states.
 - Browser (`npm run test:browser`, not part of `npm test`): builds two temporary copies of the site in which a Vite `resolveId` hook swaps `src/config/*.ts` modules for fixtures: "configured" (`tests/browser/fixtures/inquiry-configured.ts`: synthetic endpoint `https://form-test.invalid/f/browser-test` and a 1.5 s limit; `site-with-production-url.ts`: a synthetic production URL) and "unconfigured" (`inquiry-unconfigured.ts`: endpoint `null`). It never edits or depends on the real endpoint value, so it keeps working once a real endpoint is configured. Each copy is served locally and driven in headless Chromium over the DevTools protocol with **every** page request intercepted: local test-server requests continue; synthetic-endpoint requests are answered (200/422/429/500, unrecognised 2xx bodies), failed (network), held (timeout before headers) or routed to a local route that sends headers then stalls (timeout during body); any other destination is blocked and fails the run (a self-test proves the block). Before any submission the test asserts the rendered form `action` equals the synthetic endpoint. Also covers preselection, validation/focus, single in-flight submission, confirmation (and that `next` is not followed), failure/retry with preserved values, the no-JS native POST, and the unconfigured build (no form, no submit, no inquiry script, with and without JS). Adds no dependency; nothing test-related reaches the repository config or `dist/`. It also checks, in both copies, that About and How It Works make no publication or delivery claim and keep publication and production receipt as still to come; that every pricing comparison cell is associated (via `headers`) with its plan column, `scope="rowgroup"` category and `scope="row"` feature header, with Chromium roles columnheader/rowheader/cell; and that the error summary is a focused, named and described group with no duplicate live announcement.
+- Home/demo interaction (`tests/browser/home-demo-ui.ts`, second part of `npm run test:browser`): builds a temporary copy of the real site, serves it locally (the server can hold the hero MP4 response) and blocks every off-site request; no form is submitted. Covers reduced motion turned on while automatic playback is still loading (paused at once, no automatic `playing` event after the response is released; visitor Play/Pause kept), reflow at 320/390 px with a genuine 32 px browser default font (`Page.setFontSizes`) and hyphenation forced off, on seven routes with JavaScript on and off (no document overflow, clipped headings or page-level overflow hiding), the demo drawer's Tab/Shift+Tab wrap with inertness, Escape and focus return, the image-led workflow, and the collage (enhanced state, upright labels, scroll-following motion without wheel capture, Enter/Space/click selection, pause and jump-free resume, static fallbacks, live reduced-motion switching, and focus transfer to the matching audience heading when the collage becomes static with an audience button focused — under reduced motion, a resize to 768 px and a 32 px default text size — without focus reaching BODY, with the selection kept, the text clear of the sticky header and Tab continuing after the section; focus elsewhere is not moved), and the capability showcase under live browser text-size changes 16→20→32→16 px without resize or reload (focused final link kept focused and rendered on screen; midway through the pinned section with focus elsewhere: pinning, section height = sticky height + current travel, last panel fully shown at the end of the range; focus below the section kept, no scripted scrolling, the pinned ↔ stacked switch leaves content below in place; no attribute churn or ResizeObserver errors once settled; reduced motion and no JavaScript stay stacked), and layout switches (pinned ↔ stacked, collage ↔ grid) leaving content below in place within ±1 px over three runs. The video scenarios need a Chromium build that plays H.264; they fail with an explanation otherwise. Verified 2026-10-06 with full Chromium 151 and the Chromium 151 headless shell.
 - `demo-metrics` and fixtures: referential integrity, unit consistency, derived totals (section 9.3).
 - `release-check`: with synthetic configs: a complete config passes; each missing required field is reported individually; null `publicEmail` is not reported; empty `limits`/`exclusions` arrays pass; non-https URLs are reported. The real config is checked only for shape, so `npm test` passes while values are unresolved.
 

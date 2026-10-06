@@ -4,10 +4,10 @@ import type { DeliveryStatus, Device, EquipmentStatus, MaterialCategory } from '
 
 export const sectionLabels = {
   overview: 'Overview',
-  inventory: 'Inventory',
+  inventory: 'Materials',
   equipment: 'Equipment',
   deliveries: 'Deliveries',
-  events: 'Tracking events',
+  events: 'Activity',
   devices: 'Devices',
 } as const;
 

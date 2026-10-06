@@ -108,6 +108,15 @@ legend {
   min-width: 0;
 }
 
+/* A heading never grows wider than its container, including as a flex item (start-aligned
+   flex columns would otherwise size it to its longest word), so long words wrap. */
+h1,
+h2,
+h3,
+h4 {
+  max-width: 100%;
+}
+
 a {
   color: var(--color-blue);
   text-underline-offset: 0.15em;
@@ -396,7 +405,10 @@ a {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    /* None rather than a very short duration: with the default transition-property (all), a
+       short duration turns every style change into a one-frame transition, so layout scripts
+       would measure stale sizes (e.g. padding) after a class change. */
+    transition: none !important;
     scroll-behavior: auto !important;
   }
 }

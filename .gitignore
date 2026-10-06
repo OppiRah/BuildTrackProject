@@ -36,3 +36,17 @@ npm-debug.log*
 # Cloudflare Wrangler local state and local secrets
 .wrangler/
 .dev.vars*
+
+# Downloaded media starter pack: keep locally, do not commit (provenance in design/media-source/)
+/BuildTrack_Media_Starter.zip
+/design/media-source/crane-framework-pexels-31009581-720p.mp4
+
+# Home visual samples pack: keep locally, do not commit (sources and provenance in design/home-visual-samples/)
+/BuildTrack_Home_Visual_Samples.zip
+/PREVIEW.jpg
+
+# Downloaded source photos: keep locally, do not commit. Provenance (photographer, source page,
+# license, download URL) and the crops/hashes of the files that ship are committed as JSON.
+/design/home-visual-samples/*.jpg
+/design/media-source/*.jpg
+/design/media-source/*.webp

@@ -1,6 +1,7 @@
 ---
 import { equipment, events, materials, projects, simulatedEventPool } from '../../data/demo/fixtures.ts';
 import { formatDateTime } from '../../lib/demo-metrics.ts';
+import { MAX_SIMULATED_EVENTS } from '../../lib/demo-state.ts';
 import EmptyState from './EmptyState.astro';
 import Panel from './Panel.astro';
 
@@ -12,9 +13,14 @@ const rows = [...simulatedEventPool.map((e, i) => ({ e, poolIndex: i })).reverse
 
 <Panel
   section="events"
-  title="Tracking events"
+  title="Activity"
   lead="QR scans and RFID gate reads as they would be recorded on site. Use Simulate scan to add up to five labelled example events."
 >
+  <Fragment slot="filters">
+    <button type="button" class="demo-button" data-simulate>Simulate scan</button>
+    <p class="simulate-count" data-simulate-count>0 of {MAX_SIMULATED_EVENTS} simulated scans used</p>
+  </Fragment>
+
   <EmptyState rows="events" message="No tracking events for this project." />
 
   <div class="dash-table" role="region" aria-labelledby="events-caption" tabindex="0" data-hide-when-empty="events">

@@ -12,7 +12,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
-    "test:browser": "node tests/browser/inquiry-form.ts",
+    "test:browser": "node tests/browser/inquiry-form.ts && node tests/browser/home-demo-ui.ts",
     "check:release": "node scripts/check-release.ts"
   },
   "dependencies": {

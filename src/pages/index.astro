@@ -1,245 +1,474 @@
 ---
 import { contactHref } from '../lib/contact-links.ts';
-import HeroIllustration from '../components/graphics/HeroIllustration.astro';
-import CoverageNote from '../components/site/CoverageNote.astro';
-import CtaBand from '../components/site/CtaBand.astro';
 import Icon from '../components/site/Icon.astro';
-import type { IconName } from '../components/site/icons.ts';
-import PlanCard from '../components/site/PlanCard.astro';
-import ProcessSteps from '../components/site/ProcessSteps.astro';
-import Section from '../components/site/Section.astro';
-import SegmentGrid from '../components/site/SegmentGrid.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { coverage } from '../config/business.ts';
-import { plans, pricingNote } from '../config/pricing.ts';
-import { services } from '../config/services.ts';
-import { pageMeta, primaryCta, site } from '../config/site.ts';
-import { formatPct, overview } from '../lib/demo-metrics.ts';
+import { customerSegments } from '../config/business.ts';
+import { plans, priceBasis, priceLabel, pricingNote, tierLabels } from '../config/pricing.ts';
+import { pageMeta, primaryCta } from '../config/site.ts';
 
 const meta = pageMeta('/');
-// Same derivation as the demo's Overview for "All sample projects".
-const demoOverview = overview('all');
+const quotationHref = contactHref({ type: 'quotation' });
 
-const capabilities: { icon: IconName; title: string; text: string }[] = [
-  { icon: 'materials', title: 'Materials', text: 'Arrivals, stock and usage for every site.' },
-  { icon: 'equipment', title: 'Equipment', text: 'Location, status and utilization of each unit.' },
-  { icon: 'inventory', title: 'Inventory', text: 'Reorder levels and low-stock alerts.' },
-  { icon: 'visibility', title: 'Project visibility', text: 'One view of resources across projects.' },
+// Capability showcase (scroll-driven on desktop, stacked otherwise). Each image is a screen
+// captured from the Interactive Platform Demo (fictional fixtures); each link opens that section.
+const capabilities: { id: string; label: string; title: string; text: string; image: string; alt: string; caption: string; href: string; linkText: string }[] = [
+  {
+    id: 'materials',
+    label: 'Materials',
+    title: 'Inventory, movements and low stock',
+    text: 'Stock on hand, usage against the planned quantity and reorder levels for every site, with low stock flagged early.',
+    image: '/media/demo/demo-inventory.webp',
+    alt: 'Materials section of the demo, marked Simulated data, with the Low stock only filter on: usage bars for four low-stock sample materials such as deformed bar and gravel.',
+    caption: 'Materials, “Low stock only” filter on. Fictional sample data.',
+    href: '/product-demo/#demo-panel-inventory',
+    linkText: 'Open Materials in the demo',
+  },
+  {
+    id: 'equipment',
+    label: 'Equipment',
+    title: 'Assignments, utilization and maintenance',
+    text: 'Where each tagged unit is assigned, how much it worked in the last seven days, and which units are idle or under maintenance.',
+    image: '/media/demo/demo-equipment.webp',
+    alt: 'Equipment section of the demo, marked Simulated data: seven-day utilization bars for sample units with their status, such as a tower crane active at 90% and a dump truck under maintenance.',
+    caption: 'Equipment utilization and status. Fictional sample data.',
+    href: '/product-demo/#demo-panel-equipment',
+    linkText: 'Open Equipment in the demo',
+  },
+  {
+    id: 'deliveries',
+    label: 'Deliveries',
+    title: 'Delivery status and recorded receipts',
+    text: 'Scheduled, in-transit, delayed and delivered loads for each project, with the time each delivery was recorded as received.',
+    image: '/media/demo/demo-deliveries.webp',
+    alt: 'Deliveries section of the demo, marked Simulated data: counts by status and a table of sample deliveries, one recorded as delivered at a stated time and one delayed.',
+    caption: 'Deliveries by status. Fictional sample data.',
+    href: '/product-demo/#demo-panel-deliveries',
+    linkText: 'Open Deliveries in the demo',
+  },
+  {
+    id: 'reporting',
+    label: 'Reporting',
+    title: 'Project summaries and comparisons',
+    text: 'Low-stock, utilization and delivery figures for one project or all of them, with planned and actual progress side by side.',
+    image: '/media/demo/demo-overview.webp',
+    alt: 'Overview section of the demo, marked Simulated data: summary figures for all sample projects and the start of planned-versus-actual project progress and alerts.',
+    caption: 'Overview for all sample projects. Fictional sample data.',
+    href: '/product-demo/#demo-panel-overview',
+    linkText: 'Open the Overview in the demo',
+  },
 ];
 
-const problems = [
+// Three steps, each led by an illustrative stock photo (crops recorded in
+// design/home-visual-samples/CROPS.json). The section lead states what is simulated.
+const steps: { title: string; text: string; image: string; width: number; height: number }[] = [
   {
-    title: 'Fragmented visibility',
-    text: 'Materials, deliveries and equipment are tracked in notebooks, spreadsheets and messages, so no one sees the whole picture.',
+    title: 'Record site activity',
+    text: 'Log material movements and equipment activity.',
+    image: '/media/home/step-record-site-activity.webp',
+    width: 800,
+    height: 600,
   },
   {
-    title: 'Loss and waste',
-    text: 'Materials go missing, are over-ordered or are used without being recorded, and the gap is found too late.',
+    title: 'Monitor resources',
+    text: 'See stock levels, equipment status and deliveries.',
+    image: '/media/home/step-monitor-resources.webp',
+    width: 720,
+    height: 540,
   },
   {
-    title: 'Avoidable delays and costs',
-    text: 'Work waits on stock that ran out, deliveries that slipped or equipment that sat idle on another site.',
+    title: 'Review project information',
+    text: 'Spot issues and plan the next action.',
+    image: '/media/home/step-review-project-information.webp',
+    width: 800,
+    height: 600,
   },
 ];
 
-const outcomes: { icon: IconName; title: string; text: string }[] = [
-  { icon: 'waste', title: 'Reduced loss and waste', text: 'Recorded movements make missing or excess materials visible sooner.' },
-  { icon: 'accuracy', title: 'Better inventory accuracy', text: 'Scans replace manual counts as the main source of stock levels.' },
-  { icon: 'visibility', title: 'Clearer project visibility', text: 'Managers see materials, equipment and deliveries in one place.' },
-  { icon: 'clock', title: 'Fewer avoidable delays', text: 'Low-stock and late-delivery alerts give teams time to act.' },
+// "Who we serve": one illustrative photo per approved segment (equal size and treatment).
+// Tilt, swing and drift only shape the desktop collage (src/scripts/collage.ts).
+const audienceImages: Record<(typeof customerSegments)[number]['id'], string> = {
+  'construction-companies': '/media/home/audience-construction-companies.webp',
+  contractors: '/media/home/audience-contractors.webp',
+  'project-managers': '/media/home/audience-project-managers.webp',
+  'engineering-firms': '/media/home/audience-engineering-firms.webp',
+  'government-projects': '/media/home/audience-government-projects.webp',
+  'real-estate-developers': '/media/home/audience-real-estate-developers.webp',
+  'equipment-rental': '/media/home/audience-equipment-rental.webp',
+};
+const collageMotion = [
+  { tilt: -5, swing: 4, dx: -8, dy: 12 },
+  { tilt: 3, swing: -3, dx: 6, dy: -10 },
+  { tilt: -2, swing: 5, dx: -6, dy: 14 },
+  { tilt: 5, swing: -4, dx: 8, dy: -12 },
+  { tilt: -4, swing: 3, dx: -6, dy: 10 },
+  { tilt: 2, swing: -5, dx: 6, dy: -14 },
+  { tilt: -3, swing: 4, dx: -8, dy: 12 },
 ];
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
-  <section class="hero on-dark">
-    <div class="container hero-grid">
+  <script is:inline>
+    document.documentElement.classList.add('entrance-run');
+  </script>
+  <section class="hero on-dark" aria-labelledby="hero-heading">
+    <div class="hero-media" data-hero-media data-video-src="/media/construction-hero-candidate.mp4">
+      <picture>
+        <source
+          type="image/webp"
+          srcset="/media/construction-hero-640.webp 640w, /media/construction-hero-1280.webp 1280w"
+          sizes="100vw"
+        />
+        <img src="/media/construction-hero-poster.jpg" width="1280" height="720" alt="" fetchpriority="high" decoding="async" />
+      </picture>
+    </div>
+    <div class="container hero-inner">
       <div class="hero-copy">
-        <p class="eyebrow">{site.tagline}</p>
-        <h1>Know where your materials and equipment are, how they are being used, and what your project needs next.</h1>
-        <p class="hero-lead">{site.description}</p>
+        <p class="hero-label">Academic business prototype</p>
+        <h1 id="hero-heading">Know your materials. Track your equipment. Keep projects moving.</h1>
+        <p class="hero-lead">
+          Explore BuildTrack’s proposed approach to construction resource management—from inventory and equipment to
+          deliveries and project reporting.
+        </p>
         <div class="hero-actions">
-          <a class="button button-primary" href={primaryCta.href}>{primaryCta.label}</a>
-          <a class="button button-secondary" href="/product-demo/">Explore the Product Demo</a>
+          <a class="button button-primary" href="/product-demo/">Explore the Demo</a>
+          <a class="button button-secondary" href={quotationHref}>Request a Quotation</a>
         </div>
-        <p class="hero-note">Academic business proposal. The platform is proposed; the demo uses fictional data.</p>
       </div>
-      <div class="hero-art">
-        <HeroIllustration />
+      <div class="hero-foot">
+        <p class="media-credit">Background: stock construction footage, not a BuildTrack project.</p>
+        <button type="button" class="video-toggle" data-video-toggle hidden>
+          <svg class="icon-pause" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"></path>
+          </svg>
+          <svg class="icon-play" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M8 5.5v13l10.5-6.5z"></path>
+          </svg>
+          <span data-video-label>Play background video</span>
+        </button>
       </div>
     </div>
   </section>
 
-  <section class="capability-strip" aria-label="What BuildTrack covers">
+  <section class="section showcase on-dark" aria-labelledby="showcase-heading">
+    <div class="container showcase-grid">
+      <div class="showcase-copy stack" data-reveal>
+        <p class="eyebrow">Interactive Platform Demo</p>
+        <h2 id="showcase-heading">See the proposed dashboard on any screen</h2>
+        <p class="lead">
+          These screens come from BuildTrack’s own Interactive Platform Demo, which runs in your browser on four fictional
+          sample projects.
+        </p>
+        <p>The phone shows this website on a small screen. BuildTrack has no native mobile app.</p>
+        <p><a class="button button-primary" href="/product-demo/">Explore the Demo</a></p>
+      </div>
+      <figure class="devices" data-reveal="devices">
+        <p class="sim-label">Simulated platform demo</p>
+        <div class="device-stage">
+          <div class="laptop">
+            <div class="laptop-screen">
+              <img
+                src="/media/demo/demo-laptop.webp"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                alt="The Interactive Platform Demo on a laptop: a navy sidebar with its six sections and a light Overview workspace with the project picker, Reset, a Simulated data label and low-stock, utilization and delivery figures."
+              />
+            </div>
+            <div class="laptop-base"></div>
+          </div>
+          <div class="phone">
+            <img
+              src="/media/demo/demo-phone.webp"
+              width="440"
+              height="952"
+              loading="lazy"
+              decoding="async"
+              alt="The demo in this website on a phone-sized screen: a Sections button, project picker and Reset above the Simulated data label and Overview figures."
+            />
+          </div>
+        </div>
+        <figcaption>Screens captured from the Interactive Platform Demo. All projects and figures are fictional.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="capabilities" id="capabilities" aria-labelledby="capabilities-heading" data-scrolly>
+    <div class="scrolly-sticky" data-scrolly-sticky>
+      <div class="scrolly-content" data-scrolly-content>
+        <div class="container scrolly-head">
+          <header class="section-intro stack" data-reveal>
+            <p class="eyebrow">Capabilities</p>
+            <h2 id="capabilities-heading">Four things BuildTrack proposes to keep track of</h2>
+            <p class="lead">Each panel shows a screen from the simulated demo and opens that part of it.</p>
+          </header>
+          <p class="scrolly-more">
+            <a class="text-link" href="/solutions/">Explore all solutions and services <Icon name="arrow" size={20} /></a>
+          </p>
+        </div>
+        <div class="scrolly-viewport" data-scrolly-viewport>
+          <ol class="scrolly-track" data-scrolly-track>
+            {
+              capabilities.map((item, index) => (
+                <li class="scrolly-panel" id={`capability-${item.id}`}>
+                  <figure class="panel-media">
+                    <img src={item.image} width="1088" height="816" loading="lazy" decoding="async" alt={item.alt} />
+                    <figcaption>{item.caption}</figcaption>
+                  </figure>
+                  <div class="panel-body">
+                    <p class="panel-label">
+                      <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span> {item.label}
+                    </p>
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                    <a class="text-link" href={item.href}>
+                      {item.linkText} <Icon name="arrow" size={20} />
+                    </a>
+                  </div>
+                </li>
+              ))
+            }
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section workflow on-dark" aria-labelledby="workflow-heading">
     <div class="container">
-      <ul class="grid grid-4">
+      <header class="section-intro stack" data-reveal>
+        <p class="eyebrow">How it would work</p>
+        <h2 id="workflow-heading">Three steps from site to decision</h2>
+        <p class="lead">
+          The demo simulates the recording and reporting steps with fictional data. No QR, RFID or IoT hardware is
+          connected; hardware integration is a proposed concept.
+        </p>
+      </header>
+      <ol class="steps">
         {
-          capabilities.map((item) => (
-            <li class="strip-item">
-              <Icon name={item.icon} class="card-icon" />
-              <div>
-                <h2 class="strip-title">{item.title}</h2>
-                <p>{item.text}</p>
-              </div>
+          steps.map((step, index) => (
+            <li class="step" data-reveal style={`--i: ${index}`}>
+              <img
+                class="step-media"
+                src={step.image}
+                width={step.width}
+                height={step.height}
+                loading="lazy"
+                decoding="async"
+                alt=""
+              />
+              <h3>
+                <span class="step-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                <span class="visually-hidden">Step {index + 1}: </span>
+                {step.title}
+              </h3>
+              <p>{step.text}</p>
+            </li>
+          ))
+        }
+      </ol>
+      <div class="workflow-foot" data-reveal>
+        <p class="media-credit">Photos: illustrative stock photography, not BuildTrack projects, customers or working hardware.</p>
+        <p><a class="text-link" href="/how-it-works/">How it works <Icon name="arrow" size={20} /></a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section segments" aria-labelledby="segments-heading" data-collage>
+    <div class="container">
+      <header class="section-intro stack" data-reveal>
+        <p class="eyebrow">Who we serve</p>
+        <h2 id="segments-heading">Built for everyone who manages construction resources</h2>      </header>
+      <div class="collage-layout">
+        <ul class="audience-list" data-collage-stage>
+          {
+            customerSegments.map((segment, index) => {
+              const motion = collageMotion[index]!;
+              return (
+                <li
+                  class="audience"
+                  data-audience={segment.id}
+                  style={`--tilt: ${motion.tilt}deg; --swing: ${motion.swing}deg; --dx: ${motion.dx}px; --dy: ${motion.dy}px`}
+                >
+                  <div class="audience-media">
+                    <img src={audienceImages[segment.id]} width="400" height="500" loading="lazy" decoding="async" alt="" />
+                  </div>
+                  <div class="audience-text">
+                    <h3 data-audience-label>{segment.label}</h3>
+                    <p data-audience-need>{segment.need}</p>
+                  </div>
+                  <button type="button" class="audience-select" data-audience-select aria-pressed="false" hidden>
+                    <span class="audience-hint">
+                      View details<span class="visually-hidden">: {segment.label}</span>
+                      <Icon name="arrow" size={16} />
+                    </span>
+                  </button>
+                </li>
+              );
+            })
+          }
+        </ul>
+        <div class="audience-detail" data-collage-detail aria-live="polite" hidden>
+          <p class="audience-detail-label" data-detail-label></p>
+          <p class="audience-detail-text" data-detail-text>Select a photo to read what BuildTrack would offer that group.</p>
+        </div>
+      </div>
+      <p class="media-credit segments-credit">Photos: illustrative stock photography, not BuildTrack customers or projects.</p>
+    </div>
+  </section>
+
+  <section class="section pricing-preview" aria-labelledby="pricing-heading">
+    <div class="container">
+      <header class="section-intro stack" data-reveal>
+        <p class="eyebrow">Pricing</p>
+        <h2 id="pricing-heading">Three proposed packages</h2>
+        <p class="lead">{pricingNote}</p>
+      </header>
+      <ul class="price-list" data-reveal>
+        {
+          plans.map((plan) => (
+            <li>
+              <p class="tier">{tierLabels[plan.tier]}</p>
+              <h3>{plan.name}</h3>
+              <p class="price">
+                {priceLabel(plan)}
+                {plan.amountPhp !== null && <span class="basis">{priceBasis}</span>}
+              </p>
+              <p class="positioning">{plan.positioning}</p>
+              <a class="text-link" href={contactHref({ type: 'service', plan: plan.id })}>
+                Avail {plan.name} <Icon name="arrow" size={20} />
+              </a>
             </li>
           ))
         }
       </ul>
+      <p class="after"><a class="text-link" href="/pricing/">See pricing details <Icon name="arrow" size={20} /></a></p>
     </div>
   </section>
 
-  <Section
-    id="problem"
-    eyebrow="The problem"
-    title="Construction teams lose track of resources"
-    lead="Materials and equipment move constantly between suppliers, yards and sites, yet they are often the hardest resources to keep track of."
-  >
-    <ul class="grid grid-3">
-      {
-        problems.map((problem) => (
-          <li class="card">
-            <h3 class="card-title">{problem.title}</h3>
-            <p class="muted">{problem.text}</p>
-          </li>
-        ))
-      }
-    </ul>
-  </Section>
-
-  <Section
-    id="solution"
-    tone="pale"
-    eyebrow="The proposed solution"
-    title="Tag it, scan it, see it"
-    lead="BuildTrack proposes QR, RFID and IoT tracking that feeds a cloud platform with dashboards, alerts and reports."
-  >
-    <ProcessSteps />
-    <p class="after"><a class="text-link" href="/how-it-works/">How it works <Icon name="arrow" size={20} /></a></p>
-  </Section>
-
-  <Section
-    id="demo-preview"
-    tone="dark"
-    eyebrow="Interactive Platform Demo"
-    title="See how the dashboard would work"
-    lead="Explore inventory, equipment, deliveries and tracking events for four fictional sample projects."
-  >
-    <ul class="preview-tiles" aria-label="Sample figures for all four demo projects">
-      <li>
-        <span class="preview-value">{demoOverview.lowStockCount}</span>
-        <span>low-stock materials of {demoOverview.materialCount}</span>
-      </li>
-      <li>
-        <span class="preview-value">{demoOverview.utilizationPct === null ? 'n/a' : formatPct(demoOverview.utilizationPct)}</span>
-        <span>equipment utilization, last 7 days</span>
-      </li>
-      <li>
-        <span class="preview-value">{demoOverview.delayed}</span>
-        <span>delayed deliveries</span>
-      </li>
-    </ul>
-    <p class="notice dark-notice">
-      <strong>Demonstration data only.</strong> The demo uses fictional sample data. No real construction site, hardware or
-      device is connected.
-    </p>
-    <p class="after"><a class="button button-primary" href="/product-demo/">Explore the Product Demo</a></p>
-  </Section>
-
-  <Section
-    id="outcomes"
-    eyebrow="Proposed outcomes"
-    title="What BuildTrack aims to improve"
-    lead="These are intended benefits of the proposed platform, not measured results."
-  >
-    <ul class="grid grid-4">
-      {
-        outcomes.map((item) => (
-          <li class="card">
-            <Icon name={item.icon} class="card-icon" />
-            <h3 class="card-title">{item.title}</h3>
-            <p class="muted">{item.text}</p>
-          </li>
-        ))
-      }
-    </ul>
-  </Section>
-
-  <Section id="services" tone="pale" eyebrow="Services" title="Platform features and supporting services">
-    <ul class="grid grid-4">
-      {
-        services.map((service) => (
-          <li class="card">
-            <h3 class="card-title">{service.name}</h3>
-            <p class="muted">{service.summary}</p>
-          </li>
-        ))
-      }
-    </ul>
-    <p class="after"><a class="text-link" href="/solutions/">Explore solutions <Icon name="arrow" size={20} /></a></p>
-  </Section>
-
-  <Section
-    id="segments"
-    eyebrow="Who we serve"
-    title="Built for everyone who manages construction resources"
-  >
-    <SegmentGrid />
-  </Section>
-
-  <Section id="pricing-preview" tone="pale" eyebrow="Pricing" title="Three proposed packages" lead={pricingNote}>
-    <div class="grid grid-3">
-      {plans.map((plan) => <PlanCard plan={plan} compact />)}
+  <section class="closing on-dark" aria-labelledby="closing-heading">
+    <picture class="closing-media">
+      <img src="/media/construction-wide-1280.webp" width="1280" height="853" alt="" loading="lazy" decoding="async" />
+    </picture>
+    <div class="container closing-inner stack" data-reveal>
+      <h2 id="closing-heading">Ready to see BuildTrack?</h2>
+      <p class="lead">Request a walkthrough of the proposed platform or a quotation for your project.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href={primaryCta.href}>{primaryCta.label}</a>
+        <a class="button button-secondary" href={quotationHref}>Request a Quotation</a>
+      </div>
+      <p class="media-credit">Background: stock construction photo, not a BuildTrack project.</p>
     </div>
-    <p class="after"><a class="text-link" href="/pricing/">See pricing details <Icon name="arrow" size={20} /></a></p>
-  </Section>
-
-  <Section id="coverage" eyebrow="Coverage" title={`${coverage.current}-based`}>
-    <CoverageNote />
-  </Section>
-
-  <CtaBand
-    title="Ready to see BuildTrack?"
-    lead="Request a walkthrough of the proposed platform or a quotation for your project."
-    primary={primaryCta}
-    secondary={{ label: 'Request a Quotation', href: contactHref({ type: 'quotation' }) }}
-  />
+  </section>
 </BaseLayout>
 
+<script>
+  import { initHeroVideo } from '../scripts/hero-video.ts';
+  import { initReveal } from '../scripts/reveal.ts';
+  import { initScrolly } from '../scripts/scrolly.ts';
+  import { initCollage } from '../scripts/collage.ts';
+  initReveal();
+  initHeroVideo();
+  initScrolly();
+  initCollage();
+</script>
+
 <style>
+  /* ---- Hero ---------------------------------------------------------------- */
   .hero {
-    padding-block: var(--space-8);
-    background: linear-gradient(180deg, var(--color-ink), var(--color-navy));
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-height: min(85vh, 46rem);
+    overflow: hidden;
+    background: var(--color-ink);
     color: #fff;
   }
 
+  .hero-media,
+  .hero-media img,
+  .hero-media :global(video) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .hero-media {
+    z-index: -1;
+  }
+
+  .hero-media :global(video) {
+    opacity: 0;
+    transition: opacity 600ms ease-out;
+  }
+
+  .hero-media:global(.is-playing) :global(video) {
+    opacity: 1;
+  }
+
+  /* Text sits on at least 86% ink (UX_BRAND §2.2); the right side shows more footage on wide screens. */
+  .hero-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(7 26 43 / 0.86);
+  }
+
   @media (min-width: 64rem) {
-    .hero {
-      padding-block: var(--space-12);
+    .hero-media::after {
+      background: linear-gradient(
+        90deg,
+        rgb(7 26 43 / 0.92) 0%,
+        rgb(7 26 43 / 0.86) 72%,
+        rgb(7 26 43 / 0.5) 100%
+      );
     }
   }
 
-  .hero-grid {
+  .hero-inner {
     display: grid;
+    grid-template-rows: 1fr auto;
     gap: var(--space-8);
-    align-items: center;
+    padding-block: var(--space-10) var(--space-5);
   }
 
-  .hero-grid > *,
-  .strip-item > div {
+  @media (min-width: 64rem) {
+    .hero-inner {
+      padding-block: var(--space-12) var(--space-6);
+    }
+  }
+
+  /* Grid and flex children may shrink below their longest word, so enlarged text wraps. */
+  .hero-inner > *,
+  .scrolly-head > * {
     min-width: 0;
   }
 
-  @media (min-width: 64rem) {
-    .hero-grid {
-      grid-template-columns: 7fr 5fr;
-    }
+  .hero-copy {
+    align-self: center;
+    max-width: 44rem;
   }
 
   .hero-copy > * + * {
-    margin-top: var(--space-4);
+    margin-top: var(--space-5);
+  }
+
+  .hero-label {
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-yellow);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-yellow);
   }
 
   .hero h1 {
-    max-width: 22ch;
+    font-size: clamp(2.25rem, 1.4rem + 4vw, 4.25rem);
+    letter-spacing: -0.02em;
   }
 
   .hero-lead {
@@ -251,74 +480,775 @@ const outcomes: { icon: IconName; title: string; text: string }[] = [
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-3);
-    padding-top: var(--space-2);
   }
 
-  .hero-note {
+  .hero-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .media-credit {
     font-size: var(--text-sm);
     color: var(--color-blue-pale);
   }
 
-  .hero-art {
-    max-width: 32rem;
+  .video-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--target-min);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid rgb(234 246 255 / 0.7);
+    border-radius: 999px;
+    background: rgb(7 26 43 / 0.7);
+    color: #fff;
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast);
   }
 
-  .capability-strip {
-    padding-block: var(--space-6);
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+  .video-toggle:hover {
+    background: rgb(7 26 43 / 0.95);
   }
 
-  .strip-item {
-    display: flex;
-    gap: var(--space-3);
+  .video-toggle[hidden] {
+    display: none;
   }
 
-  .strip-item .card-icon {
-    flex-shrink: 0;
-    margin: 0.125rem 0 0;
+  .video-toggle[aria-disabled='true'] {
+    cursor: default;
+    opacity: 0.85;
   }
 
-  .strip-title {
-    font-size: var(--text-lg);
+  .video-toggle .icon-pause,
+  .video-toggle[data-state='playing'] .icon-play,
+  .video-toggle[data-state='unavailable'] svg {
+    display: none;
   }
 
-  .strip-item p {
-    color: var(--color-muted);
+  .video-toggle[data-state='playing'] .icon-pause {
+    display: block;
   }
 
-  .preview-tiles {
+  /* Staggered entrance, complete in under a second. Runs only with JavaScript (html.entrance-run is
+     set by an inline script before the hero renders), never under reduced motion, and never twice:
+     src/scripts/reveal.ts sets html.entrance-done once it has finished or been cancelled. */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html.entrance-run:not(.entrance-done)) .hero-copy > * {
+      animation: hero-in 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .hero-copy > :nth-child(2) {
+      animation-delay: 80ms;
+    }
+
+    .hero-copy > :nth-child(3) {
+      animation-delay: 160ms;
+    }
+
+    .hero-copy > :nth-child(4) {
+      animation-delay: 240ms;
+    }
+
+    /* Focus never waits for the entrance. */
+    .hero-copy > :focus-within {
+      animation: none;
+    }
+  }
+
+  @keyframes hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+  }
+
+  /* ---- Section reveals (src/scripts/reveal.ts) ------------------------------- */
+  :global(.reveal-ready [data-reveal]) {
+    transition:
+      opacity 500ms ease-out,
+      transform 500ms ease-out;
+    transition-delay: calc(var(--i, 0) * 90ms);
+  }
+
+  :global(.reveal-ready [data-reveal]:not(.is-revealed, [data-reveal='devices'])) {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  :global(.reveal-instant),
+  :global(.reveal-instant *) {
+    transition: none !important;
+  }
+
+  @media print {
+    :global([data-reveal] *),
+    :global([data-reveal]) {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+
+  /* ---- Showcase -------------------------------------------------------------- */
+  .showcase {
+    background: var(--color-navy);
+    color: #fff;
+    overflow: hidden;
+  }
+
+  .showcase .lead,
+  .workflow .lead,
+  .closing .lead {
+    color: var(--color-blue-pale);
+  }
+
+  .showcase-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+    gap: var(--space-8);
+    align-items: center;
+  }
+
+  @media (min-width: 64rem) {
+    .showcase-grid {
+      grid-template-columns: 5fr 7fr;
+      gap: var(--space-10);
+    }
+  }
+
+  .showcase-grid > * {
+    min-width: 0;
+  }
+
+  .sim-label {
+    display: inline-block;
+    margin-bottom: var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-yellow);
+    border-radius: var(--radius-sm);
+    background: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-yellow);
+  }
+
+  /* Room on the right and below for the overlapping phone. */
+  .device-stage {
+    position: relative;
+    padding: 0 14% 7% 0;
+  }
+
+  .laptop-screen {
+    margin-inline: 5%;
+    padding: clamp(5px, 1vw, 10px);
+    border-radius: 14px 14px 0 0;
+    background: #1e293b;
+    box-shadow: 0 24px 48px rgb(0 0 0 / 0.35);
+  }
+
+  .laptop-screen img,
+  .phone img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+
+  .laptop-base {
+    position: relative;
+    height: clamp(10px, 1.6vw, 18px);
+    border-radius: 0 0 14px 14px;
+    background: linear-gradient(#e2e8f0, #94a3b8);
+  }
+
+  .laptop-base::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 16%;
+    height: 40%;
+    border-radius: 0 0 8px 8px;
+    background: #64748b;
+    transform: translateX(-50%);
+  }
+
+  .phone {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 25%;
+    min-width: 5.5rem;
+    padding: clamp(4px, 0.8vw, 7px);
+    border-radius: clamp(14px, 2.4vw, 26px);
+    background: #1e293b;
+    box-shadow: 0 20px 40px rgb(0 0 0 / 0.45);
+  }
+
+  .phone img {
+    border-radius: clamp(10px, 1.8vw, 20px);
+  }
+
+  .devices figcaption {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-blue-pale);
+  }
+
+  /* Laptop enters, then the phone; both then stay still. */
+  :global(.reveal-ready) .devices:not(:global(.is-revealed)) .laptop,
+  :global(.reveal-ready) .devices:not(:global(.is-revealed)) .phone {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  :global(.reveal-ready) .laptop,
+  :global(.reveal-ready) .phone {
+    transition:
+      opacity 600ms ease-out,
+      transform 600ms ease-out;
+  }
+
+  :global(.reveal-ready) .phone {
+    transition-delay: 250ms;
+  }
+
+  /* ---- Capability showcase (src/scripts/scrolly.ts) ------------------------------ */
+  .section-intro {
+    max-width: 48rem;
+    margin-bottom: var(--space-8);
+  }
+
+  .capabilities {
+    padding-block: var(--space-8);
+  }
+
+  @media (min-width: 64rem) {
+    .capabilities {
+      padding-block: var(--space-12);
+    }
+  }
+
+  .scrolly-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0 var(--space-6);
+  }
+
+  .scrolly-more {
+    margin-bottom: var(--space-8);
+  }
+
+  /* Default (mobile, reduced motion, no JavaScript, or not enough room): a vertical stack. */
+  .scrolly-track {
+    --scrolly-inset: max(var(--gutter), calc((100% - var(--container-max)) / 2 + var(--gutter)));
+    display: grid;
+    gap: var(--space-6);
+    margin: 0;
+    padding: 0 var(--scrolly-inset);
+    list-style: none;
+  }
+
+  .scrolly-panel {
+    display: grid;
+    min-width: 0;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--color-navy);
+    color: #fff;
+  }
+
+  @media (min-width: 48rem) {
+    .scrolly-panel {
+      grid-template-columns: 3fr 2fr;
+      align-items: stretch;
+    }
+  }
+
+  .panel-media {
+    min-width: 0;
+    background: var(--color-ink);
+  }
+
+  .panel-media img {
+    width: 100%;
+    height: auto;
+  }
+
+  .panel-media figcaption {
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--color-blue-pale);
+  }
+
+  .panel-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: var(--space-3);
-    margin-bottom: var(--space-5);
+    min-width: 0;
+    padding: var(--space-5);
+  }
+
+  @media (min-width: 48rem) {
+    .panel-body {
+      justify-content: center;
+      padding: var(--space-6);
+    }
+  }
+
+  .panel-label {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-yellow);
+  }
+
+  .panel-label span {
+    margin-right: var(--space-2);
+    color: var(--color-blue-pale);
+  }
+
+  .panel-body h3 {
+    font-size: var(--text-2xl);
+    letter-spacing: -0.01em;
+  }
+
+  .panel-body p:not(.panel-label) {
+    color: var(--color-blue-pale);
+  }
+
+  .panel-body .text-link {
+    margin-top: var(--space-2);
+    color: #fff;
+  }
+
+  .panel-body .text-link:focus-visible {
+    outline-color: var(--color-yellow);
+  }
+
+  /* Enhanced (desktop, set by scrolly.ts only when it fits): a pinned block whose track moves
+     horizontally with the page's own vertical scrolling. No scrollbar; overflow is clipped. */
+  .capabilities:global(.is-scrolly) {
+    padding-block: 0;
+  }
+
+  :global(.is-scrolly) .scrolly-sticky {
+    position: sticky;
+    top: var(--header-rendered, var(--header-height));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: calc(100vh - var(--header-rendered, var(--header-height)));
+    overflow: clip;
+  }
+
+  :global(.is-scrolly) .scrolly-content {
+    padding-block: var(--space-4);
+  }
+
+  :global(.is-scrolly) .section-intro,
+  :global(.is-scrolly) .scrolly-more {
+    margin-bottom: var(--space-4);
+  }
+
+  :global(.is-scrolly) .section-intro > * + * {
+    margin-top: var(--space-2);
+  }
+
+  :global(.is-scrolly) .scrolly-viewport {
+    overflow: clip;
+  }
+
+  :global(.is-scrolly) .scrolly-track {
+    position: relative;
+    display: flex;
+    gap: var(--space-6);
+    width: max-content;
+    will-change: transform;
+  }
+
+  /* Width is also capped by the height left for the panel (its image height follows its width),
+     so common laptop viewports fit; scrolly.ts still falls back whenever the block does not fit. */
+  :global(.is-scrolly) .scrolly-panel {
+    flex: none;
+    width: min(52rem, 62vw, calc((100vh - var(--header-rendered, var(--header-height)) - 16rem) * 2.1));
+  }
+
+  :global(.is-scrolly) .panel-body {
+    padding: var(--space-5);
+  }
+
+  :global(.is-scrolly) .panel-body h3 {
+    font-size: var(--text-xl);
+  }
+
+  /* ---- Workflow: three open, image-led steps ------------------------------------ */
+  .workflow {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  .steps {
+    display: grid;
+    gap: var(--space-8) var(--space-6);
     padding: 0;
     list-style: none;
   }
 
-  .preview-tiles li {
-    display: grid;
+  @media (min-width: 48rem) {
+    .steps {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    /* A gentle stagger keeps the row open without cards. */
+    .step:nth-child(2) {
+      margin-top: var(--space-8);
+    }
+  }
+
+  .step {
     min-width: 0;
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    background: var(--dash-panel);
-    color: var(--dash-muted);
-    font-size: var(--text-sm);
   }
 
-  .preview-value {
-    font-size: var(--text-3xl);
+  .step-media {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    background: var(--color-navy);
+  }
+
+  .step h3 {
+    margin-top: var(--space-5);
+    font-size: var(--text-2xl);
+    letter-spacing: -0.01em;
+  }
+
+  .step-number {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-size: var(--text-lg);
     font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--color-yellow);
+  }
+
+  .step p {
+    margin-top: var(--space-2);
+    color: var(--color-blue-pale);
+  }
+
+  .workflow-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-6);
+    margin-top: var(--space-8);
+  }
+
+  .workflow-foot > * {
+    min-width: 0;
+  }
+
+  .workflow-foot .text-link {
     color: #fff;
   }
 
-  .dark-notice {
-    background: var(--dash-panel);
-    border-left-color: var(--color-yellow);
-    color: var(--dash-text);
+  .workflow-foot .text-link:focus-visible {
+    outline-color: var(--color-yellow);
   }
 
-  .dark-notice strong {
+  /* ---- Who we serve (src/scripts/collage.ts) ---------------------------------------- */
+  /* Default (no JavaScript, small screens, reduced motion, too little height): an image-led
+     grid; every audience shows its photo, name and description. */
+  .audience-list,
+  .price-list {
+    display: grid;
+    gap: var(--space-6) var(--space-8);
+    padding: 0;
+    list-style: none;
+  }
+
+  .audience-list {
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+    gap: var(--space-6);
+  }
+
+  .audience {
+    position: relative;
+    display: grid;
+    grid-template-columns: min(7rem, 35%) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+    align-content: start;
+    min-width: 0;
+  }
+
+  @media (min-width: 40rem) {
+    .audience {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-3);
+    }
+  }
+
+  .audience-media img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: var(--radius-md);
+    background: var(--color-border);
+  }
+
+  .audience-text {
+    min-width: 0;
+  }
+
+  .audience h3 {
+    font-size: var(--text-xl);
+  }
+
+  .audience-text p {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+  }
+
+  .segments-credit {
+    margin-top: var(--space-6);
+    color: var(--color-muted);
+  }
+
+  .audience-select[hidden],
+  .audience-detail[hidden] {
+    display: none;
+  }
+
+  /* Enhanced: a tilted collage beside a stable description area. --p (−1…1) follows scrolling;
+     only the photo frames rotate, so labels stay upright. */
+  .segments:global(.is-collage) .collage-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
+    gap: var(--space-8);
+    align-items: center;
+  }
+
+  :global(.is-collage) .audience-list {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: var(--space-10) var(--space-5);
+    padding-block: var(--space-4);
+  }
+
+  :global(.is-collage) .audience {
+    display: block;
+    grid-column: span 2;
+    transform: translate3d(calc(var(--p, 0) * var(--dx)), calc(var(--p, 0) * var(--dy)), 0);
+  }
+
+  /* Second row sits half a photo to the right. */
+  :global(.is-collage) .audience:nth-child(5) {
+    grid-column: 2 / span 2;
+  }
+
+  :global(.is-collage) .audience-media {
+    transform: rotate(calc(var(--tilt) + var(--p, 0) * var(--swing)));
+    border-radius: var(--radius-md);
+    box-shadow: 0 14px 28px rgb(7 26 43 / 0.22);
+    transition: box-shadow var(--duration-fast);
+  }
+
+  :global(.is-collage) .audience-media img {
+    border: 4px solid #fff;
+  }
+
+  :global(.is-collage) .audience h3 {
+    margin-top: var(--space-3);
+    font-size: var(--text-base);
+    line-height: 1.3;
+  }
+
+  :global(.is-collage) .audience-text p {
+    display: none;
+  }
+
+  /* The button covers the whole entry (photo and label); its visible part is the indicator. */
+  .audience-select {
+    position: absolute;
+    inset: 0;
+    display: block;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .audience-hint {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    max-width: calc(100% - var(--space-6));
+    padding: 0.125rem var(--space-2);
+    border-radius: 999px;
+    background: rgb(7 26 43 / 0.72);
     color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  .audience-select:hover .audience-hint,
+  .audience-select:focus-visible .audience-hint {
+    background: var(--color-ink);
+    outline: 2px solid var(--color-yellow);
+  }
+
+  .audience-select:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 6px;
+  }
+
+  :global(.is-collage) .audience:global(.is-selected) .audience-media {
+    box-shadow:
+      0 0 0 4px var(--color-blue),
+      0 14px 28px rgb(7 26 43 / 0.22);
+  }
+
+  :global(.is-collage) .audience:global(.is-selected) h3 {
+    color: var(--color-blue);
+  }
+
+  /* Fixed minimum height and top-aligned text, so selecting another audience does not move it. */
+  .audience-detail {
+    min-height: 16rem;
+    padding: var(--space-5) 0 var(--space-5) var(--space-5);
+    border-left: 4px solid var(--color-yellow);
+  }
+
+  .audience-detail-label {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .audience-detail-label:empty {
+    display: none;
+  }
+
+  .audience-detail-text {
+    margin-top: var(--space-3);
+    font-size: var(--text-lg);
+    color: var(--color-muted);
+  }
+
+  .price-list li {
+    min-width: 0;
+    padding-top: var(--space-4);
+    border-top: 2px solid var(--color-navy);
+  }
+
+  /* ---- Pricing ----------------------------------------------------------------- */
+  .pricing-preview {
+    background: var(--color-blue-pale);
+  }
+
+  @media (min-width: 64rem) {
+    .price-list {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .price-list li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .tier {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-blue);
+  }
+
+  .price-list h3 {
+    font-size: var(--text-3xl);
+  }
+
+  .price {
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  .basis {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 400;
+    color: var(--color-muted);
+  }
+
+  .positioning {
+    color: var(--color-muted);
+  }
+
+  .price-list .text-link {
+    margin-top: auto;
+  }
+
+  /* ---- Closing CTA -------------------------------------------------------------- */
+  .closing {
+    position: relative;
+    isolation: isolate;
+    padding-block: var(--space-12);
+    overflow: hidden;
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  .closing-media,
+  .closing-media img {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .closing-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgb(7 26 43 / 0.86);
+  }
+
+  .closing-inner {
+    max-width: 48rem;
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .closing-inner > * {
+    margin-inline: auto;
+  }
+
+  .closing .hero-actions {
+    justify-content: center;
   }
 </style>

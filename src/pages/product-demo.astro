@@ -2,38 +2,44 @@
 import { contactHref } from '../lib/contact-links.ts';
 import DemoDashboard from '../components/demo/DemoDashboard.astro';
 import CtaBand from '../components/site/CtaBand.astro';
-import PageHeader from '../components/site/PageHeader.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { pageMeta } from '../config/site.ts';
 
 const meta = pageMeta('/product-demo/');
 ---
 
-<BaseLayout title={meta.title} description={meta.description}>
-  <PageHeader
-    title="Interactive Platform Demo"
-    lead="Explore how the proposed BuildTrack platform would show materials, equipment, deliveries and tracking events for four fictional sample projects."
-  />
-
-  <section class="section demo-section" aria-label="Demo">
-    <div class="container">
-      <p class="notice disclosure">
-        <strong>Demonstration data shown for illustration purposes.</strong> The projects, quantities, suppliers and
-        events are fictional. No real construction site, QR/RFID hardware or IoT device is connected.
-      </p>
-      <DemoDashboard />
+<BaseLayout title={meta.title} description={meta.description} stickyHeader={false}>
+  <section class="demo-intro on-dark" aria-labelledby="demo-title">
+    <div class="container intro-grid">
+      <div class="intro-copy">
+        <p class="eyebrow">Simulated platform demo</p>
+        <h1 id="demo-title">Interactive Platform Demo</h1>
+        <p class="intro-lead">
+          Explore how the proposed BuildTrack platform would show materials, equipment, deliveries and site activity for
+          four fictional sample projects.
+        </p>
+      </div>
+      <div class="intro-side">
+        <p class="intro-disclosure">
+          <strong>Demonstration data shown for illustration purposes.</strong> The projects, quantities, suppliers and
+          events are fictional. No real construction site, QR/RFID hardware or IoT device is connected.
+        </p>
+        <a class="button button-primary" href="#demo-app">Launch interactive demo</a>
+      </div>
     </div>
   </section>
+
+  <DemoDashboard />
 
   <section class="section tone-pale" aria-labelledby="how-to-heading">
     <div class="container stack">
       <h2 id="how-to-heading">How to use this demo</h2>
       <ol class="how-to">
-        <li>Choose a section: Overview, Inventory, Equipment, Deliveries, Tracking events or Devices.</li>
+        <li>Choose a section in the sidebar (on small screens, press Sections): Overview, Materials, Equipment, Deliveries, Activity or Devices.</li>
         <li>Pick one sample project or keep all four. Schedule variance appears for a single project.</li>
         <li>Use the filters in each section, such as category, status or low stock only.</li>
-        <li>Press Simulate scan to add up to five labelled example events. They do not change stock or other figures.</li>
-        <li>Press Reset demo, or reload the page, to return to the starting snapshot. Nothing is saved.</li>
+        <li>In Activity, press Simulate scan to add up to five labelled example events. They do not change stock or other figures.</li>
+        <li>Press Reset, or reload the page, to return to the starting snapshot. Nothing is saved.</li>
       </ol>
     </div>
   </section>
@@ -46,9 +52,58 @@ const meta = pageMeta('/product-demo/');
 </BaseLayout>
 
 <style>
-  .disclosure {
-    max-width: none;
-    margin-bottom: var(--space-4);
+  /* The site header is not sticky here, so in-page targets (such as #demo-app) need no offset. */
+  :global(html:has(.demo-app)) {
+    scroll-padding-top: 0;
+  }
+
+  .demo-intro {
+    padding-block: var(--space-8);
+    background: var(--color-navy);
+    color: #fff;
+  }
+
+  .intro-grid {
+    display: grid;
+    gap: var(--space-5) var(--space-8);
+    align-items: end;
+  }
+
+  .intro-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .intro-grid {
+      grid-template-columns: 3fr 2fr;
+    }
+  }
+
+  .intro-copy > * + *,
+  .intro-side > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .intro-copy h1 {
+    font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+    letter-spacing: -0.02em;
+  }
+
+  .intro-lead {
+    font-size: var(--text-lg);
+    color: var(--color-blue-pale);
+  }
+
+  .intro-disclosure {
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--color-yellow);
+    background: rgb(7 26 43 / 0.6);
+    font-size: var(--text-sm);
+    color: var(--color-blue-pale);
+  }
+
+  .intro-disclosure strong {
+    color: #fff;
   }
 
   .tone-pale {

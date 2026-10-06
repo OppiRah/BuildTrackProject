@@ -58,6 +58,7 @@ export function initDemo(): void {
   const simulateButton = root.querySelector<HTMLButtonElement>('[data-simulate]');
   const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
   const simulateCount = root.querySelector<HTMLElement>('[data-simulate-count]');
+  const sectionTitle = root.querySelector<HTMLElement>('[data-section-title]');
 
   const isVisible = (el: HTMLElement): boolean => {
     const id = el.dataset.id ?? '';
@@ -88,6 +89,7 @@ export function initDemo(): void {
 
   const render = () => {
     for (const panel of all('[data-panel]')) panel.hidden = panel.dataset.panel !== state.section;
+    if (sectionTitle) sectionTitle.textContent = sectionLabels[state.section];
     for (const button of all('[data-section-button]')) {
       if (button.dataset.sectionButton === state.section) button.setAttribute('aria-current', 'true');
       else button.removeAttribute('aria-current');
@@ -199,7 +201,25 @@ export function initDemo(): void {
     announce('Demo reset: overview of all sample projects, no simulated scans.');
   });
 
+  // Stable entry points: /product-demo/#demo-panel-<section> opens that section (Home links
+  // here) with the workspace in view. Only the section changes; the URL is never written, so a
+  // plain reload still resets. A hash change after load is announced so the status never goes stale.
+  const openFromHash = (announceChange: boolean): boolean => {
+    const section = /^#demo-panel-([a-z]+)$/.exec(window.location.hash)?.[1] as DemoSection | undefined;
+    if (!section || !demoSections.includes(section)) return false;
+    dispatch({ type: 'section', section });
+    root.scrollIntoView();
+    if (announceChange) announce(viewSummary());
+    return true;
+  };
+  window.addEventListener('hashchange', () => openFromHash(true));
+
   root.querySelector<HTMLElement>('[data-demo-nojs]')?.setAttribute('hidden', '');
   for (const el of all('[data-demo-controls]')) el.hidden = false;
+  root.classList.add('is-enhanced');
   render();
+  // The browser's own scroll to the fragment can run after this script; realign once loaded.
+  if (openFromHash(false) && document.readyState !== 'complete') {
+    window.addEventListener('load', () => root.scrollIntoView(), { once: true });
+  }
 }

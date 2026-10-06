@@ -1,0 +1,172 @@
+[
+  {
+    "file": "public/media/home/step-record-site-activity.webp",
+    "source": "design/home-visual-samples/record-site-activity-pexels-8961008.jpg",
+    "crop_box_ltrb": [
+      100,
+      0,
+      1400,
+      975
+    ],
+    "output_size": [
+      800,
+      600
+    ],
+    "bytes": 19816,
+    "sha256": "c353203e49de8258fa7589eea1861cb47a8c31259b596d4e121b9960def8ab27",
+    "note": "Engineer with tablet; tablet is illustrative only."
+  },
+  {
+    "file": "public/media/home/step-monitor-resources.webp",
+    "source": "design/home-visual-samples/monitor-resources-pexels-10284048.jpg",
+    "crop_box_ltrb": [
+      880,
+      270,
+      1600,
+      810
+    ],
+    "output_size": [
+      720,
+      540
+    ],
+    "bytes": 45862,
+    "sha256": "8f6e63d50244000fe0382e8391f489916100527b752152907e4b3176ef36749f",
+    "note": "Right-hand shelves only: excludes legible manufacturer names (NELSKAMP, BRAAS) on wrapped pallets at left."
+  },
+  {
+    "file": "public/media/home/step-review-project-information.webp",
+    "source": "design/home-visual-samples/review-decisions-pexels-6285154.jpg",
+    "crop_box_ltrb": [
+      180,
+      0,
+      1600,
+      1065
+    ],
+    "output_size": [
+      800,
+      600
+    ],
+    "bytes": 13118,
+    "sha256": "a2b6afc91b82efa30bb7dca932e3fced39d2eabf56c98ecc41963f1f17cd1d32",
+    "note": "Two engineers reviewing drawings."
+  },
+  {
+    "file": "public/media/home/audience-construction-companies.webp",
+    "source": "design/home-visual-samples/construction-companies-pexels-29197533.jpg",
+    "crop_box_ltrb": [
+      620,
+      170,
+      1140,
+      820
+    ],
+    "output_size": [
+      400,
+      500
+    ],
+    "bytes": 32796,
+    "sha256": "99355259cc418c7b1035d37a66ac4b132ccd0932490570955c15de37a11d14e5",
+    "note": "Excludes the branded excavator at left."
+  },
+  {
+    "file": "public/media/home/audience-contractors.webp",
+    "source": "design/home-visual-samples/contractors-pexels-8961298.jpg",
+    "crop_box_ltrb": [
+      740,
+      0,
+      1593,
+      1067
+    ],
+    "output_size": [
+      400,
+      500
+    ],
+    "bytes": 21010,
+    "sha256": "5ee069419d1c217cde537c43f2a9adae6396c15ff431af13281f178dc6ee4532",
+    "note": "Two workers reviewing plans."
+  },
+  {
+    "file": "public/media/home/audience-project-managers.webp",
+    "source": "design/home-visual-samples/project-managers-pexels-8961073.jpg",
+    "crop_box_ltrb": [
+      380,
+      0,
+      1233,
+      1067
+    ],
+    "output_size": [
+      400,
+      500
+    ],
+    "bytes": 15984,
+    "sha256": "9193a0d4e8b6f16d1e7f9f5419a81b9eaa759c78b92b15dd844244d2e372d16b",
+    "note": "Two site staff in hard hats."
+  },
+  {
+    "file": "public/media/home/audience-engineering-firms.webp",
+    "source": "design/home-visual-samples/engineering-firms-pexels-3862135.jpg",
+    "crop_box_ltrb": [
+      950,
+      0,
+      1600,
+      812
+    ],
+    "output_size": [
+      400,
+      500
+    ],
+    "bytes": 15060,
+    "sha256": "507136d400ec30b71d472dfdaae443a87df2190cc7304937b8c7801694a12acf",
+    "note": "Excludes the legible contractor logo on the hi-vis vest."
+  },
+  {
+    "file": "public/media/home/audience-government-projects.webp",
+    "source": "design/home-visual-samples/infrastructure-projects-pexels-9937651.jpg",
+    "crop_box_ltrb": [
+      520,
+      0,
+      1364,
+      1055
+    ],
+    "output_size": [
+      400,
+      500
+    ],
+    "bytes": 25754,
+    "sha256": "11a609f39d3442f9489f09fb319d351aec6bc74c83816174a0db428c1df45de7",
+    "note": "Bridge under construction; no partnership implied."
+  },
+  {
+    "file": "public/media/home/audience-real-estate-developers.webp",
+    "source": "design/home-visual-samples/real-estate-developers-pexels-10917047.jpg",
+    "crop_box_ltrb": [
+      60,
+      180,
+      660,
+      930
+    ],
+    "output_size": [
+      400,
+      500
+    ],
+    "bytes": 51348,
+    "sha256": "66a530d435009b3291fa66bda7772e4add57434775616bffabecb93eb1e8e0de",
+    "note": "Residential towers above a site under construction; the right half is dominated by trees."
+  },
+  {
+    "file": "public/media/home/audience-equipment-rental.webp",
+    "source": "design/home-visual-samples/equipment-rentals-pexels-31001841.jpg",
+    "crop_box_ltrb": [
+      540,
+      620,
+      1240,
+      1495
+    ],
+    "output_size": [
+      400,
+      500
+    ],
+    "bytes": 58212,
+    "sha256": "35da13a701595ffc940af2aceef70b9557b20c17b027127fd7a933ceb55ca734",
+    "note": "Excludes the manufacturer lettering on the boom."
+  }
+]

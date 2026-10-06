@@ -1,0 +1,222 @@
+[
+  {
+    "name": "record-site-activity",
+    "id": 8961008,
+    "source": "https://www.pexels.com/photo/an-engineer-using-a-digital-tablet-8961008/",
+    "download": "https://images.pexels.com/photos/8961008/pexels-photo-8961008.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Mikael Blomkvist",
+    "bytes": 118409,
+    "description": "Confident female engineer in hard hat using a tablet computer at an outdoor construction site.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "01 Record site activity",
+    "files": {
+      "source": "design/home-visual-samples/record-site-activity-pexels-8961008.jpg",
+      "web": "public/media/home-visual-samples/record-site-activity.webp"
+    },
+    "dimensions": [
+      1400,
+      934
+    ],
+    "web_bytes": 41220,
+    "sha256": "917a7d88c6263b2a8e2d203d1e073be5fe7504d866841b37ac68dcf543ab0997"
+  },
+  {
+    "name": "monitor-resources",
+    "id": 10284048,
+    "source": "https://www.pexels.com/photo/construction-materials-on-the-shelves-10284048/",
+    "download": "https://images.pexels.com/photos/10284048/pexels-photo-10284048.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Markus Winkler",
+    "bytes": 376430,
+    "description": "Shelves filled with construction materials like tiles and wood pallets in a warehouse setting.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "02 Monitor resources",
+    "files": {
+      "source": "design/home-visual-samples/monitor-resources-pexels-10284048.jpg",
+      "web": "public/media/home-visual-samples/monitor-resources.webp"
+    },
+    "dimensions": [
+      1400,
+      934
+    ],
+    "web_bytes": 165314,
+    "sha256": "8ddcb05609b28feb85ee0c1dc208318fea6166514d8622388eed2aedcc55348f"
+  },
+  {
+    "name": "review-decisions",
+    "id": 6285154,
+    "source": "https://www.pexels.com/photo/engineers-reading-blueprint-6285154/",
+    "download": "https://images.pexels.com/photos/6285154/pexels-photo-6285154.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Gustavo Fring",
+    "bytes": 89490,
+    "description": "Two engineers in hard hats concentrate on reviewing detailed construction blueprints indoors.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "03 Review project information",
+    "files": {
+      "source": "design/home-visual-samples/review-decisions-pexels-6285154.jpg",
+      "web": "public/media/home-visual-samples/review-decisions.webp"
+    },
+    "dimensions": [
+      1400,
+      934
+    ],
+    "web_bytes": 26878,
+    "sha256": "8d6b1134a146b79b34432c7661d4f2bb1313acedf42535e25e4f6dad000f7528"
+  },
+  {
+    "name": "construction-companies",
+    "id": 29197533,
+    "source": "https://www.pexels.com/photo/construction-site-with-engineers-discussing-plans-29197533/",
+    "download": "https://images.pexels.com/photos/29197533/pexels-photo-29197533.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Umut Karabulut",
+    "bytes": 400900,
+    "description": "Two engineers discussing plans at an active construction site under sunny skies.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "Construction companies",
+    "files": {
+      "source": "design/home-visual-samples/construction-companies-pexels-29197533.jpg",
+      "web": "public/media/home-visual-samples/construction-companies.webp"
+    },
+    "dimensions": [
+      1000,
+      667
+    ],
+    "web_bytes": 103120,
+    "sha256": "d80a18b050c9863090d5542230e160d487cd239a20a5fb6ababf8858bf4b7331"
+  },
+  {
+    "name": "contractors",
+    "id": 8961298,
+    "source": "https://www.pexels.com/photo/a-woman-showing-a-man-the-construction-plan-8961298/",
+    "download": "https://images.pexels.com/photos/8961298/pexels-photo-8961298.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Mikael Blomkvist",
+    "bytes": 223285,
+    "description": "Construction workers reviewing blueprints indoors at a renovation site with wooden walls.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "Contractors / subcontractors",
+    "files": {
+      "source": "design/home-visual-samples/contractors-pexels-8961298.jpg",
+      "web": "public/media/home-visual-samples/contractors.webp"
+    },
+    "dimensions": [
+      1000,
+      667
+    ],
+    "web_bytes": 52574,
+    "sha256": "3cfb44db1011c7ea1629d8243797bef4d63179f1619ddfef017ec8bc350dd292"
+  },
+  {
+    "name": "project-managers",
+    "id": 8961073,
+    "source": "https://www.pexels.com/photo/a-two-engineer-talking-together-8961073/",
+    "download": "https://images.pexels.com/photos/8961073/pexels-photo-8961073.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Mikael Blomkvist",
+    "bytes": 167656,
+    "description": "Engineers at a construction site reviewing architectural plans with modern cityscape background.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "Project managers / site engineers",
+    "files": {
+      "source": "design/home-visual-samples/project-managers-pexels-8961073.jpg",
+      "web": "public/media/home-visual-samples/project-managers.webp"
+    },
+    "dimensions": [
+      1000,
+      667
+    ],
+    "web_bytes": 36974,
+    "sha256": "7ccfdff133a9087f4944bcddb26f347a06a20fa9e7ab69263f41bc0565f8e2bc"
+  },
+  {
+    "name": "engineering-firms",
+    "id": 3862135,
+    "source": "https://www.pexels.com/photo/engineers-looking-at-blueprint-3862135/",
+    "download": "https://images.pexels.com/photos/3862135/pexels-photo-3862135.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "ThisIsEngineering",
+    "bytes": 126377,
+    "description": "Two engineers reviewing blueprints in an office, discussing project details.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "Civil engineering firms",
+    "files": {
+      "source": "design/home-visual-samples/engineering-firms-pexels-3862135.jpg",
+      "web": "public/media/home-visual-samples/engineering-firms.webp"
+    },
+    "dimensions": [
+      1000,
+      667
+    ],
+    "web_bytes": 28942,
+    "sha256": "e9d8a26f754c19c581f7fde25795da961223b73eb02d1ccab5301c6e857b89eb"
+  },
+  {
+    "name": "infrastructure-projects",
+    "id": 9937651,
+    "source": "https://www.pexels.com/photo/a-bridge-under-construction-9937651/",
+    "download": "https://images.pexels.com/photos/9937651/pexels-photo-9937651.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Алексей Виноградов",
+    "bytes": 325818,
+    "description": "A bridge under construction with cranes and river view, showcasing modern infrastructure development.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "Government infrastructure projects",
+    "files": {
+      "source": "design/home-visual-samples/infrastructure-projects-pexels-9937651.jpg",
+      "web": "public/media/home-visual-samples/infrastructure-projects.webp"
+    },
+    "dimensions": [
+      1000,
+      659
+    ],
+    "web_bytes": 68408,
+    "sha256": "4f16141c041948d2643da0ff500cc42940ded200516eac2f226ffc5bbffeb8d5"
+  },
+  {
+    "name": "real-estate-developers",
+    "id": 10917047,
+    "source": "https://www.pexels.com/photo/green-trees-near-city-buildings-10917047/",
+    "download": "https://images.pexels.com/photos/10917047/pexels-photo-10917047.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Wilfredo Salazar",
+    "bytes": 459726,
+    "description": "Aerial view of urban construction against a backdrop of city buildings and mountains.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "Real estate developers",
+    "files": {
+      "source": "design/home-visual-samples/real-estate-developers-pexels-10917047.jpg",
+      "web": "public/media/home-visual-samples/real-estate-developers.webp"
+    },
+    "dimensions": [
+      1000,
+      667
+    ],
+    "web_bytes": 124086,
+    "sha256": "9cfb2714caa088d8a8097e930de122a7144bb8db5380141c20ad8dedcfe880f8"
+  },
+  {
+    "name": "equipment-rentals",
+    "id": 31001841,
+    "source": "https://www.pexels.com/photo/aerial-view-of-excavator-on-red-soil-construction-site-31001841/",
+    "download": "https://images.pexels.com/photos/31001841/pexels-photo-31001841.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "creator": "Anjali ..",
+    "bytes": 1281752,
+    "description": "Industrial excavator digging on a construction site, highlighting earth-moving operations.",
+    "license": "https://www.pexels.com/license/",
+    "retrieved": "2026-10-06",
+    "suggested_use": "Equipment rental companies",
+    "files": {
+      "source": "design/home-visual-samples/equipment-rentals-pexels-31001841.jpg",
+      "web": "public/media/home-visual-samples/equipment-rentals.webp"
+    },
+    "dimensions": [
+      753,
+      1000
+    ],
+    "web_bytes": 223708,
+    "sha256": "35a299c56fb7009770ed21238ed67afb6c19dbdfc0655774489aa3e670585b7c"
+  }
+]
