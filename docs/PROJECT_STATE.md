@@ -39,6 +39,25 @@ Published 2026-10-04 at https://buildtrack.sunnydelacruz.workers.dev (live verif
 - Cloudflare Workers static assets preferred, unconfigured (ADR-016).
 - Philippines coverage; seven BMC segments with equal standing; proposed academic PHP pricing set by ADR-025 (ADR-018, ADR-022, ADR-025).
 
+## Verification status (review version live, 2026-10-06)
+Commit `aa9b977` ("feat: redesign Home and Product Demo for review", author OppiRah, no agent attribution) on `ui-redesign`; `main` fast-forwarded `4646fff..aa9b977` (no force, no history rewrite) and pushed to `origin`; `ui-redesign` retained. Before committing: secrets scan clean; no agent names in the built site, `src`, `tests` or `public` (doc mentions replaced with neutral wording); unreferenced public files only `fonts/OFL.txt` (font licence) and `_headers` (hosting config); the sample-pack zip, `PREVIEW.jpg`, the 23 MB source clip and the downloaded source photos stay local (git-ignored); complete suite green. Cloudflare Workers Builds served the new build about 40 s after the push. Read-only checks against https://buildtrack.sunnydelacruz.workers.dev (formspree.io blocked; no form submitted):
+
+| Check | Result |
+|---|---|
+| Live vs build | All 41 pages and assets byte-identical to the local build of `aa9b977` (one image differed on a first fetch during cache revalidation; identical on three re-fetches); unknown URLs return the 404 page with status 404 |
+| Home media | 21 image/video sources return 200 with image/video types; every image decodes; no off-site requests |
+| Hero video | Desktop autoplays muted, fades in, Pause control; Enter pauses, Space plays; reduced motion: no MP4 request, still shown, Play offered; 390 px: 640 px still, no MP4 request |
+| Capability showcase | Pinned at 1440×900, follows scrolling 1:1 (0 → 500 → 2288 px), last panel fully shown at the end; capability check 39/40 live (the one failure sampled the hero entrance after a 6 s wait added for network loading, after it had finished; a separate live check confirmed the entrance runs once and does not replay) |
+| Collage | Seven "View details" buttons; click shows the approved Civil engineering firms description; Space selects Contractors |
+| Mobile and fallbacks | 390 px: stacked capabilities, static audience grid with seven descriptions, no overflow, menu opens with the links; reduced motion: stacked, static grid, no autoplay; no JavaScript: stacked and all seven descriptions |
+| Navigation | 8 header/footer links return pages; mobile menu reachability 12/12 |
+| Product Demo | Sidebar opens Materials; disclosure ("Simulated data …") and Back to website shown; no off-site requests; application shell check 23/23; 390 px drawer modal, 12 Tabs stay inside, Escape returns focus |
+| Contact preselection | `?type=demo`, `?type=quotation&service=equipment-tracking`, `?type=service&plan=professional` preselect correctly; form posts to the configured Formspree endpoint; nothing submitted |
+
+The older scratch checks with fixed 1.5–2 s waits after navigation failed at first on the live site because pages and media were still loading over the network; with longer navigation waits or bounded readiness waits they pass as above. The focus-target check was not run live because it presses Submit on an empty form (it passed locally on byte-identical files).
+
+Still open (not resolved by publication): a focused header navigation link loses focus when larger text folds the navigation into the menu; Firefox, Safari, real phones and touch, screen readers, true browser zoom and Lighthouse/CLS are unverified; owner/human review of the design is pending; Formspree recipient verification and production request delivery remain pending (no request was sent).
+
 ## Verification status (fourth prototype pass, 2026-10-06)
 Local build served by `astro preview`; full Chromium 151 and the Chromium 151 headless shell (both play H.264); every off-site request blocked; no inquiry sent.
 
