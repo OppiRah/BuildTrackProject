@@ -1,6 +1,8 @@
 # BuildTrack Presentation Handoff
 
-Prepared 2026-10-05 for the walkthrough with the project owner. Live site: https://buildtrack.sunnydelacruz.workers.dev/
+Prepared 2026-10-05; updated 2026-10-11 for the redesigned website. Live site: https://buildtrack.sunnydelacruz.workers.dev/
+
+**Which version this describes.** The final redesign, approved by the human on 2026-10-11 together with the page copy, audience media and privacy/confirmation wording, was merged into `main` that day for Cloudflare's automatic deployment. Live verification is recorded in `docs/PROJECT_STATE.md`. Recipient verification and a production test request are still pending (section 3).
 
 BuildTrack is an **academic business proposal**. The website is real and public. The request form is connected to a real form service. The BuildTrack platform, hardware tracking and dashboard data are **proposed or simulated**. Say this early and plainly. The site says it too.
 
@@ -8,14 +10,14 @@ BuildTrack is an **academic business proposal**. The website is real and public.
 
 | Time | Route | What to do and say |
 |---|---|---|
-| 0:00–0:45 | `/` (Home) | Read the headline. Point to the line under the buttons: "Academic business proposal. The platform is proposed; the demo uses fictional data." Scroll to **The problem** (fragmented visibility, loss and waste, delays) and **Tag it, scan it, see it** (four steps). |
-| 0:45–1:30 | `/how-it-works/` | Walk through the four steps (tag, capture, cloud platform, dashboards). Show the QR / RFID / IoT comparison table. Scroll to **Honest scope**, which lists what works, what is simulated and what is a concept only. |
-| 1:30–3:00 | `/product-demo/` | Read the blue "Demonstration data" notice aloud. On **Overview**, change **Project** to "Sample Bridge Rehabilitation", then back to "All sample projects". Open **Inventory** and **Equipment** and use a filter. Open **Tracking events**, press **Simulate scan** once or twice (limit 5), then **Reset demo**. Say: "Nothing is stored or sent. This is what the dashboard *would* look like." |
-| 3:00–3:45 | `/pricing/` | Three proposed plans: Starter ₱2,990, Professional ₱7,990 and Enterprise ₱19,990 per organization per month. Show the comparison table, the limits and the "quoted separately" list (hardware, installation, integrations). Point to the disclosure: proposed academic pricing, no subscription is activated. |
-| 3:45–4:45 | `/pricing/` → **Avail Professional** → `/contact/?type=service&plan=professional` | Show that the form opens with "Avail a Service" and "Professional" already chosen, and that both can still be changed. Press **Send service request** with the fields empty to show the error summary. **Do not submit** unless the production test below has passed and you mean to send a real request. |
-| 4:45–5:00 | `/about/` | Mission, vision, Philippines coverage, and the **Academic disclosure** list. Close by saying what is real and what is proposed. |
+| 0:00–0:50 | `/` (Home) | Read the headline and the "Academic business prototype" label. Scroll slowly: the laptop and phone show the demo (fictional data); the capabilities panel moves sideways as you scroll; the three photo cards (Record, Monitor, Review) each open their step on How It Works; **Who we serve** turns and enlarges seven stock videos with native scrolling, one per audience. Point to the "Illustrative stock footage" line and the **Pause videos** button. |
+| 0:50–1:40 | `/how-it-works/` | Three steps: **Record** (tag resources with QR, RFID or IoT, then scan), **Monitor**, **Review**. Each step says whether it is proposed hardware, a concept or simulated. Show the QR / RFID / IoT comparison. Scroll to the **prototype blueprint**: green **Working** (this website), blue **Simulated** (the demo), dashed **Concept only** (platform, hardware, app, integrations) and the yellow **Still to come** notice. Open **View scope details** to show the full lists. |
+| 1:40–3:00 | `/product-demo/` | Read the "Demonstration data" notice aloud. On **Overview**, change **Project** to "Sample Bridge Rehabilitation", then back to "All sample projects". Open **Materials** and **Equipment** and use a filter. Open **Activity**, press **Simulate scan** once or twice (limit 5), then **Reset**. Say: "Nothing is stored or sent. This is what the dashboard *would* look like." |
+| 3:00–3:45 | `/pricing/` | Read across the three columns: Starter ₱2,990, Professional ₱7,990, Enterprise ₱19,990 per organization per month, with their inclusions, onboarding and support, and limits in large numbers. Show the comparison table (✓ Included, – Not included) and the **Separately quoted** list. Point to the disclosure at the top: proposed academic pricing, no subscription is activated. |
+| 3:45–4:30 | `/pricing/` → **Avail Professional** → `/contact/?type=service&plan=professional` | The form opens with "Avail a Service" and "Professional" chosen, and both can still be changed. The phone number, location (Lingayen, Pangasinan) and coverage are in the navy panel. Press **Send service request** with the fields empty to show the error summary. **Do not submit** unless the production test below has passed and you mean to send a real request. |
+| 4:30–5:00 | `/about/` | The three site questions BuildTrack starts from, the proposal, mission and vision, Philippines coverage, and **What is real and what is proposed**. Close by saying what is real and what is proposed. |
 
-Use a phone too if you can: below about 1200 px wide the navigation becomes a **Menu** button.
+Use a phone too if you can: below about 1200 px wide (or with enlarged browser text) the navigation becomes a **Menu** button. On phones and with reduced motion, Home shows the audiences and capabilities as simple lists instead of moving sequences.
 
 ## 2. The technology in plain language
 
@@ -31,7 +33,7 @@ Use a phone too if you can: below about 1200 px wide the navigation becomes a **
 | Genuinely works | Simulated / fictional | Concept only (not built) |
 |---|---|---|
 | Public website at an HTTPS address, 7 pages + a 404 page, desktop and mobile | The four sample projects and all their figures | The cloud platform that would collect real site data |
-| Navigation, mobile menu, keyboard access | Inventory, equipment, deliveries, tracking events and device states | Real QR/RFID/IoT hardware tracking |
+| Navigation, mobile menu, keyboard access, reduced-motion and enlarged-text layouts | Inventory, equipment, deliveries, tracking events and device states | Real QR/RFID/IoT hardware tracking |
 | Links that preselect the request type, service or plan on the Contact form | "Simulate scan" (adds a fake event in the browser only; reset on reload) | Mobile app, accounts, logins, payments and subscriptions |
 | Form validation, error messages and confirmation | | Integrations with other business systems |
 | Sending the request to Formspree (connected; see the delivery status below) | | |
@@ -59,8 +61,10 @@ Edit files under `src/`. After you commit and push to `main`, Cloudflare rebuild
 | Service names and descriptions | `src/config/services.ts` |
 | Site name, tagline, page titles and descriptions, live URL | `src/config/site.ts` |
 | Form endpoint, request types, privacy wording | `src/config/inquiry.ts` |
-| "What is real" lists on About and How It Works | `src/lib/disclosures.ts` |
-| Page text (headlines, problem, mission, vision, etc.) | `src/pages/*.astro` (e.g. `index.astro`, `about.astro`) |
+| "What is real" wording on About and How It Works (working and still-to-come items) | `src/lib/disclosures.ts` |
+| Page text (headlines, problem questions, mission, vision, step and capability descriptions) | `src/pages/*.astro` (e.g. `index.astro`, `about.astro`, `how-it-works.astro`) |
+| Home audience videos and posters; workflow and audience photos | `public/media/home/` (sources and licences: `design/media-source/`, `design/home-visual-samples/`) |
+| Website screenshot on How It Works | `public/media/site/website-contact.webp` (how it was captured: `docs/UX_BRAND.md` §11.5) |
 | Demo sample data | `src/data/demo/fixtures.ts` |
 | Colours, spacing, fonts | `src/styles/tokens.css`, `src/styles/global.css` |
 | Logo in the header and footer | `src/components/site/Wordmark.astro` uses `public/buildtrack-mark.webp`, the emblem cut from the owner's original `design/BuildTrackLogo.jpeg`. To change it, replace the image with one of the same proportions, or ask the developer to re-crop from a new original. |
@@ -88,21 +92,22 @@ Other commands:
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run check` | Type and template check (should show 0 errors) |
 | `npm test` | Unit tests (142 should pass) |
-| `npm run test:browser` | Form tests in a headless browser; needs `CHROME_PATH` set (see `docs/ARCHITECTURE.md` §8) |
-| `npm run check:release` | Release checklist: automated values plus manual gates |
+| `npm run test:browser` | Browser tests: 21 form scenarios, then 33 Home/demo/navigation scenarios; needs `CHROME_PATH` set to a Chromium that plays H.264 video (see `docs/ARCHITECTURE.md` §8) |
+| `npm run check:release` | Release checklist: automated values, the two open manual gates, and recorded approvals |
 
 Do not submit the form from `npm run dev` unless you intend to: the local site posts to the real Formspree endpoint.
 
 ## 7. Current limitations
 
 - Delivery of a request sent **from the live site** is not yet confirmed (see section 8).
+- Home's seven audience clips are licensed Pexels stock footage, approved for publication on 2026-10-11. Each is a four-second loop with a visible cut; they are illustrative, not BuildTrack customers or projects.
 - Pricing, plan contents and limits are a proposal and have not been validated with customers.
 - The demo data is a fixed, fictional snapshot (28 Sep 2026, 8:00 AM). It does not change over time and saves nothing.
 - No hardware, platform backend, accounts or payments exist.
 - The logo was supplied as a JPEG with a white background and no transparency. The site shows only its emblem, because the lettering and tagline are unreadable at header size; on the dark footer the emblem sits on a white tile. The browser-tab icon and the link-preview image still use the earlier designs, because the logo is unreadable at icon size. A vector (SVG) or transparent PNG version would allow a cleaner result.
 - The address is a free `workers.dev` subdomain. A custom domain would need to be bought.
 - Formspree's free plan allows 50 submissions per month.
-- Testing has used Chromium-based browsers, automated accessibility checks and simulated mobile widths. It has not covered Firefox/Safari, real phones or screen readers.
+- Testing has used Chromium-based browsers, automated accessibility checks, simulated mobile widths and enlarged browser text (up to 32 px). It has not covered Firefox/Safari, real phones, real touch scrolling, screen readers or browser zoom.
 
 ## 8. Likely questions and honest answers
 

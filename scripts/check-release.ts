@@ -1,7 +1,7 @@
 // Release gate: `npm run check:release`. Exits 1 while any required value is unresolved.
 // Run with Node's built-in TypeScript type stripping (Node 24 LTS).
 
-import { findReleaseIssues, manualReleaseGates, projectReleaseConfig } from '../src/lib/release-check.ts';
+import { findReleaseIssues, manualReleaseGates, projectReleaseConfig, recordedApprovals } from '../src/lib/release-check.ts';
 
 const issues = findReleaseIssues(projectReleaseConfig());
 
@@ -12,7 +12,10 @@ if (issues.length === 0) {
   for (const issue of issues) console.log(`  - ${issue.field}: ${issue.problem}`);
 }
 
-console.log('\nManual release gates (verify separately):');
+console.log('\nManual release gates still open (verify separately):');
 for (const gate of manualReleaseGates) console.log(`  - ${gate}`);
+
+console.log('\nRecorded approvals (closed manual gates):');
+for (const approval of recordedApprovals) console.log(`  - ${approval}`);
 
 process.exitCode = issues.length === 0 ? 0 : 1;

@@ -91,6 +91,14 @@ legend {
   overflow-wrap: break-word;
 }
 
+/* Very narrow relative to the text size (em follows the browser default, so a phone with
+   enlarged text qualifies): words that cannot fit a line break with a hyphen, not mid-word. */
+@media (max-width: 22em) {
+  main :is(p, li, a, strong, span, dd, dt, label, legend, summary, button) {
+    hyphens: auto;
+  }
+}
+
 /* Hyphenate headings only where long words would otherwise not fit
    (rem-based, so enlarged default text also qualifies). */
 @media (max-width: 40rem) {

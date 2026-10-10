@@ -1,9 +1,8 @@
 ---
 import { contactHref } from '../lib/contact-links.ts';
 import CtaBand from '../components/site/CtaBand.astro';
-import PageHeader from '../components/site/PageHeader.astro';
-import ProcessSteps from '../components/site/ProcessSteps.astro';
-import Section from '../components/site/Section.astro';
+import Icon from '../components/site/Icon.astro';
+import type { IconName } from '../components/site/icons.ts';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { formProvider } from '../config/inquiry.ts';
 import { pageMeta } from '../config/site.ts';
@@ -11,98 +10,374 @@ import { disclosure } from '../lib/disclosures.ts';
 
 const meta = pageMeta('/how-it-works/');
 
-const technologies = [
+// Three steps, matching Home's workflow cards. Their ids are Home's link targets
+// (src/pages/index.astro); resource tagging is part of Record and keeps its own anchor.
+const steps: {
+  id: string;
+  short: string;
+  icon: IconName;
+  title: string;
+  summary: string;
+  status: { kind: 'simulated' | 'concept'; text: string };
+  who: string;
+  demo: string;
+  demoHref: string;
+  demoLink: string;
+  image: string;
+  width: number;
+  height: number;
+}[] = [
+  {
+    id: 'capture-events',
+    short: 'Record',
+    icon: 'scan',
+    title: 'Record site activity',
+    summary:
+      'Scans at gates, stockpiles and equipment record arrivals, use and movement; devices report their status.',
+    status: { kind: 'simulated', text: 'Proposed hardware, not connected. Simulated in the demo.' },
+    who: 'Storekeepers, site engineers and equipment operators. Hardware is set up during implementation.',
+    demo: 'Each item shows a QR or RFID tag type, and the demo lists fictional scan and gate-read events.',
+    demoHref: '/product-demo/#demo-panel-events',
+    demoLink: 'Open Events in the demo',
+    image: '/media/home/step-record-site-activity.webp',
+    width: 800,
+    height: 600,
+  },
+  {
+    id: 'cloud-platform',
+    short: 'Monitor',
+    icon: 'cloud',
+    title: 'Monitor resources',
+    summary:
+      'A proposed cloud platform brings records from every site together for each project, so stock levels, equipment status and deliveries stay current.',
+    status: { kind: 'concept', text: 'Proposed cloud platform, concept only. The demo uses fixed sample data stored in the page.' },
+    who: 'Handled by the platform; no manual consolidation.',
+    demo: 'Materials, equipment and deliveries for four fictional sample projects.',
+    demoHref: '/product-demo/#demo-panel-inventory',
+    demoLink: 'Open Materials in the demo',
+    image: '/media/home/step-monitor-resources.webp',
+    width: 720,
+    height: 540,
+  },
+  {
+    id: 'dashboards-decisions',
+    short: 'Review',
+    icon: 'decision',
+    title: 'Review project information',
+    summary: 'Dashboards and alerts show low stock, idle equipment and late deliveries so teams can act early.',
+    status: { kind: 'simulated', text: 'Simulated in the demo with sample figures.' },
+    who: 'Project managers, engineers and management.',
+    demo: 'The Overview shows these dashboards and alerts with sample figures.',
+    demoHref: '/product-demo/#demo-panel-overview',
+    demoLink: 'Open the Overview in the demo',
+    image: '/media/home/step-review-project-information.webp',
+    width: 800,
+    height: 600,
+  },
+];
+
+const technologies: { name: string; icon: IconName; read: string; use: string }[] = [
   {
     name: 'QR code label',
+    icon: 'tag',
     read: 'Scanned with a phone or handheld scanner at close range.',
     use: 'Material batches, storage bins, tools and documents.',
   },
   {
     name: 'RFID tag',
+    icon: 'scan',
     read: 'Read by a reader without line of sight, for example at a site gate.',
     use: 'Equipment and high-value materials passing checkpoints.',
   },
   {
     name: 'IoT device',
+    icon: 'hardware',
     read: 'Sends readings automatically, such as location or operating status.',
     use: 'Heavy equipment and site conditions that need continuous monitoring.',
   },
 ];
 
 // An endpoint only means the form is rendered; it is not evidence of delivery (src/lib/disclosures.ts).
-const status = disclosure(formProvider.endpoint !== null);
+const formRendered = formProvider.endpoint !== null;
+const status = disclosure(formRendered);
 const realityColumns = [
-  { title: 'Working in this prototype', items: status.working },
-  { title: 'Still to come for this website', items: status.stillToCome },
+  { kind: 'working', title: 'Working in this prototype', items: status.working },
+  { kind: 'pending', title: 'Still to come for this website', items: status.stillToCome },
   {
+    kind: 'simulated',
     title: 'Simulated in the demo',
     items: ['Construction projects and their figures', 'Inventory, equipment and deliveries', 'Tracking events and device states'],
   },
   {
+    kind: 'concept',
     title: 'Concept only',
     items: ['The operational cloud platform', 'Real QR/RFID/IoT hardware tracking', 'A mobile app and production integrations'],
+  },
+];
+
+// Blueprint line drawings (24-unit grid, strokes only) for the concept-only parts.
+const concepts: { name: string; paths: string[] }[] = [
+  {
+    name: 'Operational cloud platform',
+    paths: ['M14 30h28a8 8 0 001-15.9A11 11 0 0022 12a8 8 0 00-8 18z', 'M18 36h20v6H18zM18 44h20v6H18z', 'M22 39h2M22 47h2'],
+  },
+  {
+    name: 'QR, RFID and IoT hardware',
+    paths: [
+      'M6 14h14v14H6zM9 17h4v4H9zM15 23h2v2h-2z',
+      'M24 14h12v18H24zM30 18a2 2 0 100 .1',
+      'M46 30a6 6 0 100-12 6 6 0 000 12zM40 14a12 12 0 0112 0M38 10a16 16 0 0116 0',
+      'M6 40h48',
+    ],
+  },
+  {
+    name: 'Native mobile app',
+    paths: ['M20 6h20a3 3 0 013 3v42a3 3 0 01-3 3H20a3 3 0 01-3-3V9a3 3 0 013-3z', 'M21 12h18v32H21z', 'M27 48h6'],
+  },
+  {
+    name: 'Production integrations',
+    paths: ['M6 20h16v20H6zM38 20h16v20H38z', 'M22 30h16', 'M10 26h8M10 30h8M10 34h5M42 26h8M42 30h8M42 34h5'],
   },
 ];
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
-  <PageHeader
-    title="How It Works"
-    lead="BuildTrack's proposed flow has four steps: tag resources, capture events, consolidate them in a cloud platform, and act on dashboards."
-  />
-
-  <Section id="steps" eyebrow="The flow" title="From site to dashboard">
-    <ProcessSteps detailed />
-  </Section>
-
-  <Section
-    id="technologies"
-    tone="pale"
-    eyebrow="Technologies explained"
-    title="QR, RFID and IoT at a glance"
-    lead="Each project can use a different mix. Hardware costs vary and are quoted separately."
-  >
-    <div class="table-scroll" role="region" aria-labelledby="tech-caption" tabindex="0">
-      <table>
-        <caption id="tech-caption">Comparison of proposed tracking technologies</caption>
-        <thead>
-          <tr>
-            <th scope="col">Technology</th>
-            <th scope="col">How it is read</th>
-            <th scope="col">Typical use</th>
-          </tr>
-        </thead>
-        <tbody>
+  <section class="intro on-dark" aria-labelledby="hiw-heading">
+    <div class="container">
+      <div class="intro-copy">
+        <p class="eyebrow">How It Works</p>
+        <h1 id="hiw-heading">From site to decision in three steps.</h1>
+        <p class="lead">
+          BuildTrack's proposed flow: record what happens on site, monitor resources in one place, and review what
+          needs action.
+        </p>
+      </div>
+      <nav aria-label="Steps on this page">
+        <ol class="flow">
           {
-            technologies.map((tech) => (
-              <tr>
-                <th scope="row">{tech.name}</th>
-                <td>{tech.read}</td>
-                <td>{tech.use}</td>
-              </tr>
+            steps.map((step, index) => (
+              <li>
+                <a href={`#${step.id}`}>
+                  <span class="flow-node" aria-hidden="true">
+                    <Icon name={step.icon} size={28} />
+                  </span>
+                  <span class="flow-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                  <span class="flow-name">{step.short}</span>
+                </a>
+              </li>
             ))
           }
-        </tbody>
-      </table>
+        </ol>
+      </nav>
     </div>
-  </Section>
+  </section>
 
-  <Section id="reality" eyebrow="Honest scope" title="What is real in this prototype">
-    <div class="grid grid-4">
+  <section class="steps" id="steps" aria-labelledby="steps-heading">
+    <h2 id="steps-heading" class="visually-hidden">The three steps</h2>
+    <ol class="container step-list">
       {
-        realityColumns.map((column) => (
-          <div class="card">
-            <h3 class="card-title">{column.title}</h3>
-            <ul class="check-list">
-              {column.items.map((item) => (
-                <li>{item}</li>
-              ))}
-            </ul>
-          </div>
+        steps.map((step, index) => (
+          <li class="step" id={step.id}>
+            <div class="step-rail" aria-hidden="true">
+              <span class="step-number">{String(index + 1).padStart(2, '0')}</span>
+              <span class="step-line" />
+            </div>
+            <div class="step-copy" data-reveal>
+              <h3>
+                <span class="visually-hidden">Step {index + 1}: </span>
+                {step.title}
+              </h3>
+              <p class="lead">{step.summary}</p>
+              {index === 0 && (
+                <p class="tagging" id="tag-resources">
+                  <strong>First, tag resources:</strong> materials, equipment and storage areas get QR labels, RFID tags
+                  or IoT devices. <a href="#technologies">Compare the three</a>.
+                </p>
+              )}
+              <p class:list={['status', `status-${step.status.kind}`]}>{step.status.text}</p>
+              <dl class="facts">
+                <div>
+                  <dt>Who is involved</dt>
+                  <dd>{step.who}</dd>
+                </div>
+                <div>
+                  <dt>In the demo</dt>
+                  <dd>{step.demo}</dd>
+                </div>
+              </dl>
+              <a class="text-link" href={step.demoHref}>
+                {step.demoLink} <Icon name="arrow" size={20} />
+              </a>
+            </div>
+            <img
+              class="step-media"
+              data-reveal
+              src={step.image}
+              width={step.width}
+              height={step.height}
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              alt=""
+            />
+          </li>
         ))
       }
+    </ol>
+    <p class="container media-credit">
+      Photos: illustrative stock photography, not BuildTrack projects, customers or working hardware.
+    </p>
+  </section>
+
+  <section class="section technologies" id="technologies" aria-labelledby="technologies-heading">
+    <div class="container">
+      <header class="section-head" data-reveal>
+        <p class="eyebrow">Technologies explained</p>
+        <h2 id="technologies-heading">QR, RFID and IoT at a glance</h2>
+        <p class="lead">Each project can use a different mix. Hardware costs vary and are quoted separately.</p>
+      </header>
+      <div class="table-scroll tech-scroll" role="region" aria-labelledby="tech-caption" tabindex="0" data-reveal>
+        <!-- Explicit roles keep header/cell relationships when phones restack the rows. -->
+        <table class="tech-table" role="table">
+          <caption id="tech-caption">Comparison of proposed tracking technologies</caption>
+          <thead role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader">Technology</th>
+              <th scope="col" role="columnheader">How it is read</th>
+              <th scope="col" role="columnheader">Typical use</th>
+            </tr>
+          </thead>
+          <tbody role="rowgroup">
+            {
+              technologies.map((tech) => (
+                <tr role="row">
+                  <th scope="row" role="rowheader">
+                    <Icon name={tech.icon} size={32} class="tech-icon" />
+                    {tech.name}
+                  </th>
+                  <td role="cell" data-label="How it is read">{tech.read}</td>
+                  <td role="cell" data-label="Typical use">{tech.use}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
-  </Section>
+  </section>
+
+  <section class="section reality on-dark" id="reality" aria-labelledby="reality-heading">
+    <div class="container">
+      <header class="section-head" data-reveal>
+        <p class="eyebrow">Honest scope</p>
+        <h2 id="reality-heading">What is real in this prototype</h2>
+        <p class="lead">Three layers, each marked: what works, what is simulated and what is only proposed.</p>
+      </header>
+
+      <div class="blueprint">
+        <article class="part part-working" aria-labelledby="part-working-heading">
+          <p class="badge badge-working">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"></circle><path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="#071a2b" stroke-width="2"></path></svg>
+            Working
+          </p>
+          <h3 id="part-working-heading">Working website</h3>
+          <p>
+            {
+              formRendered
+                ? 'Published pages and navigation, and an editable request form that starts with your chosen request, service or plan.'
+                : 'Published pages and navigation. The request form is not connected yet.'
+            }
+          </p>
+          <figure class="frame frame-working" data-reveal>
+            <img
+              src="/media/site/website-contact.webp"
+              width="1280"
+              height="800"
+              loading="lazy"
+              decoding="async"
+              alt="This website's Contact page: the navigation bar with all seven pages and Request a Demo, above the editable request form and the contact details."
+            />
+            <svg class="outline" aria-hidden="true">
+              <rect class="draw" pathLength="1"></rect>
+            </svg>
+          </figure>
+        </article>
+
+        <article class="part part-simulated" aria-labelledby="part-simulated-heading">
+          <p class="badge badge-simulated">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M8 1a7 7 0 010 14z" fill="currentColor"></path></svg>
+            Simulated — fictional data
+          </p>
+          <h3 id="part-simulated-heading">Simulated platform</h3>
+          <p>
+            The Interactive Platform Demo runs in your browser. Its projects, figures, inventory, equipment, deliveries,
+            events and device states are fictional, and it is not connected to any hardware.
+          </p>
+          <figure class="frame frame-simulated" data-reveal>
+            <img
+              src="/media/demo/demo-overview.webp"
+              width="1088"
+              height="816"
+              loading="lazy"
+              decoding="async"
+              alt="Overview section of the Interactive Platform Demo, marked Simulated data: summary figures for fictional sample projects."
+            />
+          </figure>
+        </article>
+
+        <article class="part part-concept" aria-labelledby="part-concept-heading">
+          <p class="badge badge-concept">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5"></circle></svg>
+            Concept only
+          </p>
+          <h3 id="part-concept-heading">Proposed, not built</h3>
+          <p>Parts of a future operational BuildTrack. None of them exists in this prototype.</p>
+          <ul class="concepts">
+            {
+              concepts.map((concept, index) => (
+                <li class="concept" data-reveal style={`--i: ${index}`}>
+                  <svg class="concept-art" viewBox="0 0 60 56" aria-hidden="true">
+                    {concept.paths.map((d) => (
+                      <path class="draw" d={d} pathLength="1" />
+                    ))}
+                  </svg>
+                  <span class="concept-name">{concept.name}</span>
+                  <span class="concept-label">Concept only</span>
+                </li>
+              ))
+            }
+          </ul>
+        </article>
+      </div>
+
+      <div class="pending-notice" role="note" aria-labelledby="pending-heading">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+        <div>
+          <h3 id="pending-heading">Still to come</h3>
+          <ul>
+            {status.stillToCome.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+      </div>
+
+      <details class="scope-details">
+        <summary>View scope details</summary>
+        <div class="scope-grid">
+          {
+            realityColumns.map((column) => (
+              <div class="scope-group">
+                <h3>{column.title}</h3>
+                <ul class:list={['scope-list', `scope-${column.kind}`]}>
+                  {column.items.map((item) => (
+                    <li>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))
+          }
+        </div>
+      </details>
+    </div>
+  </section>
 
   <CtaBand
     title="See the flow in action"
@@ -112,17 +387,852 @@ const realityColumns = [
   />
 </BaseLayout>
 
-<style>
+<script>
+  import { initReveal } from '../scripts/reveal.ts';
+  initReveal();
+</script>
 
-  th,
-  td {
-    padding: var(--space-3) var(--space-4);
+<style>
+  /* ---- Intro: three-node flow that is also the page navigation ------------------ */
+  .intro {
+    overflow: hidden;
+    padding-block: var(--space-8) var(--space-10);
+    background:
+      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
+      var(--color-navy);
+    color: #fff;
+  }
+
+  @media (min-width: 64rem) {
+    .intro {
+      padding-block: var(--space-10) var(--space-12);
+    }
+  }
+
+  .intro-copy {
+    max-width: 46rem;
+  }
+
+  .intro-copy > * + * {
+    margin-top: var(--space-5);
+  }
+
+  .intro h1 {
+    max-width: 100%;
+    letter-spacing: -0.02em;
+  }
+
+  .intro .lead {
+    color: var(--color-blue-pale);
+  }
+
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: var(--space-8);
+    padding: 0;
+    list-style: none;
+  }
+
+  .flow li {
+    position: relative;
+    min-width: 0;
+  }
+
+  /* Connector from each node to the next. */
+  .flow li + li::before {
+    content: '';
+    position: absolute;
+    top: 1.75rem;
+    right: calc(100% - 1.75rem);
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-yellow), rgb(255 212 59 / 0.35));
+  }
+
+  .flow a {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding-right: var(--space-3);
+    text-decoration: none;
+  }
+
+  .flow-node {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border: 2px solid var(--color-yellow);
+    border-radius: 50%;
+    background: var(--color-ink);
+    color: var(--color-yellow);
+    transition:
+      background-color var(--duration-fast),
+      color var(--duration-fast);
+  }
+
+  .flow a:hover .flow-node,
+  .flow a:focus-visible .flow-node {
+    background: var(--color-yellow);
+    color: var(--color-ink);
+  }
+
+  /* Very narrow relative to the text size: one step per row, so names stay whole. */
+  @media (max-width: 22em) {
+    .flow {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-3);
+    }
+
+    .flow li + li::before {
+      display: none;
+    }
+
+    .flow a {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .flow-number {
+      margin-top: 0;
+    }
+  }
+
+  .flow-number {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-yellow);
+  }
+
+  .flow-name {
+    max-width: 100%;
+    font-size: var(--text-xl);
+    font-weight: 700;
+    overflow-wrap: break-word;
+  }
+
+  @media (min-width: 64rem) {
+    .flow-name {
+      font-size: var(--text-2xl);
+    }
+  }
+
+  /* ---- Steps: a numbered rail that fills while each step passes ------------------ */
+  .steps {
+    padding-block: var(--space-8);
+  }
+
+  @media (min-width: 64rem) {
+    .steps {
+      padding-block: var(--space-12) var(--space-8);
+    }
+  }
+
+  .step-list {
+    padding-block: 0;
+    list-style: none;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0 var(--space-4);
+    overflow-x: clip;
+  }
+
+  @media (min-width: 64rem) {
+    .step {
+      grid-template-columns: 5rem minmax(0, 5fr) minmax(0, 6fr);
+      gap: 0 var(--space-8);
+      align-items: start;
+    }
+  }
+
+  @media (max-width: 39.99rem) {
+    .step {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .step-rail {
+      align-items: flex-start;
+    }
+
+    .step-line {
+      display: none;
+    }
+
+  }
+
+  @media (min-width: 40rem) {
+    .step-media {
+      grid-column: 2;
+    }
+  }
+
+  .step-rail {
+    grid-row: 1 / span 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  @media (min-width: 64rem) {
+    .step-rail {
+      grid-row: auto;
+      align-self: stretch;
+    }
+  }
+
+  .step-number {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-blue);
+  }
+
+  @media (min-width: 64rem) {
+    .step-number {
+      font-size: var(--text-4xl);
+    }
+  }
+
+  .step-line {
+    flex: 1;
+    width: 3px;
+    min-height: var(--space-6);
+    margin-block: var(--space-3);
+    border-radius: 2px;
+    background: linear-gradient(var(--color-yellow), var(--color-yellow)) top / 100% 100% no-repeat;
+    background-color: var(--color-border);
+  }
+
+  .step:last-child .step-line {
+    background-image: linear-gradient(var(--color-yellow), transparent);
+    background-color: transparent;
+  }
+
+  /* Where scroll-driven animations exist and motion is welcome, the yellow fill follows the step
+     through the viewport; otherwise it is simply full. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      /* Longhands only: a merged `animation` shorthand cannot carry a view() timeline. */
+      .step-line {
+        animation-name: line-fill;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 40% cover 60%;
+      }
+    }
+  }
+
+  @keyframes line-fill {
+    from {
+      background-size: 100% 0%;
+    }
+  }
+
+  .step-copy {
+    padding-bottom: var(--space-8);
+  }
+
+  .step-copy > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .step h3 {
+    max-width: 100%;
+    font-size: var(--text-3xl);
+    letter-spacing: -0.01em;
+  }
+
+  .tagging {
+    padding-left: var(--space-4);
+    border-left: 3px solid var(--color-yellow);
+  }
+
+  .status {
+    display: inline-block;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .status-simulated {
+    background: var(--color-blue-pale);
+    color: var(--color-blue);
+  }
+
+  .status-concept {
+    background: #e2e8f0;
+    color: var(--color-ink);
+  }
+
+  .facts {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .facts dt {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .facts dd {
+    margin: 0;
+  }
+
+  .step-media {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    margin-bottom: var(--space-10);
+    border-radius: var(--radius-lg);
+    background: var(--color-blue-pale);
+    box-shadow: 0 30px 60px -24px rgb(7 26 43 / 0.4);
+  }
+
+  @media (min-width: 64rem) {
+    .step-media {
+      grid-column: 3;
+      grid-row: 1;
+      margin-bottom: var(--space-12);
+    }
+  }
+
+  .media-credit {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  /* ---- Technologies ----------------------------------------------------------- */
+  .technologies {
+    background: var(--color-blue-pale);
+  }
+
+  .section-head {
+    max-width: 46rem;
+    margin-bottom: var(--space-8);
+  }
+
+  .section-head > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .tech-scroll {
+    border: 0;
+  }
+
+  /* Three short columns wrap to fit phones; the scroll region remains for very large text. */
+  .tech-scroll .tech-table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+  }
+
+
+
+  .tech-table caption {
+    text-align: left;
+  }
+
+  .tech-table th,
+  .tech-table td {
+    padding: var(--space-5) var(--space-4);
     border-top: 1px solid var(--color-border-strong);
     text-align: left;
     vertical-align: top;
   }
 
-  thead th {
-    background: var(--color-bg);
+  .tech-table thead th {
+    padding-block: var(--space-2);
+    border-top: 0;
+    font-size: var(--text-sm);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .tech-table tbody th {
+    width: 30%;
+    font-size: var(--text-xl);
+  }
+
+  .tech-table :global(.tech-icon) {
+    margin-bottom: var(--space-2);
+    color: var(--color-blue);
+  }
+
+  @media (min-width: 48rem) {
+    .tech-table td {
+      font-size: var(--text-lg);
+    }
+  }
+
+  /* Phones: each technology becomes a stacked block; labels come from data-label with empty
+     alternative text, so assistive technology hears the real column headers instead. */
+  @media (max-width: 39.99rem) {
+    .tech-table thead tr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .tech-table tbody tr,
+    .tech-table tbody th,
+    .tech-table tbody td {
+      display: block;
+    }
+
+    .tech-table tbody tr {
+      padding-block: var(--space-4);
+      border-top: 1px solid var(--color-border-strong);
+    }
+
+    .tech-scroll .tech-table tbody th,
+    .tech-table tbody td {
+      width: auto;
+      padding: 0 var(--space-4);
+      border-top: 0;
+    }
+
+    .tech-table tbody td {
+      margin-top: var(--space-3);
+    }
+
+    .tech-table tbody td::before {
+      content: attr(data-label);
+      content: attr(data-label) / '';
+      display: block;
+      font-size: var(--text-sm);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+    }
+  }
+
+  /* ---- Honest scope: prototype blueprint ---------------------------------------- */
+  .reality {
+    --line: #7dd3fc;
+    background-color: var(--color-navy);
+    background-image:
+      linear-gradient(rgb(125 211 252 / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(125 211 252 / 0.1) 1px, transparent 1px),
+      linear-gradient(rgb(125 211 252 / 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(125 211 252 / 0.04) 1px, transparent 1px);
+    background-size:
+      120px 120px,
+      120px 120px,
+      24px 24px,
+      24px 24px;
+    color: #fff;
+  }
+
+  .reality .lead,
+  .part > p:not(.badge),
+  .concept-name {
+    color: var(--color-blue-pale);
+  }
+
+  .blueprint {
+    display: grid;
+    gap: var(--space-10) var(--space-8);
+  }
+
+  @media (min-width: 64rem) {
+    .blueprint {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .part-concept {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .part {
+    min-width: 0;
+  }
+
+  .part > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .part h3 {
+    max-width: 100%;
+    font-size: var(--text-2xl);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .badge svg {
+    flex: none;
+  }
+
+  .badge-working {
+    background: var(--dash-success);
+    color: var(--color-ink);
+  }
+
+  .badge-working svg {
+    color: var(--color-ink);
+  }
+
+  .badge-working svg path {
+    stroke: var(--dash-success);
+  }
+
+  .badge-simulated {
+    background: var(--dash-info);
+    color: var(--color-ink);
+  }
+
+  .badge-concept {
+    border: 2px dashed #fff;
+    color: #fff;
+  }
+
+  .frame {
+    position: relative;
+    margin: var(--space-5) 0 0;
+    padding: var(--space-2);
+  }
+
+  .frame img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Phones: a larger top-left crop keeps the screenshots' text readable. */
+  @media (max-width: 39.99rem) {
+    .frame img {
+      aspect-ratio: 1;
+      object-fit: cover;
+      object-position: left top;
+    }
+  }
+
+  .frame-simulated {
+    border: 2px solid var(--dash-info);
+    border-radius: var(--radius-md);
+  }
+
+  /* The working site's solid outline is an SVG rectangle, so it can draw once. */
+  .outline {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  /* Sized in CSS (not a scaled viewBox), so the stroke stays even and pathLength stays exact. */
+  .outline rect {
+    x: 1.5px;
+    y: 1.5px;
+    width: calc(100% - 3px);
+    height: calc(100% - 3px);
+    rx: 6px;
+    fill: none;
+    stroke: var(--dash-success);
+    stroke-width: 3;
+  }
+
+  .concepts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+
+  .concept {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-4);
+    border: 2px dashed rgb(125 211 252 / 0.7);
+    border-radius: var(--radius-md);
+    background: rgb(7 26 43 / 0.45);
+  }
+
+  .concept-art {
+    width: 5rem;
+    height: auto;
+    margin-bottom: var(--space-2);
+  }
+
+  .concept-art path,
+  .outline rect {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .concept-art path {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.5;
+  }
+
+  .concept-name {
+    max-width: 100%;
+    font-weight: 700;
+    color: #fff;
+    overflow-wrap: break-word;
+  }
+
+  .concept-label {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--line);
+  }
+
+  .pending-notice {
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-10);
+    padding: var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-yellow);
+    color: var(--color-ink);
+  }
+
+  .pending-notice svg {
+    flex: none;
+  }
+
+  /* Narrow or enlarged text: icon above the text, so the wording keeps a full line. */
+  @media (max-width: 39.99rem) {
+    .pending-notice {
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--space-4);
+    }
+
+    .pending-notice > div > ul {
+      padding-left: 1em;
+      hyphens: auto;
+    }
+
+    .concept {
+      padding: var(--space-3);
+    }
+  }
+
+  .pending-notice > div {
+    min-width: 0;
+  }
+
+  .pending-notice h3 {
+    font-size: var(--text-lg);
+  }
+
+  .pending-notice ul {
+    margin-top: var(--space-1);
+    padding-left: 1.25rem;
+  }
+
+  /* A single pending item reads as a sentence, without a bullet. */
+  .pending-notice > div > ul:has(> li:only-child) {
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .scope-details {
+    margin-top: var(--space-6);
+    border-top: 1px solid rgb(125 211 252 / 0.35);
+  }
+
+  .scope-details summary {
+    display: flex;
+    align-items: center;
+    min-height: var(--target-min);
+    padding-block: var(--space-3);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* The flex summary loses the native marker, so draw a chevron that turns when open. */
+  .scope-details summary {
+    gap: var(--space-3);
+    list-style: none;
+  }
+
+  .scope-details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .scope-details summary::before {
+    content: '';
+    flex: none;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin-inline: 0.2rem;
+    border: solid var(--color-yellow);
+    border-width: 0 2px 2px 0;
+    transform: rotate(-45deg);
+    transition: transform var(--duration-fast);
+  }
+
+  .scope-details[open] summary::before {
+    transform: rotate(45deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scope-details summary::before {
+      transition: none;
+    }
+  }
+
+  .scope-details summary:focus-visible {
+    outline: 3px solid var(--color-yellow);
+    outline-offset: 4px;
+  }
+
+  .scope-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--space-6);
+    padding-block: var(--space-4) var(--space-2);
+  }
+
+  .scope-group {
+    min-width: 0;
+  }
+
+  .scope-group h3 {
+    max-width: 100%;
+    margin-bottom: var(--space-3);
+    font-size: var(--text-lg);
+  }
+
+  .scope-list {
+    padding: 0;
+    list-style: none;
+    color: var(--color-blue-pale);
+  }
+
+  .scope-list li {
+    position: relative;
+    padding-left: 1.75rem;
+  }
+
+  .scope-list li + li {
+    margin-top: var(--space-2);
+  }
+
+  /* One marker shape per status; only working items carry a check. */
+  .scope-list li::before {
+    content: '';
+    position: absolute;
+    left: 0.15rem;
+    top: 0.3em;
+    width: 0.9rem;
+    height: 0.9rem;
+    border-radius: 50%;
+  }
+
+  .scope-working li::before {
+    top: 0.25em;
+    left: 0.4rem;
+    width: 0.45rem;
+    height: 0.85rem;
+    border: solid var(--dash-success);
+    border-width: 0 2px 2px 0;
+    border-radius: 0;
+    transform: rotate(45deg);
+  }
+
+  .scope-pending li::before {
+    border: 2px solid var(--color-yellow);
+    background: radial-gradient(circle, var(--color-yellow) 0 2px, transparent 2.5px);
+  }
+
+  .scope-simulated li::before {
+    border: 2px solid var(--dash-info);
+    background: linear-gradient(90deg, transparent 50%, var(--dash-info) 50%);
+  }
+
+  .scope-concept li::before {
+    border: 2px dashed #fff;
+  }
+
+  /* Draw once when revealed (reveal.ts); without it the outlines are simply complete. */
+  .draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1100ms cubic-bezier(0.4, 0, 0.2, 1) 150ms;
+  }
+
+  :global(.reveal-ready) [data-reveal]:not(:global(.is-revealed)) .draw {
+    stroke-dashoffset: 1;
+  }
+
+  /* ---- Reveals (src/scripts/reveal.ts) ---------------------------------------- */
+  :global(.reveal-ready) [data-reveal] {
+    transition:
+      opacity 600ms ease-out,
+      transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i, 0) * 90ms);
+  }
+
+  :global(.reveal-ready) [data-reveal]:not(:global(.is-revealed)) {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  :global(.reveal-ready) .frame[data-reveal]:not(:global(.is-revealed)) {
+    transform: none;
+  }
+
+  :global(.reveal-ready) .frame[data-reveal] {
+    transition-duration: 900ms;
+  }
+
+  :global(.reveal-ready) .step-media[data-reveal]:not(:global(.is-revealed)) {
+    transform: translateY(40px) scale(0.97);
+  }
+
+  :global(.reveal-instant),
+  :global(.reveal-instant *) {
+    transition: none !important;
+  }
+
+  @media print {
+    [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+    }
   }
 </style>

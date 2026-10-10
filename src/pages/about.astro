@@ -1,68 +1,199 @@
 ---
-import CoverageNote from '../components/site/CoverageNote.astro';
 import CtaBand from '../components/site/CtaBand.astro';
-import PageHeader from '../components/site/PageHeader.astro';
-import Section from '../components/site/Section.astro';
+import Icon from '../components/site/Icon.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { coverage } from '../config/business.ts';
+import { contact, coverage } from '../config/business.ts';
 import { formProvider } from '../config/inquiry.ts';
 import { disclosure } from '../lib/disclosures.ts';
-import { pageMeta, site } from '../config/site.ts';
+import { pageMeta } from '../config/site.ts';
 
 const meta = pageMeta('/about/');
 // An endpoint only means the form is rendered; it is not evidence of delivery (src/lib/disclosures.ts).
 const status = disclosure(formProvider.endpoint !== null);
+
+// The site problem the proposal starts from (approved background copy, split into its three questions).
+const questions = [
+  'What materials are on hand?',
+  'Where is each piece of equipment?',
+  'Will the delivery arrive in time?',
+];
+
+// What is real, grouped by status; every approved disclosure statement is kept.
+const layers = [
+  { kind: 'working', label: 'Working', items: [status.aboutSite, status.aboutForm] },
+  {
+    kind: 'simulated',
+    label: 'Simulated',
+    items: ['The Interactive Platform Demo uses fictional sample data; no real site or device is connected.'],
+  },
+  {
+    kind: 'concept',
+    label: 'Proposed',
+    items: [
+      'The BuildTrack platform, hardware tracking and mobile app are proposed and not yet operating.',
+      'Prices are proposed academic pricing, not current charges.',
+    ],
+  },
+];
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
-  <PageHeader title="About BuildTrack" lead={`${site.name}: ${site.tagline}`} />
-
-  <Section id="background" eyebrow="Background" title="Where BuildTrack comes from">
-    <div class="stack">
-      <p>
-        BuildTrack is a construction-technology business proposal created for a Technopreneurship course by a Civil
-        Engineering student. It starts from a familiar site problem: teams often cannot say exactly what materials are
-        on hand, where each piece of equipment is, or whether a delivery will arrive in time.
-      </p>
-      <p>
-        The proposal is a smart construction materials and equipment management system for efficient project delivery
-        services. It combines QR, RFID and IoT tracking with a cloud platform, dashboards and alerts.
-      </p>
+  <section class="intro on-dark" aria-labelledby="about-heading">
+    <div class="container intro-grid">
+      <div class="intro-copy">
+        <p class="eyebrow">About BuildTrack</p>
+        <h1 id="about-heading">Knowing what is on site, where it is and what comes next.</h1>
+      </div>
+      <aside class="academic" aria-labelledby="academic-heading">
+        <h2 id="academic-heading">An academic business proposal</h2>
+        <p>
+          Created for a Technopreneurship course by a Civil Engineering student. This website works; the Interactive
+          Platform Demo is simulated; the BuildTrack platform is proposed.
+        </p>
+        <a class="text-link" href="#real">What is real <Icon name="arrow" size={20} /></a>
+      </aside>
     </div>
-  </Section>
+  </section>
 
-  <Section id="mission-vision" tone="pale" eyebrow="Purpose" title="Mission and vision">
-    <div class="grid grid-2">
-      <div class="card">
-        <h3 class="card-title">Mission</h3>
-        <p class="muted">
-          To help construction teams know where their materials and equipment are, how they are used and what each
-          project needs next, so work is delivered with less waste and fewer avoidable delays.
+  <section class="section problem" id="background" aria-labelledby="problem-heading">
+    <div class="container problem-grid">
+      <figure class="problem-media" data-reveal>
+        <img
+          src="/media/construction-wide-1280.webp"
+          width="1280"
+          height="853"
+          loading="lazy"
+          decoding="async"
+          alt="A multi-storey building under construction, with tower cranes against an evening sky."
+        />
+        <figcaption>Stock construction photo, not a BuildTrack project.</figcaption>
+      </figure>
+      <div class="problem-copy">
+        <p class="eyebrow">The problem</p>
+        <h2 id="problem-heading">A familiar site problem. Teams often cannot say exactly:</h2>
+        <ol class="questions">
+          {
+            questions.map((question, index) => (
+              <li data-reveal style={`--i: ${index}`}>
+                <span class="q-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                {question}
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section proposal" aria-labelledby="proposal-heading">
+    <div class="container proposal-grid" data-reveal>
+      <h2 id="proposal-heading">The proposal</h2>
+      <div class="proposal-copy">
+        <p class="statement">
+          A smart construction materials and equipment management system for efficient project delivery services.
+        </p>
+        <p>
+          It combines QR, RFID and IoT tracking with a cloud platform, dashboards and alerts. The Interactive Platform
+          Demo shows how that would look, using fictional data.
+        </p>
+        <p class="links">
+          <a class="text-link" href="/solutions/">Solutions <Icon name="arrow" size={20} /></a>
+          <a class="text-link" href="/how-it-works/">How it works <Icon name="arrow" size={20} /></a>
         </p>
       </div>
-      <div class="card">
-        <h3 class="card-title">Vision</h3>
-        <p class="muted">
-          To become a trusted resource-management partner for construction projects in the {coverage.current}, with
-          Southeast Asian expansion as a future possibility.
-        </p>
+    </div>
+  </section>
+
+  <section class="section purpose on-dark" id="mission-vision" aria-labelledby="purpose-heading">
+    <div class="container">
+      <h2 id="purpose-heading" class="visually-hidden">Mission and vision</h2>
+      <div class="purpose-grid">
+        <div class="purpose-block" data-reveal>
+          <h3>Mission</h3>
+          <p>
+            To help construction teams know where their materials and equipment are, how they are used and what each
+            project needs next, so work is delivered with less waste and fewer avoidable delays.
+          </p>
+        </div>
+        <div class="purpose-block" data-reveal style="--i: 1">
+          <h3>Vision</h3>
+          <p>
+            To become a trusted resource-management partner for construction projects in the {coverage.current}, with
+            Southeast Asian expansion as a future possibility.
+          </p>
+        </div>
       </div>
     </div>
-  </Section>
+  </section>
 
-  <Section id="coverage" eyebrow="Coverage" title={`${coverage.current}-based`}>
-    <CoverageNote />
-  </Section>
+  <section class="section coverage" id="coverage" aria-labelledby="coverage-heading">
+    <div class="container coverage-grid" data-reveal>
+      <div>
+        <p class="eyebrow">Coverage</p>
+        <h2 id="coverage-heading"><span class="coverage-word">{coverage.current}</span>-based</h2>
+      </div>
+      <div class="coverage-copy">
+        {
+          contact.location && (
+            <p class="place">
+              <Icon name="pin" size={28} />
+              <span>Based in {contact.location}</span>
+            </p>
+          )
+        }
+        <p>
+          BuildTrack is proposed as a {coverage.current}-based business serving construction projects in the
+          {' '}{coverage.current}.
+        </p>
+        <p class="muted">{coverage.futureVision}</p>
+      </div>
+    </div>
+  </section>
 
-  <Section id="disclosure" tone="pale" eyebrow="Academic disclosure" title="What is real and what is proposed">
-    <ul class="check-list">
-      <li>{status.aboutSite}</li>
-      <li>{status.aboutForm}</li>
-      <li>The BuildTrack platform, hardware tracking and mobile app are proposed and not yet operating.</li>
-      <li>The Interactive Platform Demo uses fictional sample data; no real site or device is connected.</li>
-      <li>Prices are proposed academic pricing, not current charges.</li>
-    </ul>
-  </Section>
+  <section class="section real" id="real" aria-labelledby="real-heading">
+    <div class="container">
+      <header class="real-head" data-reveal>
+        <p class="eyebrow">Academic disclosure</p>
+        <h2 id="real-heading">What is real and what is proposed</h2>
+      </header>
+      <div id="disclosure" class="layers">
+        {
+          layers.map((layer, index) => (
+            <div class:list={['layer', `layer-${layer.kind}`]} data-reveal style={`--i: ${index}`}>
+              <p class:list={['badge', `badge-${layer.kind}`]}>
+                {layer.kind === 'working' && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="8" fill="currentColor" />
+                    <path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="#fff" stroke-width="2" />
+                  </svg>
+                )}
+                {layer.kind === 'simulated' && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+                    <path d="M8 1a7 7 0 010 14z" fill="currentColor" />
+                  </svg>
+                )}
+                {layer.kind === 'concept' && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2.5" />
+                  </svg>
+                )}
+                {layer.label}
+              </p>
+              <ul>
+                {layer.items.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+      <p class="real-more" data-reveal>
+        <a class="text-link" href="/how-it-works/#reality">See the prototype blueprint <Icon name="arrow" size={20} /></a>
+      </p>
+    </div>
+  </section>
 
   <CtaBand
     title="Questions about BuildTrack?"
@@ -71,3 +202,422 @@ const status = disclosure(formProvider.endpoint !== null);
   />
 </BaseLayout>
 
+<script>
+  import { initReveal } from '../scripts/reveal.ts';
+  initReveal();
+</script>
+
+<style>
+  /* ---- Intro: statement left, academic disclosure right ------------------------- */
+  .intro {
+    padding-block: var(--space-10);
+    background:
+      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
+      var(--color-navy);
+    color: #fff;
+  }
+
+  @media (min-width: 64rem) {
+    .intro {
+      padding-block: var(--space-12);
+    }
+  }
+
+  .intro-grid {
+    display: grid;
+    gap: var(--space-8);
+    align-items: end;
+  }
+
+  .intro-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .intro-grid {
+      grid-template-columns: 7fr 4fr;
+      gap: var(--space-10);
+    }
+  }
+
+  .intro-copy > * + * {
+    margin-top: var(--space-5);
+  }
+
+  .intro h1 {
+    max-width: 100%;
+    font-size: clamp(2.25rem, 1.4rem + 3.6vw, 4rem);
+    letter-spacing: -0.025em;
+  }
+
+  .academic {
+    padding-left: var(--space-5);
+    border-left: 4px solid var(--color-yellow);
+  }
+
+  .academic > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .academic h2 {
+    max-width: 100%;
+    font-size: var(--text-xl);
+    color: var(--color-yellow);
+  }
+
+  .academic p {
+    color: var(--color-blue-pale);
+  }
+
+  /* ---- Problem: site photo beside the three questions ---------------------------- */
+  .problem-grid {
+    display: grid;
+    gap: var(--space-8);
+    align-items: center;
+  }
+
+  .problem-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .problem-grid {
+      grid-template-columns: 5fr 6fr;
+      gap: var(--space-10);
+    }
+  }
+
+  .problem-media {
+    margin: 0;
+  }
+
+  .problem-media img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 35% center;
+    border-radius: var(--radius-sm);
+  }
+
+  @media (max-width: 63.99rem) {
+    .problem-media img {
+      aspect-ratio: 16 / 9;
+    }
+  }
+
+  .problem-media figcaption {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .problem-copy > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .problem-copy h2 {
+    max-width: 100%;
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+
+  .questions {
+    margin-top: var(--space-6);
+    padding: 0;
+    list-style: none;
+  }
+
+  .questions li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    align-items: baseline;
+    padding-block: var(--space-5);
+    border-top: 2px solid var(--color-navy);
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .questions li:last-child {
+    border-bottom: 2px solid var(--color-navy);
+  }
+
+  .q-number {
+    font-size: var(--text-base);
+    letter-spacing: 0;
+    color: var(--color-blue);
+  }
+
+  /* ---- Proposal: heading left, statement right ----------------------------------- */
+  .proposal {
+    background: var(--color-surface);
+  }
+
+  .proposal-grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .proposal-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .proposal-grid {
+      grid-template-columns: 4fr 7fr;
+      gap: var(--space-10);
+    }
+  }
+
+  .proposal h2 {
+    max-width: 100%;
+  }
+
+  .proposal-copy > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .statement {
+    font-size: var(--text-2xl);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .proposal-copy p:not(.statement, .links) {
+    color: var(--color-muted);
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-6);
+  }
+
+  /* ---- Mission and vision ----------------------------------------------------------- */
+  .purpose {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  .purpose-grid {
+    display: grid;
+    gap: var(--space-10);
+  }
+
+  @media (min-width: 64rem) {
+    .purpose-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-12);
+    }
+  }
+
+  .purpose-block {
+    min-width: 0;
+  }
+
+  .purpose-block h3 {
+    display: inline-block;
+    padding-bottom: var(--space-2);
+    border-bottom: 3px solid var(--color-yellow);
+    font-size: var(--text-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-yellow);
+  }
+
+  .purpose-block p {
+    margin-top: var(--space-5);
+    font-size: var(--text-2xl);
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  /* ---- Coverage ------------------------------------------------------------------------ */
+  .coverage-grid {
+    display: grid;
+    gap: var(--space-6);
+    align-items: end;
+  }
+
+  .coverage-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .coverage-grid {
+      grid-template-columns: 7fr 5fr;
+      gap: var(--space-10);
+    }
+  }
+
+  .coverage h2 {
+    max-width: 100%;
+    margin-top: var(--space-3);
+    font-size: clamp(2.5rem, 1.2rem + 5.5vw, 5.5rem);
+    line-height: 1;
+    letter-spacing: -0.035em;
+    overflow-wrap: break-word;
+  }
+
+  .coverage-word {
+    color: var(--color-blue);
+  }
+
+  .coverage-copy > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .place {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  .place :global(svg) {
+    flex: none;
+    color: var(--color-blue);
+  }
+
+  /* ---- What is real: three marked layers ------------------------------------------------ */
+  .real {
+    background: var(--color-blue-pale);
+  }
+
+  .real-head {
+    margin-bottom: var(--space-6);
+  }
+
+  .real-head > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .layers {
+    border-top: 2px solid var(--color-navy);
+  }
+
+  .layer {
+    display: grid;
+    gap: var(--space-3);
+    padding-block: var(--space-5);
+    border-bottom: 1px solid var(--color-border-strong);
+  }
+
+  @media (min-width: 48rem) {
+    .layer {
+      grid-template-columns: 12rem minmax(0, 1fr);
+      gap: var(--space-6);
+      align-items: start;
+    }
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .badge svg {
+    flex: none;
+  }
+
+  .badge-working {
+    background: var(--color-success);
+    color: #fff;
+  }
+
+  .badge-simulated {
+    background: var(--color-blue);
+    color: #fff;
+  }
+
+  .badge-concept {
+    border: 2px dashed var(--color-ink);
+    color: var(--color-ink);
+  }
+
+  .layer ul {
+    min-width: 0;
+    padding-left: 1.1rem;
+    font-size: var(--text-lg);
+  }
+
+  .layer li + li {
+    margin-top: var(--space-2);
+  }
+
+  .real-more {
+    margin-top: var(--space-5);
+  }
+
+  /* Narrow relative to the text size (em follows the browser default, so enlarged text on a
+     phone qualifies): step the display type down and let long words hyphenate. */
+  @media (max-width: 22em) {
+    .intro h1 {
+      font-size: var(--text-3xl);
+    }
+
+    .coverage h2 {
+      font-size: var(--text-xl);
+    }
+
+    .questions li {
+      grid-template-columns: minmax(0, 1fr);
+      font-size: var(--text-xl);
+    }
+
+    .statement,
+    .purpose-block p {
+      font-size: var(--text-lg);
+    }
+
+    .academic,
+    .layer {
+      padding-left: var(--space-3);
+    }
+
+    .layer ul {
+      font-size: var(--text-base);
+    }
+
+    :global(main) :is(h1, h2, h3, p, li) {
+      hyphens: auto;
+    }
+  }
+
+  /* ---- Reveals (src/scripts/reveal.ts) ---------------------------------------------- */
+  :global(.reveal-ready) [data-reveal] {
+    transition:
+      opacity 600ms ease-out,
+      transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i, 0) * 110ms);
+  }
+
+  :global(.reveal-ready) [data-reveal]:not(:global(.is-revealed)) {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  :global(.reveal-instant),
+  :global(.reveal-instant *) {
+    transition: none !important;
+  }
+
+  @media print {
+    [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+</style>

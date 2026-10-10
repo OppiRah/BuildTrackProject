@@ -59,7 +59,9 @@ const meta = pageMeta('/product-demo/');
 
   .demo-intro {
     padding-block: var(--space-8);
-    background: var(--color-navy);
+    background:
+      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
+      var(--color-navy);
     color: #fff;
   }
 
@@ -110,11 +112,42 @@ const meta = pageMeta('/product-demo/');
     background: var(--color-blue-pale);
   }
 
+  /* Numbered steps in the style of the Contact page's "What happens next". */
   .how-to {
-    padding-left: 1.25rem;
+    display: grid;
+    gap: var(--space-4) var(--space-8);
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
   }
 
-  .how-to li + li {
-    margin-top: var(--space-2);
+  @media (min-width: 64rem) {
+    .how-to {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .how-to li {
+    position: relative;
+    min-width: 0;
+    padding-left: 2.75rem;
+    counter-increment: step;
+  }
+
+  .how-to li::before {
+    content: counter(step);
+    content: counter(step) / '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid var(--color-blue);
+    border-radius: 50%;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-blue);
   }
 </style>

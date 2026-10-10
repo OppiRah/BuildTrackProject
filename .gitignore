@@ -50,3 +50,6 @@ npm-debug.log*
 /design/home-visual-samples/*.jpg
 /design/media-source/*.jpg
 /design/media-source/*.webp
+
+# Owner reference recordings and local browser review evidence are never deployed/committed.
+/design/references/

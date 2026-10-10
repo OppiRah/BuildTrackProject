@@ -1,7 +1,7 @@
 // Keeps what the visitor is looking at in place while a Home section switches layout
-// (src/scripts/scrolly.ts, src/scripts/collage.ts).
+// (src/scripts/scrolly.ts, src/scripts/audience-sequence.ts).
 //
-// When a section above the visible content changes height (pinned ↔ stacked, collage ↔ grid),
+// When a section above the visible content changes height (pinned ↔ stacked, stage ↔ list),
 // the content below it would move. Chromium's scroll anchoring sometimes corrects this and
 // sometimes picks an anchor inside the changing section and moves the page by hundreds of
 // pixels, so the correction is made here, deterministically: if the section ends above the

@@ -1,9 +1,8 @@
 ---
-import CoverageNote from '../components/site/CoverageNote.astro';
 import InquiryForm from '../components/form/InquiryForm.astro';
-import PageHeader from '../components/site/PageHeader.astro';
+import Icon from '../components/site/Icon.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { contact } from '../config/business.ts';
+import { contact, coverage } from '../config/business.ts';
 import { formProvider, requestTypes } from '../config/inquiry.ts';
 import { pageMeta } from '../config/site.ts';
 
@@ -17,14 +16,20 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
-  <PageHeader
-    title="Request a demo, quotation or service"
-    lead="Tell BuildTrack what you need. A request is not a payment, booking or subscription."
-  />
-  <section class="section">
+  <!-- Source order is intro, form, details: on phones the form follows the heading directly.
+       On desktop the intro and details share a navy panel to the left of the form. -->
+  <section class="contact" aria-labelledby="contact-heading">
     <div class="container contact-grid">
-      <div class="stack">
-        <h2>Send a request</h2>
+      <div class="panel" aria-hidden="true"></div>
+
+      <header class="intro on-dark">
+        <p class="eyebrow">Contact</p>
+        <h1 id="contact-heading">Request a demo, quotation or service</h1>
+        <p class="lead">Tell BuildTrack what you need. A request is not a payment, booking or subscription.</p>
+      </header>
+
+      <div class="form-area">
+        <h2 class="form-heading">Send a request</h2>
         {
           formProvider.endpoint === null ? (
             <>
@@ -35,9 +40,9 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
                 {hasContact && <p>In the meantime, you can use the contact details on this page.</p>}
               </div>
               <h3>Request types</h3>
-              <ul class="grid request-types">
+              <ul class="request-types">
                 {requestTypes.map((type) => (
-                  <li class="card">
+                  <li>
                     <h4>{type.label}</h4>
                     <p class="muted">{requestDescriptions[type.id]}</p>
                   </li>
@@ -49,15 +54,27 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
           )
         }
       </div>
-      <aside class="stack aside" aria-labelledby="contact-details-heading">
+
+      <aside class="details on-dark" aria-labelledby="contact-details-heading">
         <h2 id="contact-details-heading">Contact details</h2>
         {
           hasContact ? (
-            <ul class="details">
-              {contact.location && <li>Based in {contact.location}</li>}
-              {contact.phone && <li>{contact.phoneHref ? <a href={contact.phoneHref}>{contact.phone}</a> : contact.phone}</li>}
+            <ul class="detail-list">
+              {contact.phone && (
+                <li class="phone">
+                  <span class="detail-label">Phone</span>
+                  {contact.phoneHref ? <a href={contact.phoneHref}>{contact.phone}</a> : <span>{contact.phone}</span>}
+                </li>
+              )}
+              {contact.location && (
+                <li>
+                  <span class="detail-label">Location</span>
+                  <span>Based in {contact.location}</span>
+                </li>
+              )}
               {contact.publicEmail && (
                 <li>
+                  <span class="detail-label">Email</span>
                   <a href={`mailto:${contact.publicEmail}`}>{contact.publicEmail}</a>
                 </li>
               )}
@@ -66,10 +83,19 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
             <p class="pending">Contact details pending approval.</p>
           )
         }
+
         <h2>Coverage</h2>
-        <CoverageNote />
+        <p class="coverage">
+          <Icon name="pin" size={24} />
+          <span>
+            BuildTrack is proposed as a {coverage.current}-based business serving construction projects in the
+            {' '}{coverage.current}.
+          </span>
+        </p>
+        <p class="muted-dark">{coverage.futureVision}</p>
+
         <h2>What happens next</h2>
-        {formProvider.endpoint === null && <p class="muted">Once the request form is connected:</p>}
+        {formProvider.endpoint === null && <p class="muted-dark">Once the request form is connected:</p>}
         <ol class="next-steps">
           <li>Your request is sent to the BuildTrack contact through a form service.</li>
           <li>The contact follows up by email or phone using the details you provide.</li>
@@ -81,59 +107,267 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
 </BaseLayout>
 
 <style>
+  /* ---- Layout ----------------------------------------------------------------------- */
+  .contact {
+    isolation: isolate;
+    overflow-x: clip;
+  }
+
   .contact-grid {
     display: grid;
-    gap: var(--space-8);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'intro'
+      'form'
+      'details';
   }
 
   .contact-grid > * {
     min-width: 0;
   }
 
+  .intro {
+    grid-area: intro;
+  }
+
+  .form-area {
+    grid-area: form;
+  }
+
+  .details {
+    grid-area: details;
+  }
+
+  /* Navy bands bleed to the viewport edges without widening the page. */
+  .intro,
+  .details,
+  .panel {
+    position: relative;
+    color: #fff;
+  }
+
+  .intro,
+  .details {
+    padding-block: var(--space-8);
+  }
+
+  .intro::before,
+  .details::before,
+  .panel {
+    background-color: var(--color-navy);
+    background-image:
+      linear-gradient(rgb(125 211 252 / 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(125 211 252 / 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .intro::before,
+  .details::before {
+    content: '';
+    position: absolute;
+    inset: 0 -100vmax;
+    z-index: -1;
+  }
+
+  .panel {
+    display: none;
+  }
+
+  .form-area {
+    padding-block: var(--space-8);
+  }
+
   @media (min-width: 64rem) {
     .contact-grid {
-      grid-template-columns: 7fr 5fr;
-      align-items: start;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        'intro form'
+        'details form';
+      column-gap: var(--space-10);
     }
+
+    /* One continuous navy panel behind the intro and details, extended to the left edge. */
+    .panel {
+      display: block;
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      z-index: -1;
+      margin-left: -100vmax;
+      margin-right: calc(-1 * var(--space-6));
+    }
+
+    .intro::before,
+    .details::before {
+      content: none;
+    }
+
+    .intro {
+      padding-block: var(--space-10) var(--space-6);
+    }
+
+    .details {
+      align-self: start;
+      padding-block: var(--space-4) var(--space-10);
+    }
+
+    .form-area {
+      padding-block: var(--space-10);
+    }
+  }
+
+  /* ---- Intro ----------------------------------------------------------------------- */
+  .intro > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .intro h1 {
+    max-width: 100%;
+    font-size: clamp(2rem, 1.3rem + 2.6vw, 3.25rem);
+    letter-spacing: -0.02em;
+  }
+
+  .intro .lead {
+    color: var(--color-blue-pale);
+  }
+
+  /* ---- Form -------------------------------------------------------------------------- */
+  .form-heading {
+    margin-bottom: var(--space-5);
+    font-size: var(--text-2xl);
   }
 
   .not-connected p + p {
     margin-top: var(--space-2);
   }
 
-  h2 {
-    font-size: var(--text-2xl);
-  }
-
-  h3 {
+  .form-area h3 {
+    margin-top: var(--space-6);
     font-size: var(--text-xl);
   }
 
-  h4 {
-    font-size: var(--text-lg);
-  }
-
   .request-types {
+    display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
-  }
-
-  .aside {
-    padding: var(--space-5);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-  }
-
-  .details {
+    gap: var(--space-4);
+    margin-top: var(--space-3);
     padding: 0;
     list-style: none;
   }
 
+  .request-types li {
+    min-width: 0;
+    padding-top: var(--space-3);
+    border-top: 2px solid var(--color-navy);
+  }
+
+  .request-types h4 {
+    font-size: var(--text-lg);
+  }
+
+  /* ---- Details ------------------------------------------------------------------------- */
+  .details h2 {
+    margin-top: var(--space-8);
+    font-size: var(--text-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-yellow);
+  }
+
+  .details h2:first-child {
+    margin-top: 0;
+  }
+
+  .details h2 + * {
+    margin-top: var(--space-3);
+  }
+
+  .detail-list {
+    display: grid;
+    gap: var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  .detail-list li {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .detail-label {
+    font-size: var(--text-sm);
+    color: var(--color-blue-pale);
+  }
+
+  .phone a {
+    justify-self: start;
+    font-size: var(--text-3xl);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 22em) {
+    .phone a {
+      font-size: var(--text-xl);
+      overflow-wrap: normal;
+    }
+  }
+
+  .coverage {
+    display: flex;
+    gap: var(--space-3);
+  }
+
+  .coverage :global(svg) {
+    flex: none;
+    margin-top: 0.15em;
+    color: var(--color-yellow);
+  }
+
+  .coverage span {
+    min-width: 0;
+  }
+
+  .muted-dark {
+    margin-top: var(--space-2);
+    color: var(--color-blue-pale);
+  }
+
   .next-steps {
-    padding-left: 1.25rem;
+    counter-reset: step;
+    padding: 0;
+    list-style: none;
+  }
+
+  .next-steps li {
+    position: relative;
+    padding-left: 2.5rem;
+    counter-increment: step;
   }
 
   .next-steps li + li {
-    margin-top: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .next-steps li::before {
+    content: counter(step);
+    content: counter(step) / '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 2px solid var(--color-yellow);
+    border-radius: 50%;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-yellow);
+  }
+
+  .pending {
+    color: var(--color-blue-pale);
   }
 </style>

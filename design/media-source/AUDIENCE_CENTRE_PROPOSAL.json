@@ -1,0 +1,108 @@
+{
+  "checked_date": "2026-10-08",
+  "status": "First visual checkpoint; poster and storyboard proposal only. No final montage or new video playback shipped.",
+  "permission": "Official Pexels License checked: free download/use and modification allowed; attribution optional; no implied endorsement. Stock footage is not BuildTrack customers, projects, Philippine-site evidence or working hardware.",
+  "sources": [
+    {
+      "id": 8964794,
+      "creator": "Mikael Blomkvist",
+      "source_url": "https://www.pexels.com/video/engineers-holding-a-blueprint-8964794/",
+      "download_url": "https://videos.pexels.com/video-files/8964794/8964794-uhd_3840_2160_25fps.mp4",
+      "local_file": "design/references/orbit-centre/team-8964794.mp4",
+      "status": "Downloaded locally; 9.76 seconds, inspected using sequential 1-second frames and full-size poster. Proposed team/coordination shots only; final edit pending.",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "sha256": "79c4243696143fb3d226ce218a637692d28af7ca621f5520c176c63a8f5ce021",
+      "bytes": 27192727
+    },
+    {
+      "id": 31009581,
+      "creator": "David Pickup | Advertising & Marketing",
+      "source_url": "https://www.pexels.com/video/construction-site-with-crane-and-framework-31009581/",
+      "local_file": "design/media-source/crane-framework-pexels-31009581-720p.mp4",
+      "status": "Existing local source; wide framing rejected due to crane branding. Proposed crops sampled every 0.25 seconds from 14-16.5 and 24-26.5; no visible company branding in inspected crops.",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "sha256": "dcff78601ec9447fde0441f464dca7e776f66655183373f85c776e6ce81cb7f7",
+      "bytes": 23038202
+    },
+    {
+      "id": 34831845,
+      "creator": "TR Studio",
+      "source_url": "https://www.pexels.com/video/construction-site-with-workers-pouring-concrete-34831845/",
+      "download_url": "https://videos.pexels.com/video-files/34831845/14771291_1920_1080_24fps.mp4",
+      "status": "Secondary candidate only; download failed (connection reset). Not inspected or included in storyboard.",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/"
+    }
+  ],
+  "poster": {
+    "path": "public/media/home/audience-centre-poster.webp",
+    "source_id": 8964794,
+    "time_seconds": 1,
+    "dimensions": [
+      960,
+      540
+    ],
+    "process": "FFmpeg -ss 1; one frame; scale=960:-1; WebP quality=82",
+    "sha256": "868a5c6070d6108100682d9cfcc4d0567d749ecd199337bc77d4945c9af9c704",
+    "bytes": 73646
+  },
+  "proposed_storyboard": [
+    {
+      "order": 1,
+      "timeline": "0-2.5 s",
+      "theme": "Construction teams reviewing drawings",
+      "source_id": 8964794,
+      "source_seconds": [
+        0,
+        2.5
+      ]
+    },
+    {
+      "order": 2,
+      "timeline": "2.5-5 s",
+      "theme": "On-site coordination / pointing and discussing",
+      "source_id": 8964794,
+      "source_seconds": [
+        6,
+        8.5
+      ]
+    },
+    {
+      "order": 3,
+      "timeline": "5-7.5 s",
+      "theme": "Materials lifting / crane hook, timber framing and supplies",
+      "source_id": 31009581,
+      "source_seconds": [
+        14,
+        16.5
+      ],
+      "crop": [
+        640,
+        70,
+        640,
+        360
+      ]
+    },
+    {
+      "order": 4,
+      "timeline": "7.5-10 s",
+      "theme": "Civil-site infrastructure / access road and foundations",
+      "source_id": 31009581,
+      "source_seconds": [
+        24,
+        26.5
+      ],
+      "crop": [
+        704,
+        270,
+        576,
+        324
+      ]
+    }
+  ],
+  "edit_proposal": "10 seconds, muted, natural-speed shots, restrained straight cuts or 150 ms dissolves, no marketing overlays. Crop/keyframe review of every final frame before acceptance. No final montage editing until visual approval.",
+  "playback_plan": "After approval: muted inline video with visible Play/Pause; lazy local source only while section visible and layout eligible. Mobile/reduced motion/Save-Data poster first and no automatic video download; live changes cancel pending autoplay with request tokens and detach unloaded automatic source. Error preserves poster; no-JS remains poster.",
+  "current_revision_note": "ADR-033 retires the separate centre montage/poster. This record is historical; raw sources/storyboard remain recoverable. Optimized poster moved out of public to design/references/home-sequence/retired-centre-poster.webp. No final montage or new footage sourced for this checkpoint."
+}

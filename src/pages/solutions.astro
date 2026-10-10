@@ -1,18 +1,24 @@
 ---
 import { contactHref } from '../lib/contact-links.ts';
-import SamplePanel from '../components/graphics/SamplePanel.astro';
 import CtaBand from '../components/site/CtaBand.astro';
-import PageHeader from '../components/site/PageHeader.astro';
-import Section from '../components/site/Section.astro';
-import SegmentGrid from '../components/site/SegmentGrid.astro';
+import Icon from '../components/site/Icon.astro';
+import type { IconName } from '../components/site/icons.ts';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { customerSegments } from '../config/business.ts';
 import { capabilityServices, supportingServices, type ServiceId } from '../config/services.ts';
 import { pageMeta } from '../config/site.ts';
 
 const meta = pageMeta('/solutions/');
 
-const details: Partial<Record<ServiceId, { problem: string; points: string[] }>> = {
+// Each capability is shown by a screen captured from the Interactive Platform Demo (fictional
+// fixtures) and links to that demo section.
+const details: Record<
+  (typeof capabilityServices)[number]['id'],
+  { label: string; icon: IconName; problem: string; points: string[]; image: string; alt: string; demo: string }
+> = {
   'materials-inventory': {
+    label: 'Materials',
+    icon: 'materials',
     problem: 'Stock counts drift from reality when deliveries, transfers and usage are recorded by hand.',
     points: [
       'Scan materials in at delivery and out when issued to work areas',
@@ -20,8 +26,13 @@ const details: Partial<Record<ServiceId, { problem: string; points: string[] }>>
       'Used-versus-planned quantities for each project',
       'Consistent units, such as bags, cubic metres and pieces',
     ],
+    image: '/media/demo/demo-inventory.webp',
+    alt: 'Materials section of the demo, marked Simulated data, with the Low stock only filter on: usage bars for four low-stock sample materials such as deformed bar and gravel.',
+    demo: '/product-demo/#demo-panel-inventory',
   },
   'equipment-tracking': {
+    label: 'Equipment',
+    icon: 'equipment',
     problem: 'Equipment sits idle on one site while another site waits or rents a replacement.',
     points: [
       'QR or RFID tag on each machine or tool',
@@ -29,16 +40,26 @@ const details: Partial<Record<ServiceId, { problem: string; points: string[] }>>
       'Utilization from hours used against hours available',
       'Location by project or yard',
     ],
+    image: '/media/demo/demo-equipment.webp',
+    alt: 'Equipment section of the demo, marked Simulated data: seven-day utilization bars for sample units with their status, such as a tower crane active at 90% and a dump truck under maintenance.',
+    demo: '/product-demo/#demo-panel-equipment',
   },
   'delivery-monitoring': {
+    label: 'Deliveries',
+    icon: 'delivery',
     problem: 'Late or partial deliveries are often discovered only when work is already waiting.',
     points: [
       'Scheduled, in-transit, delivered and delayed status',
       'Deliveries linked to the materials and project they serve',
       'Receipt confirmed by scan at the site gate',
     ],
+    image: '/media/demo/demo-deliveries.webp',
+    alt: 'Deliveries section of the demo, marked Simulated data: counts by status and a table of sample deliveries, one recorded as delivered at a stated time and one delayed.',
+    demo: '/product-demo/#demo-panel-deliveries',
   },
   'project-dashboards': {
+    label: 'Reporting',
+    icon: 'visibility',
     problem: 'Managers have to collect updates from several people to understand where resources stand.',
     points: [
       'Overview of stock, equipment and deliveries per project',
@@ -46,78 +67,169 @@ const details: Partial<Record<ServiceId, { problem: string; points: string[] }>>
       'Planned-versus-actual progress',
       'Reports for site and management meetings',
     ],
+    image: '/media/demo/demo-overview.webp',
+    alt: 'Overview section of the demo, marked Simulated data: summary figures for all sample projects and the start of planned-versus-actual project progress and alerts.',
+    demo: '/product-demo/#demo-panel-overview',
   },
 };
+
+const serviceIcons: Partial<Record<ServiceId, IconName>> = {
+  'hardware-deployment': 'hardware',
+  'onboarding-training': 'training',
+  'custom-integration': 'integration',
+  'maintenance-support': 'support',
+};
+
+// The seven approved 4:5 audience photos; sources and crops: design/home-visual-samples/.
+const audiencePhoto = (id: string) => `/media/home/audience-${id}.webp`;
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
-  <PageHeader
-    title="Solutions"
-    lead="BuildTrack proposes four connected capabilities for managing construction resources, supported by hardware, onboarding, integration and maintenance services."
-  />
+  <section class="intro on-dark" aria-labelledby="solutions-heading">
+    <div class="container intro-grid">
+      <div class="intro-copy">
+        <p class="eyebrow">Solutions</p>
+        <h1 id="solutions-heading">Four capabilities. One view of every site.</h1>
+        <p class="lead">
+          BuildTrack proposes connected tracking for materials, equipment, deliveries and reporting, supported by
+          hardware, onboarding, integration and maintenance services.
+        </p>
+        <nav aria-label="Capabilities on this page">
+          <ol class="jump">
+            {
+              capabilityServices.map((service, index) => (
+                <li>
+                  <a href={`#${service.id}`}>
+                    <span class="jump-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                    <span class="jump-name">{details[service.id].label}</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ol>
+        </nav>
+      </div>
+      <figure class="screens">
+        <p class="sim-label">Simulated platform demo</p>
+        <div class="screen-stack">
+          <img class="screen screen-back" src="/media/demo/demo-equipment.webp" width="1088" height="816" alt="" decoding="async" />
+          <img class="screen screen-mid" src="/media/demo/demo-inventory.webp" width="1088" height="816" alt="" decoding="async" />
+          <img
+            class="screen screen-front"
+            src="/media/demo/demo-overview.webp"
+            width="1088"
+            height="816"
+            decoding="async"
+            fetchpriority="high"
+            alt="Overview section of the Interactive Platform Demo, marked Simulated data, in front of its Materials and Equipment sections."
+          />
+        </div>
+        <figcaption>Screens from the Interactive Platform Demo. All projects and figures are fictional.</figcaption>
+      </figure>
+    </div>
+  </section>
 
-  {
-    capabilityServices.map((service, index) => {
-      const detail = details[service.id];
-      return (
-        <section
-          class:list={['section', { 'tone-pale': index % 2 === 1 }]}
-          id={service.id}
-          aria-labelledby={`${service.id}-heading`}
-        >
-          <div class:list={['container split', { 'split-reverse': index % 2 === 1 }]}>
-            <div class="stack">
-              <h2 id={`${service.id}-heading`}>{service.name}</h2>
-              <p class="lead">{service.summary}</p>
-              {detail && (
-                <>
-                  <p>
-                    <strong>The problem:</strong> {detail.problem}
-                  </p>
-                  <ul class="check-list">
-                    {detail.points.map((point) => (
-                      <li>{point}</li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              <p>
-                <a class="button button-primary" href={contactHref({ type: 'quotation', service: service.id })}>
-                  Request a Quotation<span class="visually-hidden"> for {service.name}</span>
-                </a>
-              </p>
+  <div class="capabilities">
+    <p class="container capabilities-note">
+      <Icon name="info" size={20} />
+      <span>
+        Scanning, tags and readers describe the proposed hardware concept. No QR, RFID or IoT hardware is connected in
+        this prototype; the demo simulates the records with fictional data.
+      </span>
+    </p>
+    {
+      capabilityServices.map((service, index) => {
+        const detail = details[service.id];
+        return (
+          <section
+            class:list={['capability', { flip: index % 2 === 1 }]}
+            id={service.id}
+            aria-labelledby={`${service.id}-heading`}
+          >
+            <div class="container capability-grid">
+              <div class="capability-copy" data-reveal>
+                <p class="capability-label">
+                  <span class="capability-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                  <span class="capability-kind">
+                    <Icon name={detail.icon} size={22} />
+                    <span class="capability-word">{detail.label}</span>
+                  </span>
+                </p>
+                <h2 id={`${service.id}-heading`}>{service.name}</h2>
+                <p class="lead">{service.summary}</p>
+                <p class="problem">
+                  <strong>The problem:</strong> {detail.problem}
+                </p>
+                <ul class="check-list">
+                  {detail.points.map((point) => (
+                    <li>{point}</li>
+                  ))}
+                </ul>
+                <div class="capability-actions">
+                  <a class="button button-primary" href={contactHref({ type: 'quotation', service: service.id })}>
+                    Request a Quotation<span class="visually-hidden"> for {service.name}</span>
+                  </a>
+                  <a class="text-link" href={detail.demo}>
+                    See it in the demo<span class="visually-hidden">: {detail.label}</span> <Icon name="arrow" size={20} />
+                  </a>
+                </div>
+              </div>
+              <figure class="shot" data-reveal>
+                <img src={detail.image} width="1088" height="816" loading="lazy" decoding="async" alt={detail.alt} />
+                <figcaption>{detail.label} in the demo. Fictional sample data.</figcaption>
+              </figure>
             </div>
-            <SamplePanel pattern={index} label={`Sample ${service.name.toLowerCase()} panel`} />
-          </div>
-        </section>
-      );
-    })
-  }
+          </section>
+        );
+      })
+    }
+  </div>
 
-  <Section
-    id="supporting-services"
-    eyebrow="Supporting services"
-    title="Help getting set up and staying running"
-    lead="Hardware, implementation and integration are quoted separately unless a package states otherwise."
-  >
-    <ul class="grid grid-4">
-      {
-        supportingServices.map((service) => (
-          <li class="card service-card">
-            <h3 class="card-title">{service.name}</h3>
-            <p class="muted">{service.summary}</p>
-            <a class="text-link" href={contactHref({ type: 'quotation', service: service.id })}>
-              Request a quotation<span class="visually-hidden"> for {service.name}</span>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-  </Section>
+  <section class="section services on-dark" id="supporting-services" aria-labelledby="supporting-services-heading">
+    <div class="container">
+      <header class="services-head" data-reveal>
+        <p class="eyebrow">Supporting services</p>
+        <h2 id="supporting-services-heading">Help getting set up and staying running</h2>
+        <p class="lead">Hardware, implementation and integration are quoted separately unless a package states otherwise.</p>
+      </header>
+      <ul class="service-list">
+        {
+          supportingServices.map((service, index) => (
+            <li data-reveal style={`--i: ${index}`}>
+              <Icon name={serviceIcons[service.id] ?? 'check'} size={32} class="service-icon" />
+              <h3>{service.name}</h3>
+              <p>{service.summary}</p>
+              <a class="text-link" href={contactHref({ type: 'quotation', service: service.id })}>
+                Request a quotation<span class="visually-hidden"> for {service.name}</span> <Icon name="arrow" size={20} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
 
-  <Section id="segments" tone="pale" eyebrow="Who it serves" title="Every segment, equally">
-    <SegmentGrid />
-  </Section>
+  <section class="section audiences" id="segments" aria-labelledby="segments-heading">
+    <div class="container">
+      <ul class="audience-grid">
+        <li class="audience-head" data-reveal>
+          <p class="eyebrow">Who it serves</p>
+          <h2 id="segments-heading">Every segment, equally</h2>
+          <p>Seven audiences share one problem: knowing where materials and equipment stand.</p>
+          <p class="media-credit">Photos: illustrative stock photography, not BuildTrack customers or projects.</p>
+        </li>
+        {
+          customerSegments.map((segment, index) => (
+            <li class="audience" data-reveal style={`--i: ${index % 4}`}>
+              <img src={audiencePhoto(segment.id)} width="400" height="500" loading="lazy" decoding="async" alt="" />
+              <h3>{segment.label}</h3>
+              <p>{segment.need}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
 
   <CtaBand
     title="Need BuildTrack for your project?"
@@ -127,18 +239,472 @@ const details: Partial<Record<ServiceId, { problem: string; points: string[] }>>
   />
 </BaseLayout>
 
+<script>
+  import { initReveal } from '../scripts/reveal.ts';
+  initReveal();
+</script>
+
 <style>
-  .tone-pale {
+  /* ---- Intro ------------------------------------------------------------------ */
+  .intro {
+    overflow: hidden;
+    padding-block: var(--space-8) var(--space-10);
+    background:
+      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
+      var(--color-navy);
+    color: #fff;
+  }
+
+  .intro-grid {
+    display: grid;
+    gap: var(--space-8);
+    align-items: center;
+  }
+
+  .intro-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .intro {
+      padding-block: var(--space-10) var(--space-12);
+    }
+
+    .intro-grid {
+      grid-template-columns: 5fr 6fr;
+      gap: var(--space-10);
+    }
+  }
+
+  .intro-copy > * + * {
+    margin-top: var(--space-5);
+  }
+
+  .intro h1 {
+    max-width: 100%;
+    letter-spacing: -0.02em;
+  }
+
+  .intro .lead {
+    color: var(--color-blue-pale);
+  }
+
+  .jump {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2) var(--space-5);
+    max-width: 30rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Narrow relative to the text size (em follows the browser default, so enlarged text on a
+     phone qualifies): one link per row, so each name has the full width. */
+  @media (max-width: 22em) {
+    .jump {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .jump a {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-height: var(--target-min);
+    padding-top: var(--space-2);
+    border-top: 2px solid rgb(234 246 255 / 0.25);
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color var(--duration-fast);
+  }
+
+  .jump a:hover,
+  .jump a:focus-visible {
+    border-top-color: var(--color-yellow);
+  }
+
+  .jump li {
+    min-width: 0;
+  }
+
+  /* Number and name wrap independently and may shrink, so a long name never overruns.
+     The scroll margin makes native focus scrolling stop with the whole focus outline
+     (3px ring + 2px offset) in view; it does not change the layout. */
+  .jump a {
+    flex-wrap: wrap;
+    column-gap: var(--space-2);
+    min-width: 0;
+    scroll-margin-block: var(--space-2);
+  }
+
+  .jump-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .jump-number {
+    font-size: var(--text-sm);
+    color: var(--color-yellow);
+  }
+
+  .sim-label {
+    display: inline-block;
+    margin-bottom: var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-yellow);
+    border-radius: var(--radius-sm);
+    background: var(--color-ink);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-yellow);
+  }
+
+  /* Three demo screens fanned behind each other; the front one carries the description. */
+  .screen-stack {
+    display: grid;
+    padding: 9% 9% 0 0;
+  }
+
+  .screen {
+    grid-area: 1 / 1;
+    width: 100%;
+    height: auto;
+    border: 6px solid #1e293b;
+    border-radius: var(--radius-md);
+    box-shadow: 0 24px 48px rgb(0 0 0 / 0.35);
+  }
+
+  .screen-back {
+    transform: translate(18%, -18%) scale(0.82);
+    opacity: 0.55;
+  }
+
+  .screen-mid {
+    transform: translate(9%, -9%) scale(0.91);
+    opacity: 0.8;
+  }
+
+  .screens figcaption {
+    margin-top: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-blue-pale);
+  }
+
+  /* One-time fan-out on load; the final state is the static layout. */
+  @media (prefers-reduced-motion: no-preference) {
+    .screen {
+      animation: screen-in 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .screen-mid {
+      animation-delay: 120ms;
+    }
+
+    .screen-back {
+      animation-delay: 240ms;
+    }
+  }
+
+  @keyframes screen-in {
+    from {
+      opacity: 0;
+      transform: translate(0, 24px) scale(0.94);
+    }
+  }
+
+  /* ---- Capabilities ----------------------------------------------------------- */
+  .capabilities-note {
+    display: flex;
+    gap: var(--space-3);
+    padding-block: var(--space-6) 0;
+    color: var(--color-muted);
+  }
+
+  .capabilities-note :global(svg) {
+    flex: none;
+    margin-top: 0.2em;
+    color: var(--color-blue);
+  }
+
+  /* Clip the screenshot's off-side starting position, so it never widens the page. */
+  .capability {
+    padding-block: var(--space-8);
+    overflow-x: clip;
+  }
+
+  .capability + .capability {
+    border-top: 1px solid var(--color-border);
+  }
+
+  @media (min-width: 64rem) {
+    .capability {
+      padding-block: var(--space-10);
+    }
+  }
+
+  .capability-grid {
+    display: grid;
+    gap: var(--space-6);
+    align-items: center;
+  }
+
+  .capability-grid > * {
+    min-width: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .capability-grid {
+      grid-template-columns: 5fr 7fr;
+      gap: var(--space-10);
+    }
+
+    .flip .capability-grid {
+      grid-template-columns: 7fr 5fr;
+    }
+
+    .flip .capability-copy {
+      order: 2;
+    }
+  }
+
+  .capability-copy > * + * {
+    margin-top: var(--space-4);
+  }
+
+  /* Number and kind wrap onto separate lines when they do not fit side by side. */
+  .capability-label {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-blue);
+  }
+
+  .capability-kind {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .capability-kind :global(svg) {
+    flex: none;
+  }
+
+  .capability-word {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .capability-number {
+    margin-right: var(--space-2);
+    font-size: var(--text-3xl);
+    letter-spacing: -0.02em;
+    color: var(--color-navy);
+  }
+
+  .capability h2 {
+    max-width: 100%;
+    letter-spacing: -0.01em;
+  }
+
+  .problem {
+    padding-left: var(--space-4);
+    border-left: 3px solid var(--color-yellow);
+  }
+
+  .capability-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-6);
+    padding-top: var(--space-2);
+  }
+
+  .shot {
+    position: relative;
+    margin: 0;
+  }
+
+  .shot img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 30px 60px -20px rgb(7 26 43 / 0.35);
+  }
+
+  .shot figcaption {
+    margin-top: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  /* ---- Supporting services ---------------------------------------------------- */
+  .services {
+    background: var(--color-ink);
+    color: #fff;
+  }
+
+  .services-head {
+    max-width: 48rem;
+    margin-bottom: var(--space-8);
+  }
+
+  .services-head > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .services .lead,
+  .service-list p {
+    color: var(--color-blue-pale);
+  }
+
+  .service-list {
+    display: grid;
+    gap: var(--space-8) var(--space-6);
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 40rem) {
+    .service-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .service-list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .service-list li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3);
+    min-width: 0;
+    padding-top: var(--space-5);
+    border-top: 3px solid var(--color-yellow);
+  }
+
+  .service-list :global(.service-icon) {
+    color: var(--color-blue-bright);
+  }
+
+  .service-list h3 {
+    max-width: 100%;
+    font-size: var(--text-xl);
+  }
+
+  .service-list .text-link {
+    margin-top: auto;
+  }
+
+  /* ---- Audiences -------------------------------------------------------------- */
+  .audience-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: var(--space-6) var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 64rem) {
+    .audience-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .audience-grid > li {
+    min-width: 0;
+  }
+
+  @media (max-width: 63.99rem) {
+    .audience-head {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .audience-head > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .audience-head h2 {
+    max-width: 100%;
+  }
+
+  .media-credit {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .audience img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: var(--radius-md);
     background: var(--color-blue-pale);
   }
 
-  .service-card {
-    display: flex;
-    flex-direction: column;
+  .audience h3 {
+    max-width: 100%;
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 2px solid var(--color-navy);
+    font-size: var(--text-lg);
+    hyphens: manual;
+    overflow-wrap: break-word;
   }
 
-  .service-card .text-link {
-    margin-top: auto;
-    padding-top: var(--space-3);
+  .audience p {
+    margin-top: var(--space-2);
+    color: var(--color-muted);
+  }
+
+  /* ---- Reveals (src/scripts/reveal.ts) ---------------------------------------- */
+  :global(.reveal-ready) [data-reveal] {
+    transition:
+      opacity 600ms ease-out,
+      transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      clip-path 800ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i, 0) * 90ms);
+  }
+
+  :global(.reveal-ready) [data-reveal]:not(:global(.is-revealed)) {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  /* Screens wipe in from the page edge they sit against. */
+  :global(.reveal-ready) .shot[data-reveal]:not(:global(.is-revealed)) {
+    clip-path: inset(0 0 0 30% round var(--radius-lg));
+    transform: translateX(40px);
+  }
+
+  :global(.reveal-ready) .flip .shot[data-reveal]:not(:global(.is-revealed)) {
+    clip-path: inset(0 30% 0 0 round var(--radius-lg));
+    transform: translateX(-40px);
+  }
+
+  :global(.reveal-instant),
+  :global(.reveal-instant *) {
+    transition: none !important;
+  }
+
+  @media print {
+    [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+      clip-path: none !important;
+    }
   }
 </style>

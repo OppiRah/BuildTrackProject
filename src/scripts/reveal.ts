@@ -1,4 +1,4 @@
-// Home entrance motion: the hero entrance (CSS) and one-time reveals for [data-reveal] blocks.
+// Entrance motion for Home, Solutions, How It Works, Pricing and About: the Home hero entrance (CSS) and one-time reveals for [data-reveal] blocks.
 //
 // Content is visible by default. The hidden starting state of a reveal applies only once
 // this script has finished setting up (html.reveal-ready), never under reduced motion, and

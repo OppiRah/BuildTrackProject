@@ -19,12 +19,17 @@ export interface ReleaseIssue {
   problem: string;
 }
 
-/** Requirements that cannot be verified from the repository. */
+/** Requirements that cannot be verified from the repository and are still open. */
 export const manualReleaseGates = [
   'Notification recipient verified in the form provider account (do not commit the address).',
   'Production test request received by the designated contact (record date and pass/fail only).',
-  'Provider-specific privacy wording approved.',
-  'Owner approval of public page copy (headlines, mission, vision, plan positioning, segment and service descriptions).',
+];
+
+/** Former manual gates closed by a recorded human decision (docs/PROJECT_STATE.md, DECISIONS.md). */
+export const recordedApprovals = [
+  'Privacy wording and confirmation wording for this academic prototype: approved by the human 2026-10-11.',
+  'Public page copy (headlines, mission, vision, plan positioning, segment and service descriptions): approved by the human 2026-10-11.',
+  'Final redesign and Home audience media (seven licensed stock clips and posters) for publication: approved by the human 2026-10-11.',
 ];
 
 export function projectReleaseConfig(): ReleaseConfig {

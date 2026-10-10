@@ -9,14 +9,13 @@
 // Covers: reduced motion turned on while automatic hero playback is still loading (no
 // automatic `playing` event afterwards, explicit Play/Pause kept); reflow at 320/390 px with a
 // genuine 32 px browser default font (Page.setFontSizes, not CSS); the demo drawer's focus
-// wrap in both directions; the Home workflow steps; and the "Who we serve" collage and its
-// static fallbacks.
+// wrap in both directions; the Home workflow steps; and the "Who we serve" full-frame audience sequence and static title fallbacks.
 //
 // Requires CHROME_PATH (docs/ARCHITECTURE.md §8) pointing at a Chromium build that can play
 // H.264 MP4 (the video scenarios fail with an explanation otherwise).
 // Uses only Node built-ins and Astro.
 
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createServer, type ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join, resolve } from 'node:path';
@@ -51,6 +50,8 @@ const types: Record<string, string> = {
 let holdVideo = false;
 const heldVideo: (() => void)[] = [];
 let videoRequests = 0;
+let holdAudience = false;
+const heldAudience: (() => void)[] = [];
 const server = createServer((req, res) => {
   const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
   let file = join(outDir, path);
@@ -62,6 +63,9 @@ const server = createServer((req, res) => {
   const send = (response: ServerResponse) =>
     response.writeHead(200, { 'Content-Type': types[extname(file)] ?? 'application/octet-stream' }).end(readFileSync(file));
   if (extname(file) === '.mp4') {
+    if (path.startsWith('/media/home/audience-')) {
+      if (holdAudience) { heldAudience.push(() => send(res)); return; }
+    }
     videoRequests++;
     if (holdVideo) {
       heldVideo.push(() => send(res));
@@ -76,6 +80,8 @@ const origin = `http://127.0.0.1:${typeof address === 'object' && address ? addr
 const releaseVideo = () => {
   holdVideo = false;
   for (const release of heldVideo.splice(0)) release();
+  holdAudience = false;
+  for (const release of heldAudience.splice(0)) release();
 };
 
 // ---- 2. Chromium over CDP ----------------------------------------------------------------
@@ -128,12 +134,19 @@ async function evaluate<T = unknown>(expression: string): Promise<T> {
 
 const blocked: string[] = [];
 const pageErrors: string[] = [];
+const audienceNetwork: { loaderId: string; url: string }[] = [];
+let pageLoader = '';
+const audienceTransfers = () => audienceNetwork.filter(request => request.loaderId === pageLoader).length;
 listeners.push((message) => {
+  if (message.method === 'Network.requestWillBeSent' && message.params.request.url.includes('/media/home/audience-'))
+    audienceNetwork.push({ loaderId: message.params.loaderId, url: message.params.request.url });
   if (message.method === 'Runtime.exceptionThrown')
     pageErrors.push(message.params.exceptionDetails.exception?.description ?? message.params.exceptionDetails.text);
   if (message.method !== 'Fetch.requestPaused') return;
   const { requestId, request } = message.params;
-  if (request.url.startsWith(`${origin}/`)) void send('Fetch.continueRequest', { requestId });
+  // A paused same-origin request can be cancelled by the page (navigation, removed video src)
+  // before it is continued; that is not a failure.
+  if (request.url.startsWith(`${origin}/`)) send('Fetch.continueRequest', { requestId }).catch(() => {});
   else {
     blocked.push(`${request.method} ${request.url}`);
     void send('Fetch.failRequest', { requestId, errorReason: 'BlockedByClient' });
@@ -183,7 +196,8 @@ async function open(path: string, { width = 1280, height = 800, fontSize = 16, r
     };
     listeners.push(listener);
   });
-  await send('Page.navigate', { url: origin + path });
+  const navigation = await send('Page.navigate', { url: origin + path });
+  pageLoader = navigation.loaderId;
   await loaded;
   const url = origin + path;
   await waitFor(() => evaluate<boolean>(`location.href === ${JSON.stringify(url)} && document.readyState === 'complete'`), `page ${url}`);
@@ -426,187 +440,139 @@ await scenario('workflow: three image-led steps with number, heading and one sen
   }
 });
 
-// ---- 7. "Who we serve" collage -----------------------------------------------------------
-const collage = () =>
-  evaluate<{ enhanced: boolean; buttons: number; hints: number; descriptions: number; labels: number; detail: boolean; p: string }>(`(() => {
-    const section = document.querySelector('[data-collage]');
-    const items = [...section.querySelectorAll('[data-audience]')];
-    return { enhanced: section.classList.contains('is-collage'),
-      buttons: items.filter((li) => li.querySelector('[data-audience-select]').checkVisibility()).length,
-      hints: items.filter((li) => { const h = li.querySelector('.audience-hint'); return h.checkVisibility() && h.textContent.includes('View details'); }).length,
-      descriptions: items.filter((li) => li.querySelector('[data-audience-need]').checkVisibility()).length,
-      labels: items.filter((li) => li.querySelector('[data-audience-label]').checkVisibility()).length,
-      detail: section.querySelector('[data-collage-detail]').checkVisibility(),
-      p: section.querySelector('[data-collage-stage]').style.getPropertyValue('--p') };
-  })()`);
-const centreCollage = (offset = 0) =>
-  evaluate(`(() => { const r = document.querySelector('.collage-layout').getBoundingClientRect();
-    window.scrollTo({ top: r.top + scrollY - 64 - (innerHeight - 64 - r.height) / 2 + ${offset}, behavior: 'instant' }); })()`).then(() => sleep(250));
-const readP = async () => Number((await collage()).p);
-const staticCollage = { enhanced: false, buttons: 0, hints: 0, descriptions: 7, labels: 7, detail: false, p: '' };
-
-await scenario('collage: desktop shows all seven tilted photos at rest with upright labels and View details indicators', async () => {
-  await open('/', { width: 1440, height: 900 });
-  await centreCollage();
-  const state = await collage();
-  expectEqual([state.enhanced, state.buttons, state.hints, state.labels, state.descriptions, state.detail], [true, 7, 7, 7, 0, true], 'collage state');
-  const layout = await evaluate<{ inView: number; upright: boolean; tilted: number; overflow: boolean }>(`(() => {
-    const items = [...document.querySelectorAll('[data-audience]')];
-    const angle = (el) => { const m = new DOMMatrix(getComputedStyle(el).transform); return Math.abs(Math.atan2(m.b, m.a) * 180 / Math.PI); };
-    return { inView: items.filter((li) => { const r = li.getBoundingClientRect(); return r.top >= 64 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }).length,
-      upright: items.every((li) => angle(li) < 0.01 && angle(li.querySelector('h3')) < 0.01),
-      tilted: items.filter((li) => angle(li.querySelector('.audience-media')) > 0.5).length,
-      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
-  })()`);
-  expectEqual(layout, { inView: 7, upright: true, tilted: 7, overflow: false }, 'all seven in view, labels upright, photos tilted');
-});
-
-await scenario('collage: motion follows ordinary scrolling (wheel not captured) and never runs on its own', async () => {
-  await open('/', { width: 1440, height: 900 });
-  await centreCollage(-200);
-  const before = await readP();
-  await sleep(800);
-  expectEqual(await readP(), before, 'no movement without scrolling');
-  const y = await evaluate<number>('scrollY');
-  const point = await evaluate<{ x: number; y: number }>(`(() => { const r = document.querySelector('[data-audience]').getBoundingClientRect(); return { x: r.left + 20, y: r.top + 20 }; })()`);
-  await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: point.x, y: point.y, deltaX: 0, deltaY: 300 });
-  await waitFor(async () => (await evaluate<number>('scrollY')) > y + 100, 'the wheel scrolls the page');
-  await sleep(200);
-  if (!((await readP()) > before + 0.2)) throw new Error(`progress did not follow scrolling: ${before} → ${await readP()}`);
-});
-
-await scenario('collage: Enter, Space and click select an audience and show its approved description in the adjacent area', async () => {
-  await open('/', { width: 1440, height: 900 });
-  await centreCollage();
-  const detail = () => evaluate<string>(`document.querySelector('[data-collage-detail]').innerText.replace(/\\s+/g, ' ').trim()`);
-  const pressed = () => evaluate<string[]>(`[...document.querySelectorAll('[data-audience-select]')].map((b) => b.getAttribute('aria-pressed'))`);
-  // Position within the collage layout (the click helper may scroll the page).
-  const box = () =>
-    evaluate<number>(`document.querySelector('[data-collage-detail]').getBoundingClientRect().top - document.querySelector('.collage-layout').getBoundingClientRect().top`);
-  const top = await box();
-  await evaluate(`document.querySelector('.segments h2').setAttribute('tabindex', '-1'); document.querySelector('.segments h2').focus()`);
-  await press('Tab');
-  expectEqual(
-    await evaluate(`document.activeElement === document.querySelector('[data-audience="construction-companies"] [data-audience-select]')`),
-    true,
-    'first Tab stop is the first audience',
-  );
-  await press('Enter');
-  expectEqual(await detail(), 'Construction companies (small, medium and large) One view of materials and equipment across every active site.', 'Enter');
-  await press('Tab');
-  await press(' ');
-  expectEqual(await detail(), 'Contractors and subcontractors Know what is on hand before work starts and account for what was used.', 'Space');
-  expectEqual(await pressed(), ['false', 'true', 'false', 'false', 'false', 'false', 'false'], 'aria-pressed');
-  await click('[data-audience="equipment-rental"] .audience-media');
-  expectEqual(await detail(), 'Equipment rental companies Track where rented units are, how they are used and when they are due back.', 'click');
-  expectEqual(await evaluate(`document.querySelector('[data-collage-detail]').getAttribute('aria-live')`), 'polite', 'live region');
-  if (Math.abs((await box()) - top) > 1) throw new Error('description area moved');
-  // Every audience is reachable by keyboard.
-  const names = await evaluate<string[]>(`[...document.querySelectorAll('[data-audience-select]')].map((b) => b.textContent.replace(/\\s+/g, ' ').trim())`);
-  expectEqual(names.length, 7, 'seven buttons');
-});
-
-await scenario('collage: movement pauses while focus is inside and resumes without a positional jump', async () => {
-  await open('/', { width: 1440, height: 900 });
-  await centreCollage(-150);
-  await evaluate(`document.querySelector('[data-audience-select]').focus()`);
-  await press('Enter');
-  const frozen = await readP();
-  await evaluate(`scrollBy({ top: 250, behavior: 'instant' })`);
-  await sleep(250);
-  expectEqual(await readP(), frozen, 'paused while a selected description is being read');
-  await evaluate(`document.activeElement.blur()`);
-  await evaluate(`scrollBy({ top: 10, behavior: 'instant' })`);
-  await sleep(250);
-  const resumed = await readP();
-  if (Math.abs(resumed - frozen) > 0.05) throw new Error(`jumped on resume: ${frozen} → ${resumed}`);
-  await evaluate(`scrollBy({ top: 120, behavior: 'instant' })`);
-  await sleep(250);
-  if (!((await readP()) > resumed + 0.1)) throw new Error('did not continue after resuming');
-});
-
-await scenario('collage: static image-led grid on mobile, with reduced motion, without JavaScript, on short screens and with 32 px text', async () => {
-  const cases: [string, OpenOptions][] = [
-    ['390 px', { width: 390, height: 844 }],
-    ['768 px', { width: 768, height: 1024 }],
-    ['reduced motion', { width: 1440, height: 900, reduced: true }],
-    ['short 1440×600', { width: 1440, height: 600 }],
-    ['32 px text at 1280', { width: 1280, height: 800, fontSize: 32 }],
-  ];
-  for (const [label, options] of cases) {
-    await open('/', options);
-    expectEqual(await collage(), staticCollage, label);
-    if (await evaluate<boolean>(`document.documentElement.scrollWidth > document.documentElement.clientWidth`)) throw new Error(`${label}: overflow`);
+// ---- 7. Full-frame audience sequence (selection/description UI retired) -------------------
+const audience = () => evaluate<any>(`(()=>{const s=document.querySelector('[data-audience-orbit]'),t=s.querySelector('[data-orbit-scroll]');return{enhanced:s.classList.contains('is-orbit'),titles:s.querySelectorAll('[data-audience-label]').length,removed:s.querySelectorAll('[data-audience-select],[data-orbit-detail],[data-audience-need],[data-orbit-centre]').length,motion:+t.dataset.motionTravel,fade:+t.dataset.titleTravel,hold:+t.dataset.holdTravel,start:t.getBoundingClientRect().top+scrollY-parseFloat(s.style.getPropertyValue('--orbit-top'))}})()`);
+const stageDistance = async(distance:number) => {
+  const state=await audience();await evaluate(`scrollTo({top:${state.start+distance},behavior:'instant'})`);
+  await evaluate('new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)))');
+};
+await scenario('audience sequence: continuous growth, upright full frames, settled titles, scroll hold and release',async()=>{
+  for(const dimensions of[{width:1440,height:900},{width:1366,height:768}]){
+    await open('/',dimensions);const a=await audience();expectEqual([a.enhanced,a.titles,a.removed],[true,7,0],'seven equal audience identities');
+    for(let i=0;i<=20;i++){
+      await stageDistance(a.motion*i/20);
+      expectEqual(await evaluate(`(()=>{const arr=document.querySelector('[data-orbit-arrangement]'),parent=new DOMMatrix(getComputedStyle(arr).transform);return [...document.querySelectorAll('.orbit-photo')].every(photo=>{const m=parent.multiply(new DOMMatrix(getComputedStyle(photo).transform)),img=photo.querySelector('img'),r=img.getBoundingClientRect(),ratio=Number(img.getAttribute('width'))/Number(img.getAttribute('height'));return Math.abs(m.b)<.00001&&Math.abs(m.c)<.00001&&Math.abs(r.width/r.height-ratio)<.001})&&document.documentElement.scrollWidth<=innerWidth})()`),true,'upright full-frame image / overflow');
+    }
+    await stageDistance(a.motion+a.fade+a.hold/2);
+    expectEqual(await evaluate(`(()=>{const s=getComputedStyle(document.querySelector('[data-orbit-arrangement]'));return[s.getPropertyValue('--orbit-angle'),s.getPropertyValue('--orbit-scale'),s.getPropertyValue('--orbit-titles')]})()`),['300.65deg','1','1'],'reference-matched title hold');
+    expectEqual(await evaluate(`(()=>{const section=document.querySelector('[data-audience-orbit]'),art=section.querySelector('[data-orbit-art]').getBoundingClientRect(),captions=[...section.querySelectorAll('figcaption')],rects=captions.map(e=>e.getBoundingClientRect()),media=[...section.querySelectorAll('.orbit-frame')].map(e=>e.getBoundingClientRect()),clear=(a,b)=>a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>=b.bottom;return rects.every((r,i)=>r.left>=art.left&&r.right<=art.right&&r.top>=art.top&&r.bottom<=art.bottom&&media.every(m=>clear(r,m))&&rects.slice(i+1).every(other=>clear(r,other)))&&captions.every(e=>getComputedStyle(e).backgroundImage==='none')})()`),true,'external titles clear of all videos, each other and stage edges; no caption gradient');
+    expectEqual(await evaluate(`(()=>{const p=[...document.querySelectorAll('.orbit-frame')].map(e=>e.getBoundingClientRect()),title=document.querySelector('[data-orbit-index="0"] figcaption').getBoundingClientRect(),close=(a,b)=>Math.abs(a-b)<0.1;return close(p[3].top,p[4].top)&&close(p[3].height,p[4].height)&&close(p[2].top,p[5].top)&&close(p[2].height,p[5].height)&&close(p[1].bottom,p[6].bottom)&&close(p[0].left+p[0].right,p[2].right+p[5].left)&&close(title.left+title.right,p[0].left+p[0].right)&&title.top>p[0].bottom&&title.bottom<Math.min(p[1].top,p[6].top)})()`),true,'paired edges/heights and centred below-video title with bottom clearance');
+    await stageDistance(a.motion+a.fade+a.hold+150);
+    expectEqual(await evaluate(`document.querySelector('[data-orbit-shell]').getBoundingClientRect().top<document.querySelector('[data-site-header]').getBoundingClientRect().bottom-100`),true,'natural release');
+    await stageDistance(0);expectEqual(await evaluate(`+getComputedStyle(document.querySelector('[data-orbit-arrangement]')).getPropertyValue('--orbit-titles')<.00001`),true,'reverse restores compact title-free scene');
   }
-  await open('/', { width: 1440, height: 900, js: false });
-  expectEqual(await collage(), { ...staticCollage, p: '' }, 'no JavaScript');
+});
+await scenario('audience sequence: all seven titles/full-frame photos in static fallbacks',async()=>{
+  for(const options of[{width:320,height:844},{width:390,height:844},{width:320,height:844,fontSize:32},{width:390,height:844,fontSize:32},{width:1440,height:900,reduced:true},{width:1440,height:900,js:false},{width:1440,height:500}]){
+    await open('/',options);const s=await audience();expectEqual([s.enhanced,s.titles,s.removed],[false,7,0],'static audience identities');
+    expectEqual(await evaluate(`document.documentElement.scrollWidth<=innerWidth&&[...document.querySelectorAll('[data-audience-label]')].every(e=>e.checkVisibility({opacityProperty:true}))`),true,'visible titles / no overflow');
+  }
+});
+await scenario('audience sequence: live preference and text changes retain focus and reveal the matching title',async()=>{
+  await open('/',{width:1440,height:900});await evaluate(`document.querySelectorAll('[data-audience-label]')[5].focus()`);
+  const chosen=await evaluate<string>('document.activeElement.textContent');
+  for(const reduced of[true,false]){await setReducedMotion(reduced);await waitFor(async()=>(await audience()).enhanced===!reduced,'layout');expectEqual(await evaluate('document.activeElement.textContent'),chosen,'same DOM focus');}
+  await send('Page.setFontSizes',{fontSizes:{standard:32,fixed:13}});await waitFor(async()=>!(await audience()).enhanced,'enlarged text fallback');expectEqual(await evaluate('document.activeElement.textContent'),chosen,'text-change focus');
+  expectEqual(await evaluate(`document.activeElement.getBoundingClientRect().top>=document.querySelector('[data-site-header]').getBoundingClientRect().bottom`),true,'focused title below actual header');
+});
+await scenario('audience sequence: image error retains title and reserved frame',async()=>{
+  await open('/',{width:390,height:844});const before=await evaluate<number>(`document.querySelector('.orbit-frame').getBoundingClientRect().height`);
+  await evaluate(`document.querySelector('.orbit-frame img').dispatchEvent(new Event('error'))`);
+  expectEqual(await evaluate(`document.querySelector('.orbit-frame img').hidden&&!document.querySelector('.orbit-photo-error').hidden&&document.querySelectorAll('[data-audience-label]').length===7`),true,'title/error retained');
+  expectEqual(await evaluate<number>(`document.querySelector('.orbit-frame').getBoundingClientRect().height`),before,'reserved size retained');
+});
+if(process.env.EVIDENCE_DIR)await scenario('audience sequence: capture final title scene and mobile grid',async()=>{
+  const dir=resolve(process.env.EVIDENCE_DIR!);mkdirSync(dir,{recursive:true});
+  const capture=async(name:string)=>{const shot=await send('Page.captureScreenshot',{format:'png'});writeFileSync(join(dir,name),Buffer.from(shot.data,'base64'));};
+  await open('/',{width:1440,height:900});const a=await audience();await stageDistance(a.motion+a.fade+a.hold/2);await capture('desktop.png');
+  await open('/',{width:390,height:844,reduced:true});await evaluate(`document.querySelector('[data-audience-orbit]').scrollIntoView({behavior:'instant'})`);await capture('mobile.png');
 });
 
-await scenario('collage: reduced motion turned on and off while open switches static ↔ collage and keeps the selection', async () => {
-  await open('/', { width: 1440, height: 900 });
-  await centreCollage();
-  await evaluate(`document.querySelectorAll('[data-audience-select]')[3].click(); document.activeElement.blur()`);
-  await setReducedMotion(true);
-  await waitFor(async () => !(await collage()).enhanced, 'static under reduced motion');
-  expectEqual(await collage(), staticCollage, 'static');
-  await setReducedMotion(false);
-  await waitFor(async () => (await collage()).enhanced, 'collage again');
-  expectEqual(await evaluate(`document.querySelector('[data-collage-detail]').innerText.includes('Civil engineering firms')`), true, 'selection kept');
+// Audience playback: test decoded pixels as well as lifecycle/control state.
+const audienceMedia = () => evaluate<any>(`(()=>{const vs=[...document.querySelectorAll('.orbit-frame video')],b=document.querySelector('[data-audience-video-toggle]');return{count:vs.length,paused:vs.every(v=>v.paused),label:b.textContent,disabled:b.getAttribute('aria-disabled'),shown:document.querySelectorAll('.orbit-frame.is-video-playing').length}})()`);
+const awaitAudiencePlayback = () => waitFor(async () => {
+  const s=await audienceMedia();return s.count===7&&!s.paused&&s.shown===7;
+},'seven audience decoders',10000);
+await scenario('audience videos: load only near stage; all seven deliver changing decoded pixels with natural dimensions',async()=>{
+  await open('/',{width:1440,height:900});await sleep(200);
+  expectEqual(audienceTransfers(),0,'no audience transfer at page top');
+  await stageDistance(0);await awaitAudiencePlayback();
+  const decoded=await evaluate<any>(`Promise.all([...document.querySelectorAll('.orbit-frame video')].map(v=>new Promise(done=>{let first=null;const c=document.createElement('canvas');c.width=48;c.height=27;const ctx=c.getContext('2d');function frame(now,m){ctx.drawImage(v,0,0,48,27);const bytes=ctx.getImageData(0,0,48,27).data;let hash=0;for(const byte of bytes)hash=(Math.imul(hash,31)+byte)|0;if(!first){first={hash,time:now,frames:m.presentedFrames};v.requestVideoFrameCallback(frame);}else if(now-first.time<800)v.requestVideoFrameCallback(frame);else done({changed:hash!==first.hash,frames:m.presentedFrames-first.frames,ratio:m.width/m.height,muted:v.muted,loop:v.loop,inline:v.playsInline});}v.requestVideoFrameCallback(frame)})))`);
+  expectEqual(decoded.length,7,'seven decoded streams');
+  if(!decoded.every((d:any,i:number)=>d.changed&&d.frames>5&&d.muted&&d.loop&&d.inline&&Math.abs(d.ratio-(i===1?9/16:16/9))<.001))throw Error('Decoded pixels / natural proportions mismatch: '+JSON.stringify(decoded));
+  await evaluate('scrollTo(0,0)');await waitFor(async()=>(await audienceMedia()).paused,'off-screen pause');
+  await stageDistance(0);await awaitAudiencePlayback();
 });
-
-// Focus on an audience button when the collage switches to the static grid: it must move to
-// that audience's heading (never BODY), keep the selection, stay visible below the sticky
-// header, and Tab must continue from there. Focus is not blurred before the transition.
-const collageTransitions: [string, () => Promise<unknown>][] = [
-  ['reduced motion turned on', () => setReducedMotion(true)],
-  ['window resized to 768 px', () => send('Emulation.setDeviceMetricsOverride', { width: 768, height: 900, deviceScaleFactor: 1, mobile: false })],
-  ['browser default text raised to 32 px', () => send('Page.setFontSizes', { fontSizes: { standard: 32, fixed: 13 } })],
-];
-for (const [label, transition] of collageTransitions) {
-  await scenario(`collage focus: ${label} while "Equipment rental companies" has focus moves focus to its heading`, async () => {
-    await open('/', { width: 1440, height: 900 });
-    await centreCollage();
-    await click('[data-audience="equipment-rental"] .audience-media');
-    const button = `document.querySelector('[data-audience="equipment-rental"] [data-audience-select]')`;
-    expectEqual(await evaluate(`document.activeElement === ${button}`), true, 'button focused before the transition');
-    // Records any moment at which focus has fallen to BODY.
-    await evaluate(`window.__bodyFocus = 0; document.addEventListener('focusout', () => setTimeout(() => {
-      if (!document.activeElement || document.activeElement === document.body) window.__bodyFocus++; }), true)`);
-    await transition();
-    await waitFor(async () => !(await collage()).enhanced, 'static grid');
-    await evaluate(`new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(done, 50))))`);
-    const state = await evaluate<Record<string, unknown>>(`(() => {
-      const item = document.querySelector('[data-audience="equipment-rental"]');
-      const heading = item.querySelector('[data-audience-label]');
-      const text = item.querySelector('.audience-text');
-      const header = document.querySelector('[data-site-header]').getBoundingClientRect().bottom;
-      const r = text.getBoundingClientRect();
-      return { onHeading: document.activeElement === heading, bodyFocus: window.__bodyFocus,
-        notTabStop: heading.tabIndex < 0, selected: ${button}.getAttribute('aria-pressed') === 'true' && item.classList.contains('is-selected'),
-        visible: heading.checkVisibility() && item.querySelector('[data-audience-need]').checkVisibility(),
-        belowHeader: r.top >= header - 0.5, inViewport: r.bottom <= innerHeight + 0.5 };
-    })()`);
-    expectEqual(state, { onHeading: true, bodyFocus: 0, notTabStop: true, selected: true, visible: true, belowHeader: true, inViewport: true }, 'after the transition');
-    await press('Tab');
-    const next = await evaluate<{ body: boolean; after: boolean; visible: boolean; text: string }>(`(() => {
-      const el = document.activeElement; const section = document.querySelector('[data-collage]');
-      const r = el.getBoundingClientRect(); const header = document.querySelector('[data-site-header]').getBoundingClientRect().bottom;
-      return { body: el === document.body, after: !!(section.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) && !section.contains(el),
-        visible: r.top >= header - 0.5 && r.bottom <= innerHeight + 0.5, text: el.textContent.replace(/\\s+/g, ' ').trim() };
-    })()`);
-    if (next.body || !next.after || !next.visible) throw new Error(`Tab after the transition: ${JSON.stringify(next)}`);
-  });
-}
-
-await scenario('collage focus: focus elsewhere is not moved when the collage switches to the static grid', async () => {
-  await open('/', { width: 1440, height: 900 });
-  await centreCollage();
-  await evaluate(`document.querySelector('.workflow-foot a').focus({ preventScroll: true })`);
-  await setReducedMotion(true);
-  await waitFor(async () => !(await collage()).enhanced, 'static grid');
-  await sleep(100);
-  expectEqual(await evaluate(`document.activeElement === document.querySelector('.workflow-foot a')`), true, 'focus kept');
-  expectEqual(await evaluate(`[...document.querySelectorAll('[data-audience-label]')].some((h) => h.hasAttribute('tabindex'))`), false, 'no heading made focusable');
+await scenario('audience videos: native Space/Enter, rapid toggles and explicit Pause persist across scroll, preference and text reflow',async()=>{
+  await open('/',{width:1440,height:900});await stageDistance(0);await awaitAudiencePlayback();
+  await evaluate(`document.querySelector('[data-audience-video-toggle]').focus({preventScroll:true})`);await press(' ');
+  expectEqual((await audienceMedia()).paused,true,'keyboard Pause');
+  expectEqual(await evaluate(`document.activeElement===document.querySelector('[data-audience-video-toggle]')`),true,'control focus retained');
+  await evaluate(`scrollTo(0,0)`);await stageDistance(500);await sleep(100);expectEqual((await audienceMedia()).paused,true,'Pause after scroll');
+  await setReducedMotion(true);await waitFor(async()=>(await audienceMedia()).count===0,'reduced unload');
+  await setReducedMotion(false);await waitFor(async()=>(await audience()).enhanced,'restored layout');await stageDistance(0);
+  expectEqual([(await audienceMedia()).count,(await audienceMedia()).label],[0,'Play videos'],'Pause after preference restore');
+  await send('Page.setFontSizes',{fontSizes:{standard:32,fixed:13}});await waitFor(async()=>!(await audience()).enhanced,'text fallback');
+  expectEqual(await evaluate(`document.activeElement===document.querySelector('[data-audience-video-toggle]')&&document.activeElement.getBoundingClientRect().top>=document.querySelector('[data-site-header]').getBoundingClientRect().bottom`),true,'visible control focus in fallback');
+  await send('Page.setFontSizes',{fontSizes:{standard:16,fixed:13}});await waitFor(async()=>(await audience()).enhanced,'text restore');await stageDistance(0);
+  await press('Enter');await awaitAudiencePlayback();
+  await evaluate(`const b=document.querySelector('[data-audience-video-toggle]');for(let i=0;i<9;i++)b.click()`);await sleep(150);
+  expectEqual([(await audienceMedia()).paused,(await audienceMedia()).label],[true,'Play videos'],'latest rapid toggle wins');
+});
+await scenario('audience videos: pending fetch/autoplay cancelled synchronously by reduced motion and never revived by stale completion',async()=>{
+  holdAudience=true;await open('/',{width:1440,height:900});await stageDistance(0);
+  // HTTP/1.1 may cap concurrent held responses at six. One pending response is
+  // enough to exercise cancellation; all seven video elements must be pending.
+  await waitFor(()=>heldAudience.length>=1,'held audience requests');
+  expectEqual((await audienceMedia()).count,7,'seven pending elements');
+  await evaluate(`const m=matchMedia('(prefers-reduced-motion: reduce)');m.addEventListener('change',()=>window.__audienceImmediatelyDetached=!document.querySelector('.orbit-frame video'),{once:true})`);
+  await setReducedMotion(true);await waitFor(()=>evaluate<boolean>('window.__audienceImmediatelyDetached===true'),'synchronous cancellation');
+  releaseVideo();await sleep(200);expectEqual((await audienceMedia()).count,0,'no stale playing after release');
+  await setReducedMotion(false);await waitFor(async()=>(await audience()).enhanced,'preference restore');await stageDistance(0);await awaitAudiencePlayback();
+});
+await scenario('audience videos: initial poster fallbacks never request video on mobile, enlarged text, reduced motion, short viewport or no JS',async()=>{
+  for(const options of[{width:320,height:844},{width:390,height:844},{width:320,height:844,fontSize:32},{width:390,height:844,fontSize:32},{width:1440,height:900,fontSize:32},{width:1440,height:900,reduced:true},{width:1440,height:500},{width:1440,height:900,js:false}]){
+    await open('/',options);await evaluate(`document.querySelector('.segments').scrollIntoView()`);await sleep(150);
+    expectEqual([audienceTransfers(),(await audienceMedia()).count],[0,0],'no video downloads '+JSON.stringify(options));
+  }
+});
+await scenario('audience videos: explicit Pause during pending loads survives completion and Play starts the newer request',async()=>{
+  holdAudience=true;await open('/',{width:1440,height:900});await stageDistance(0);
+  await waitFor(()=>heldAudience.length>=1,'pending response');
+  await evaluate(`document.querySelector('[data-audience-video-toggle]').focus({preventScroll:true})`);await press(' ');
+  releaseVideo();await sleep(250);expectEqual([(await audienceMedia()).paused,(await audienceMedia()).label,(await audienceMedia()).shown],[true,'Play videos',0],'pending Pause retained');
+  await press('Enter');await awaitAudiencePlayback();
+});
+await scenario('audience videos: Save-Data prevents requests; live Save-Data cancels and explicit Pause survives return',async()=>{
+  const injection=await send('Page.addScriptToEvaluateOnNewDocument',{source:`Object.defineProperty(navigator,'connection',{value:Object.assign(new EventTarget(),{saveData:true})})`});
+  try{
+    await open('/',{width:1440,height:900});await evaluate(`document.querySelector('.segments').scrollIntoView()`);await sleep(100);expectEqual([audienceTransfers(),(await audienceMedia()).count],[0,0],'Save-Data poster only');
+    await evaluate(`navigator.connection.saveData=false;navigator.connection.dispatchEvent(new Event('change'))`);await waitFor(async()=>(await audience()).enhanced,'Save-Data restore');await stageDistance(0);await awaitAudiencePlayback();
+    await evaluate(`document.querySelector('[data-audience-video-toggle]').click();navigator.connection.saveData=true;navigator.connection.dispatchEvent(new Event('change'));window.__detached=!document.querySelector('.orbit-frame video')`);expectEqual(await evaluate('window.__detached'),true,'live immediate unload');
+    await evaluate(`navigator.connection.saveData=false;navigator.connection.dispatchEvent(new Event('change'))`);await waitFor(async()=>(await audience()).enhanced,'layout restore');await stageDistance(0);expectEqual((await audienceMedia()).count,0,'explicit Pause persists');
+  }finally{await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:injection.identifier});}
+});
+await scenario('audience videos: refused autoplay keeps posters; native Play retries; one failed stream preserves poster/title and other playback',async()=>{
+  const injection=await send('Page.addScriptToEvaluateOnNewDocument',{source:`const originalPlay=HTMLMediaElement.prototype.play;window.__allowAudience=false;HTMLMediaElement.prototype.play=function(){if(this.src.includes('/media/home/audience-')&&!window.__allowAudience)return Promise.reject(new DOMException('Test refusal','NotAllowedError'));return originalPlay.call(this)}`});
+  try{
+    await open('/',{width:1440,height:900});await stageDistance(0);await waitFor(async()=>(await audienceMedia()).label==='Play videos','refusal');
+    expectEqual((await audienceMedia()).shown,0,'posters on refusal');
+    await evaluate(`window.__allowAudience=true;document.querySelector('[data-audience-video-toggle]').focus({preventScroll:true})`);await press('Enter');await awaitAudiencePlayback();
+    const before=await evaluate(`document.querySelector('.orbit-frame').getBoundingClientRect().height`);
+    await evaluate(`document.querySelector('.orbit-frame video').src='/media/home/intentionally-missing-test.mp4'`);
+    await waitFor(async()=>(await audienceMedia()).count===6,'failed clip removed');
+    expectEqual(await evaluate(`!document.querySelector('.orbit-frame').classList.contains('is-video-playing')&&!document.querySelector('.orbit-frame img').hidden&&document.querySelectorAll('[data-audience-label]').length===7&&[...document.querySelectorAll('.orbit-frame video')].every(v=>!v.paused)`),true,'poster/title/other clips retained');
+    expectEqual(await evaluate(`document.querySelector('.orbit-frame').getBoundingClientRect().height`),before,'error reserves geometry');
+  }finally{await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:injection.identifier});}
+});
+await scenario('audience videos: hidden document immediately pauses and visible document resumes without overriding user Pause',async()=>{
+  await open('/',{width:1440,height:900});await stageDistance(0);await awaitAudiencePlayback();
+  // Deterministic visibility event: headless focus emulation keeps real tabs visible.
+  await evaluate(`Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));window.__allPaused=[...document.querySelectorAll('.orbit-frame video')].every(v=>v.paused)`);
+  expectEqual(await evaluate('window.__allPaused'),true,'hidden synchronous pause');
+  await evaluate(`Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'))`);await awaitAudiencePlayback();
+  await evaluate(`document.querySelector('[data-audience-video-toggle]').click();Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'))`);
+  expectEqual((await audienceMedia()).paused,true,'explicit Pause after tab return');
 });
 
 // ---- 8. Capability showcase under live text-size changes ----------------------------------
@@ -701,7 +667,7 @@ await scenario('capabilities: midway through the pinned section with focus elsew
 // motion), so on-screen position across a text change is not asserted here. What the showcase
 // controls is asserted: it never scrolls the page while focus is elsewhere, and its own
 // pinned ↔ stacked switch leaves content below it where it was.
-await scenario('layout switches keep content below in place: workflow and pricing links, pinned ↔ stacked and collage ↔ grid, three runs each', async () => {
+await scenario('layout switches keep content below in place: workflow and pricing links, pinned ↔ stacked and stage ↔ list, three runs each', async () => {
   // Intermittent before the fix (Chromium's scroll anchoring sometimes moved these by 400–600 px).
   for (const target of ['.workflow-foot a', '.price-list a']) {
     for (let run = 1; run <= 3; run++) {
@@ -763,6 +729,150 @@ await scenario('capabilities: reduced motion and no JavaScript stay stacked thro
       expectEqual(await scrolly(), { pinned: false, consistent: true, overflow: false }, `${JSON.stringify(options)} ${size} px`);
     }
   }
+});
+
+await scenario('navigation: desktop routes, mobile keyboard menu, Escape and the demo return link remain usable', async () => {
+  await open('/', {width:1440,height:900});
+  expectEqual(await evaluate(`document.querySelector('#site-nav a[aria-current="page"]').pathname`), '/', 'Home current');
+  const routes = await evaluate<string[]>(`[...document.querySelectorAll('#site-nav .nav-list a')].map(a=>a.pathname)`);
+  expectEqual(routes.length, 7, 'seven public routes');
+  for(const route of routes) expectEqual((await fetch(origin + route)).status, 200, route);
+  await open('/', {width:390,height:844});
+  await evaluate(`document.querySelector('[data-menu-toggle]').focus()`);
+  await press('Enter');
+  expectEqual(await evaluate(`document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded')`), 'true', 'menu opened');
+  await press('Tab');
+  expectEqual(await evaluate(`document.activeElement.pathname`), '/', 'Home reached');
+  await press('Escape');
+  expectEqual(await evaluate(`document.activeElement === document.querySelector('[data-menu-toggle]')`), true, 'Escape returns focus');
+  await press('Enter'); await press('Tab'); await press('Tab'); await press('Enter');
+  await waitFor(()=>evaluate<boolean>(`location.pathname === '/solutions/' && document.readyState === 'complete'`), 'Solutions navigation');
+  await open('/product-demo/', {width:1440,height:900});
+  await click('.back-link');
+  await waitFor(()=>evaluate<boolean>(`location.pathname === '/' && document.readyState === 'complete'`), 'Back to website');
+});
+
+// Solutions' capability jump links and numbered capability labels sit inside containers that clip
+// overflow, so page-level overflow cannot reveal a cut-off label. Check the rendered text itself.
+await scenario('solutions: jump links and capability labels stay fully visible and separate at 320/390 px with a 32 px default font, JavaScript on and off', async () => {
+  for (const width of [320, 390]) for (const js of [true, false]) {
+    await open('/solutions/', { width, height: 800, fontSize: 32, js });
+    const problems = await evaluate<string[]>(`(() => {
+      const problems = [];
+      const textRects = (el) => { const range = document.createRange(); range.selectNodeContents(el); return [...range.getClientRects()].filter((r) => r.width > 0); };
+      const overlap = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+      const visible = (el, name) => {
+        const box = el.getBoundingClientRect();
+        for (const t of textRects(el)) if (t.left < box.left - 1 || t.right > box.right + 1 || t.right > innerWidth + 1) { problems.push(name + ': text outside its box'); break; }
+        for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+          if (!/(hidden|clip)/.test(getComputedStyle(a).overflowX)) continue;
+          const clip = a.getBoundingClientRect();
+          if (textRects(el).some((t) => t.left < clip.left - 1 || t.right > clip.right + 1)) { problems.push(name + ': clipped by .' + a.classList[0]); break; }
+        }
+      };
+      const links = [...document.querySelectorAll('.jump a')];
+      if (links.length !== 4) problems.push('expected four jump links, found ' + links.length);
+      links.forEach((a) => visible(a, 'jump link ' + a.textContent.trim().replace(/\\s+/g, ' ')));
+      links.forEach((a, i) => links.slice(i + 1).forEach((b) => { if (overlap(a.getBoundingClientRect(), b.getBoundingClientRect())) problems.push('jump links overlap: ' + a.textContent.trim() + ' / ' + b.textContent.trim()); }));
+      const labels = [...document.querySelectorAll('.capability-label')];
+      if (labels.length !== 4) problems.push('expected four capability labels, found ' + labels.length);
+      labels.forEach((label, i) => {
+        visible(label, 'capability label ' + (i + 1));
+        const parts = [...label.children].map((c) => c.getBoundingClientRect());
+        parts.forEach((p, j) => parts.slice(j + 1).forEach((q) => { if (overlap(p, q)) problems.push('capability label ' + (i + 1) + ': number and name overlap'); }));
+      });
+      return [...new Set(problems)];
+    })()`);
+    expectEqual(problems, [], `${width} px, JavaScript ${js ? 'on' : 'off'}`);
+  }
+});
+
+// Native focus scrolling brings a link's box into view, not its outline. Check the complete
+// outline extent (box + offset + width) after scrolling settles, against the visible area below a
+// sticky header and every clipping ancestor.
+await scenario('solutions: Tab through the jump links at 390 px / 32 px leaves each complete focus outline visible, JavaScript on and off', async () => {
+  for (const js of [true, false]) {
+    await open('/solutions/', { width: 390, height: 844, fontSize: 32, js });
+    await evaluate(`(() => { const h = document.getElementById('solutions-heading'); h.setAttribute('tabindex', '-1'); h.focus(); return true; })()`);
+    for (let i = 0; i < 4; i++) {
+      await press('Tab');
+      let last = -1;
+      for (let k = 0; k < 20; k++) { await sleep(50); const y = await evaluate<number>('scrollY'); if (y === last) break; last = y; }
+      const report = await evaluate<{ link: string; problems: string[] }>(`(() => {
+        const a = document.activeElement, cs = getComputedStyle(a), problems = [];
+        if (!a.closest('.jump')) return { link: a.textContent.trim(), problems: ['focus left the jump links'] };
+        const width = cs.outlineStyle === 'none' ? 0 : parseFloat(cs.outlineWidth), grow = width + (parseFloat(cs.outlineOffset) || 0), r = a.getBoundingClientRect();
+        const ext = { top: r.top - grow, bottom: r.bottom + grow, left: r.left - grow, right: r.right + grow };
+        if (width < 2) problems.push('no visible outline');
+        const header = document.querySelector('[data-site-header]'), hp = getComputedStyle(header).position;
+        const covered = hp === 'sticky' || hp === 'fixed' ? header.getBoundingClientRect().bottom : 0;
+        if (ext.top < covered - 0.5) problems.push('outline top under the header');
+        if (ext.bottom > innerHeight + 0.5) problems.push('outline bottom below the viewport by ' + (ext.bottom - innerHeight).toFixed(1) + 'px');
+        if (ext.left < -0.5 || ext.right > innerWidth + 0.5) problems.push('outline outside the viewport horizontally');
+        for (let p = a.parentElement; p && p !== document.documentElement; p = p.parentElement) {
+          const pcs = getComputedStyle(p), pr = p.getBoundingClientRect(), clips = (v) => /(hidden|clip|auto|scroll)/.test(v);
+          if (clips(pcs.overflowX) && (ext.left < pr.left - 0.5 || ext.right > pr.right + 0.5)) problems.push('outline clipped horizontally by .' + (p.classList[0] || p.tagName));
+          if (clips(pcs.overflowY) && (ext.top < pr.top - 0.5 || ext.bottom > pr.bottom + 0.5)) problems.push('outline clipped vertically by .' + (p.classList[0] || p.tagName));
+        }
+        return { link: a.textContent.trim().replace(/\\s+/g, ' '), problems };
+      })()`);
+      expectEqual(report.problems, [], `JavaScript ${js ? 'on' : 'off'}, link ${i + 1} (${report.link})`);
+    }
+  }
+});
+
+// The rem-based desktop navigation query switches when the browser text size changes, with no
+// media `change` event; a focused header control must keep the keyboard position.
+await scenario('navigation: live text-size changes that collapse or expand the header keep focus on an equivalent visible control', async () => {
+  const header = () => evaluate<{ active: string; visible: boolean; open: string | null }>(`(() => { const a = document.activeElement;
+    return { active: a === document.body ? 'body' : a.textContent.trim(), visible: a !== document.body && a.checkVisibility(), open: document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded') }; })()`);
+  const fonts = (size: number) => send('Page.setFontSizes', { fontSizes: { standard: size, fixed: 13 } });
+  for (const path of ['/pricing/', '/contact/']) {
+    await open(path, { width: 1440, height: 900 });
+    await evaluate(`document.querySelector('#site-nav a[href="/about/"]').focus()`);
+    await fonts(32);
+    await waitFor(async () => (await header()).open === 'true', `${path} menu opened for the focused link`);
+    expectEqual(await header(), { active: 'About', visible: true, open: 'true' }, `${path} link kept after collapse`);
+    await press('Tab');
+    expectEqual((await header()).active, 'Contact', `${path} Tab continues in the menu`);
+    await fonts(16);
+    await waitFor(async () => (await header()).open === 'false', `${path} menu closed on expand`);
+    expectEqual(await header(), { active: 'Contact', visible: true, open: 'false' }, `${path} link kept after expand`);
+
+    await open(path, { width: 1440, height: 900, fontSize: 32 });
+    await evaluate(`document.querySelector('[data-menu-toggle]').focus()`);
+    await fonts(16);
+    await waitFor(async () => (await header()).active !== 'Menu', `${path} focus left the hidden Menu button`);
+    const current = await evaluate<string>(`document.querySelector('#site-nav a[aria-current="page"]').textContent.trim()`);
+    expectEqual(await header(), { active: current, visible: true, open: 'false' }, `${path} Menu focus moves to the current page link`);
+  }
+});
+
+await scenario('demo: keyboard section/project/filter controls, coherent chart rows, bounded scans, reset and reload remain functional', async () => {
+  await open('/product-demo/', {width:1440,height:900});
+  const rows = () => evaluate<string[]>(`[...document.querySelectorAll('[data-rows="inventory"] tr')].filter(r=>r.checkVisibility()).map(r=>r.dataset.id)`);
+  await evaluate(`document.querySelector('[data-section-button="inventory"]').focus()`); await press('Enter');
+  expectEqual(await evaluate(`document.querySelector('[data-panel="inventory"]').checkVisibility()`), true, 'Materials shown');
+  expectEqual((await rows()).length, 18, 'all fixture materials');
+  await evaluate(`document.querySelector('[data-project-select]').focus()`);
+  for(const type of ['keyDown','keyUp']) await send('Input.dispatchKeyEvent',{type,key:'ArrowDown',code:'ArrowDown',windowsVirtualKeyCode:40});
+  await sleep(100);
+  if ((await rows()).length >= 18 || !(await rows()).length) throw new Error('project selection did not filter materials');
+  await evaluate(`document.querySelector('[data-filter="lowStockOnly"]').focus()`); await press(' ');
+  const filtered = await rows();
+  expectEqual(await evaluate(`document.querySelector('[data-filter="lowStockOnly"]').checked`), true, 'keyboard filter');
+  const bars = await evaluate<string[]>(`[...document.querySelectorAll('[data-panel="inventory"] .bars [data-kind="material"]')].filter(r=>r.checkVisibility()).map(r=>r.dataset.id)`);
+  expectEqual(bars, filtered, 'chart and table show the same records');
+  await click('[data-reset]');
+  await evaluate(`document.querySelector('[data-section-button="events"]').focus()`); await press('Enter');
+  for(let i=0;i<6;i++) await click('[data-simulate]');
+  expectEqual(await evaluate(`document.querySelector('[data-simulate]').getAttribute('aria-disabled')`), 'true', 'scan limit');
+  expectEqual(await evaluate(`document.querySelector('[data-simulate-count]').textContent.startsWith('5 of 5')`), true, 'five scans only');
+  expectEqual(await evaluate(`document.querySelector('.app-disclosure').checkVisibility() && /no live hardware/.test(document.querySelector('.app-disclosure').textContent)`), true, 'persistent disclosure');
+  await click('[data-reset]');
+  expectEqual(await evaluate(`document.querySelector('[data-project-select]').value`), 'all', 'reset project');
+  await open('/product-demo/', {width:1440,height:900});
+  expectEqual(await evaluate(`document.querySelector('[data-simulate-count]').textContent.startsWith('0 of 5')`), true, 'reload resets scans');
 });
 
 // ---- 9. Report and clean up -------------------------------------------------------------

@@ -400,6 +400,20 @@ const hasAlternative = Boolean(contact.phone || contact.publicEmail);
     color: transparent;
   }
 
+  /* Narrow relative to the text size (em follows the browser default): put the marker above
+     the label so long words keep the full width instead of running under it. */
+  @media (max-width: 22em) {
+    .type-option {
+      padding-top: calc(var(--space-3) + 1.5rem + var(--space-2));
+      padding-right: var(--space-4);
+    }
+
+    .type-check {
+      right: auto;
+      left: var(--space-4);
+    }
+  }
+
   .type-option:has(input:checked) .type-check {
     border-color: var(--color-blue);
     background: var(--color-blue);

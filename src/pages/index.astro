@@ -60,9 +60,10 @@ const capabilities: { id: string; label: string; title: string; text: string; im
 
 // Three steps, each led by an illustrative stock photo (crops recorded in
 // design/home-visual-samples/CROPS.json). The section lead states what is simulated.
-const steps: { title: string; text: string; image: string; width: number; height: number }[] = [
+const steps: { title: string; text: string; image: string; width: number; height: number; target: string }[] = [
   {
     title: 'Record site activity',
+    target: 'capture-events',
     text: 'Log material movements and equipment activity.',
     image: '/media/home/step-record-site-activity.webp',
     width: 800,
@@ -70,6 +71,7 @@ const steps: { title: string; text: string; image: string; width: number; height
   },
   {
     title: 'Monitor resources',
+    target: 'cloud-platform',
     text: 'See stock levels, equipment status and deliveries.',
     image: '/media/home/step-monitor-resources.webp',
     width: 720,
@@ -77,6 +79,7 @@ const steps: { title: string; text: string; image: string; width: number; height
   },
   {
     title: 'Review project information',
+    target: 'dashboards-decisions',
     text: 'Spot issues and plan the next action.',
     image: '/media/home/step-review-project-information.webp',
     width: 800,
@@ -84,26 +87,17 @@ const steps: { title: string; text: string; image: string; width: number; height
   },
 ];
 
-// "Who we serve": one illustrative photo per approved segment (equal size and treatment).
-// Tilt, swing and drift only shape the desktop collage (src/scripts/collage.ts).
-const audienceImages: Record<(typeof customerSegments)[number]['id'], string> = {
-  'construction-companies': '/media/home/audience-construction-companies.webp',
-  contractors: '/media/home/audience-contractors.webp',
-  'project-managers': '/media/home/audience-project-managers.webp',
-  'engineering-firms': '/media/home/audience-engineering-firms.webp',
-  'government-projects': '/media/home/audience-government-projects.webp',
-  'real-estate-developers': '/media/home/audience-real-estate-developers.webp',
-  'equipment-rental': '/media/home/audience-equipment-rental.webp',
+// Full-frame posters from candidates approved for local playback review. Sources/licences and the
+// retained original candidate set: design/media-source/AUDIENCE_VIDEO_PROPOSAL.json.
+const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: string; width: number; height: number }> = {
+  'construction-companies': { src: '/media/home/candidate-construction-companies.webp', width: 960, height: 540 },
+  contractors: { src: '/media/home/candidate-contractors.webp', width: 540, height: 960 },
+  'project-managers': { src: '/media/home/candidate-project-managers.webp', width: 960, height: 540 },
+  'engineering-firms': { src: '/media/home/candidate-engineering-firms.webp', width: 960, height: 540 },
+  'government-projects': { src: '/media/home/candidate-government-projects.webp', width: 960, height: 540 },
+  'real-estate-developers': { src: '/media/home/candidate-real-estate-developers.webp', width: 960, height: 540 },
+  'equipment-rental': { src: '/media/home/candidate-equipment-rental.webp', width: 960, height: 540 },
 };
-const collageMotion = [
-  { tilt: -5, swing: 4, dx: -8, dy: 12 },
-  { tilt: 3, swing: -3, dx: 6, dy: -10 },
-  { tilt: -2, swing: 5, dx: -6, dy: 14 },
-  { tilt: 5, swing: -4, dx: 8, dy: -12 },
-  { tilt: -4, swing: 3, dx: -6, dy: 10 },
-  { tilt: 2, swing: -5, dx: 6, dy: -14 },
-  { tilt: -3, swing: 4, dx: -8, dy: 12 },
-];
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
@@ -161,7 +155,7 @@ const collageMotion = [
         <p>The phone shows this website on a small screen. BuildTrack has no native mobile app.</p>
         <p><a class="button button-primary" href="/product-demo/">Explore the Demo</a></p>
       </div>
-      <figure class="devices" data-reveal="devices">
+      <figure class="devices" data-device-entrance>
         <p class="sim-label">Simulated platform demo</p>
         <div class="device-stage">
           <div class="laptop">
@@ -248,6 +242,7 @@ const collageMotion = [
         {
           steps.map((step, index) => (
             <li class="step" data-reveal style={`--i: ${index}`}>
+              <a class="step-card" href={`/how-it-works/#${step.target}`}>
               <img
                 class="step-media"
                 src={step.image}
@@ -257,12 +252,14 @@ const collageMotion = [
                 decoding="async"
                 alt=""
               />
-              <h3>
+              <div class="step-copy"><h3>
                 <span class="step-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                 <span class="visually-hidden">Step {index + 1}: </span>
                 {step.title}
               </h3>
               <p>{step.text}</p>
+              <span class="step-link-cue">Explore this step <Icon name="arrow" size={20} /></span></div>
+              </a>
             </li>
           ))
         }
@@ -274,46 +271,37 @@ const collageMotion = [
     </div>
   </section>
 
-  <section class="section segments" aria-labelledby="segments-heading" data-collage>
-    <div class="container">
-      <header class="section-intro stack" data-reveal>
-        <p class="eyebrow">Who we serve</p>
-        <h2 id="segments-heading">Built for everyone who manages construction resources</h2>      </header>
-      <div class="collage-layout">
-        <ul class="audience-list" data-collage-stage>
-          {
-            customerSegments.map((segment, index) => {
-              const motion = collageMotion[index]!;
-              return (
-                <li
-                  class="audience"
-                  data-audience={segment.id}
-                  style={`--tilt: ${motion.tilt}deg; --swing: ${motion.swing}deg; --dx: ${motion.dx}px; --dy: ${motion.dy}px`}
-                >
-                  <div class="audience-media">
-                    <img src={audienceImages[segment.id]} width="400" height="500" loading="lazy" decoding="async" alt="" />
+  <section class="segments on-dark" aria-labelledby="segments-heading" data-audience-orbit>
+    <div class="orbit-scroll" data-orbit-scroll>
+      <div class="orbit-shell" data-orbit-shell>
+        <header class="orbit-heading" data-orbit-heading>
+          <p class="eyebrow">Who we serve</p>
+          <h2 id="segments-heading">Built for the people behind every project.</h2>
+        </header>
+        <div class="orbit-art" data-orbit-art>
+          <ul class="orbit-arrangement" data-orbit-arrangement>
+            {customerSegments.map((segment, index) => (
+              <li class="orbit-anchor" data-orbit-photo={segment.id} data-orbit-index={index}>
+                <figure class="orbit-photo">
+                  <div class="orbit-frame" data-audience-video-src={`/media/home/audience-${segment.id}.mp4`} style={`--media-aspect: ${audienceImages[segment.id].width} / ${audienceImages[segment.id].height}`}>
+                    <img src={audienceImages[segment.id].src} width={audienceImages[segment.id].width} height={audienceImages[segment.id].height} loading="lazy" decoding="async" alt="" />
+                    <p class="orbit-photo-error" hidden>Illustrative photo unavailable</p>
                   </div>
-                  <div class="audience-text">
-                    <h3 data-audience-label>{segment.label}</h3>
-                    <p data-audience-need>{segment.need}</p>
-                  </div>
-                  <button type="button" class="audience-select" data-audience-select aria-pressed="false" hidden>
-                    <span class="audience-hint">
-                      View details<span class="visually-hidden">: {segment.label}</span>
-                      <Icon name="arrow" size={16} />
-                    </span>
-                  </button>
-                </li>
-              );
-            })
-          }
-        </ul>
-        <div class="audience-detail" data-collage-detail aria-live="polite" hidden>
-          <p class="audience-detail-label" data-detail-label></p>
-          <p class="audience-detail-text" data-detail-text>Select a photo to read what BuildTrack would offer that group.</p>
+                  <figcaption><h3 data-audience-label tabindex="-1">{segment.label}</h3></figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="orbit-foot" data-orbit-foot>
+          <p class="media-credit">Illustrative stock footage, not BuildTrack customers, projects or working hardware.</p>
+          <div class="audience-video-controls">
+            <button type="button" class="audience-video-toggle" data-audience-video-toggle aria-describedby="audience-video-status" hidden>Play videos</button>
+            <span class="visually-hidden" id="audience-video-status" data-audience-video-status role="status"></span>
+          </div>
+          <a class="text-link" href="/solutions/#segments">Explore audience needs <Icon name="arrow" size={20} /></a>
         </div>
       </div>
-      <p class="media-credit segments-credit">Photos: illustrative stock photography, not BuildTrack customers or projects.</p>
     </div>
   </section>
 
@@ -366,11 +354,13 @@ const collageMotion = [
   import { initHeroVideo } from '../scripts/hero-video.ts';
   import { initReveal } from '../scripts/reveal.ts';
   import { initScrolly } from '../scripts/scrolly.ts';
-  import { initCollage } from '../scripts/collage.ts';
+  import { initAudienceSequence } from '../scripts/audience-sequence.ts';
+  import { initDeviceEntrance } from '../scripts/device-entrance.ts';
   initReveal();
   initHeroVideo();
   initScrolly();
-  initCollage();
+  initAudienceSequence();
+  initDeviceEntrance();
 </script>
 
 <style>
@@ -700,23 +690,7 @@ const collageMotion = [
     color: var(--color-blue-pale);
   }
 
-  /* Laptop enters, then the phone; both then stay still. */
-  :global(.reveal-ready) .devices:not(:global(.is-revealed)) .laptop,
-  :global(.reveal-ready) .devices:not(:global(.is-revealed)) .phone {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-
-  :global(.reveal-ready) .laptop,
-  :global(.reveal-ready) .phone {
-    transition:
-      opacity 600ms ease-out,
-      transform 600ms ease-out;
-  }
-
-  :global(.reveal-ready) .phone {
-    transition-delay: 250ms;
-  }
+  /* One-time coordinated entrance is progressive enhancement in device-entrance.ts. */
 
   /* ---- Capability showcase (src/scripts/scrolly.ts) ------------------------------ */
   .section-intro {
@@ -891,62 +865,26 @@ const collageMotion = [
     font-size: var(--text-xl);
   }
 
-  /* ---- Workflow: three open, image-led steps ------------------------------------ */
-  .workflow {
-    background: var(--color-ink);
-    color: #fff;
-  }
-
-  .steps {
-    display: grid;
-    gap: var(--space-8) var(--space-6);
-    padding: 0;
-    list-style: none;
-  }
-
-  @media (min-width: 48rem) {
-    .steps {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    /* A gentle stagger keeps the row open without cards. */
-    .step:nth-child(2) {
-      margin-top: var(--space-8);
-    }
-  }
-
-  .step {
-    min-width: 0;
-  }
-
-  .step-media {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-    border-radius: var(--radius-lg);
-    background: var(--color-navy);
-  }
-
-  .step h3 {
-    margin-top: var(--space-5);
-    font-size: var(--text-2xl);
-    letter-spacing: -0.01em;
-  }
-
-  .step-number {
-    display: block;
-    margin-bottom: var(--space-1);
-    font-size: var(--text-lg);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--color-yellow);
-  }
-
-  .step p {
-    margin-top: var(--space-2);
-    color: var(--color-blue-pale);
-  }
+  /* Three image-backed links; essential text is visible on touch and without JS. */
+  .workflow { background: var(--color-ink); color: #fff; }
+  .steps { display: grid; gap: 1.5rem; padding: 0; list-style: none; }
+  @media (min-width: 48rem) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .step { min-width: 0; }
+  .step-card { position: relative; display: flex; align-items: flex-end; min-height: 28rem;
+    padding: 1.5rem; overflow: clip; isolation: isolate; color: #fff; text-decoration: none;
+    background: var(--color-navy); border-bottom: 3px solid #ffffff33; transition: border-color 180ms ease; }
+  .step-card::after { content: ''; position: absolute; inset: 0; z-index: -1;
+    background: linear-gradient(180deg, #06152300 10%, #06152394 46%, #061523f5 100%); }
+  .step-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2;
+    transition: transform 350ms ease; }
+  .step-card:hover, .step-card:focus-visible { color: #fff; border-color: var(--color-yellow); }
+  .step-card:focus-visible { outline: 3px solid var(--color-yellow); outline-offset: 4px; }
+  .step-card:hover .step-media, .step-card:focus-visible .step-media { transform: scale(1.035); }
+  .step-copy { min-width: 0; }
+  .step h3 { font-size: var(--text-2xl); letter-spacing: -0.01em; }
+  .step-number { display: block; margin-bottom: 0.75rem; font-size: 1rem; font-weight: 700; color: var(--color-yellow); }
+  .step p { margin-top: 0.75rem; color: #e0e8ef; }
+  .step-link-cue { display: flex; align-items: center; gap: 0.5rem; margin-top: 1.25rem; font-size: 0.875rem; color: var(--color-yellow); }
 
   .workflow-foot {
     display: flex;
@@ -969,190 +907,62 @@ const collageMotion = [
     outline-color: var(--color-yellow);
   }
 
-  /* ---- Who we serve (src/scripts/collage.ts) ---------------------------------------- */
-  /* Default (no JavaScript, small screens, reduced motion, too little height): an image-led
-     grid; every audience shows its photo, name and description. */
-  .audience-list,
-  .price-list {
-    display: grid;
-    gap: var(--space-6) var(--space-8);
-    padding: 0;
-    list-style: none;
-  }
-
-  .audience-list {
-    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
-    gap: var(--space-6);
-  }
-
-  .audience {
-    position: relative;
-    display: grid;
-    grid-template-columns: min(7rem, 35%) minmax(0, 1fr);
-    gap: var(--space-4);
-    align-items: start;
-    align-content: start;
-    min-width: 0;
-  }
-
-  @media (min-width: 40rem) {
-    .audience {
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--space-3);
-    }
-  }
-
-  .audience-media img {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 4 / 5;
-    object-fit: cover;
-    border-radius: var(--radius-md);
-    background: var(--color-border);
-  }
-
-  .audience-text {
-    min-width: 0;
-  }
-
-  .audience h3 {
-    font-size: var(--text-xl);
-  }
-
-  .audience-text p {
-    margin-top: var(--space-2);
-    color: var(--color-muted);
-  }
-
-  .segments-credit {
-    margin-top: var(--space-6);
-    color: var(--color-muted);
-  }
-
-  .audience-select[hidden],
-  .audience-detail[hidden] {
-    display: none;
-  }
-
-  /* Enhanced: a tilted collage beside a stable description area. --p (−1…1) follows scrolling;
-     only the photo frames rotate, so labels stay upright. */
-  .segments:global(.is-collage) .collage-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
-    gap: var(--space-8);
-    align-items: center;
-  }
-
-  :global(.is-collage) .audience-list {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-    gap: var(--space-10) var(--space-5);
-    padding-block: var(--space-4);
-  }
-
-  :global(.is-collage) .audience {
-    display: block;
-    grid-column: span 2;
-    transform: translate3d(calc(var(--p, 0) * var(--dx)), calc(var(--p, 0) * var(--dy)), 0);
-  }
-
-  /* Second row sits half a photo to the right. */
-  :global(.is-collage) .audience:nth-child(5) {
-    grid-column: 2 / span 2;
-  }
-
-  :global(.is-collage) .audience-media {
-    transform: rotate(calc(var(--tilt) + var(--p, 0) * var(--swing)));
-    border-radius: var(--radius-md);
-    box-shadow: 0 14px 28px rgb(7 26 43 / 0.22);
-    transition: box-shadow var(--duration-fast);
-  }
-
-  :global(.is-collage) .audience-media img {
-    border: 4px solid #fff;
-  }
-
-  :global(.is-collage) .audience h3 {
-    margin-top: var(--space-3);
-    font-size: var(--text-base);
-    line-height: 1.3;
-  }
-
-  :global(.is-collage) .audience-text p {
-    display: none;
-  }
-
-  /* The button covers the whole entry (photo and label); its visible part is the indicator. */
-  .audience-select {
-    position: absolute;
-    inset: 0;
-    display: block;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-md);
-    background: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .audience-hint {
-    position: absolute;
-    top: var(--space-3);
-    right: var(--space-3);
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    max-width: calc(100% - var(--space-6));
-    padding: 0.125rem var(--space-2);
-    border-radius: 999px;
-    background: rgb(7 26 43 / 0.72);
-    color: #fff;
-    font-size: 0.8125rem;
-    font-weight: 600;
-  }
-
-  .audience-select:hover .audience-hint,
-  .audience-select:focus-visible .audience-hint {
-    background: var(--color-ink);
-    outline: 2px solid var(--color-yellow);
-  }
-
-  .audience-select:focus-visible {
-    outline: var(--focus-ring);
-    outline-offset: 6px;
-  }
-
-  :global(.is-collage) .audience:global(.is-selected) .audience-media {
-    box-shadow:
-      0 0 0 4px var(--color-blue),
-      0 14px 28px rgb(7 26 43 / 0.22);
-  }
-
-  :global(.is-collage) .audience:global(.is-selected) h3 {
-    color: var(--color-blue);
-  }
-
-  /* Fixed minimum height and top-aligned text, so selecting another audience does not move it. */
-  .audience-detail {
-    min-height: 16rem;
-    padding: var(--space-5) 0 var(--space-5) var(--space-5);
-    border-left: 4px solid var(--color-yellow);
-  }
-
-  .audience-detail-label {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    line-height: 1.25;
-  }
-
-  .audience-detail-label:empty {
-    display: none;
-  }
-
-  .audience-detail-text {
-    margin-top: var(--space-3);
-    font-size: var(--text-lg);
-    color: var(--color-muted);
+  /* Full-frame audience sequence. Static title grid is the default. */
+  .segments { background: var(--color-navy); color: #fff; }
+  .orbit-shell { width: min(100%, 1920px); margin-inline: auto; padding: 2rem clamp(1rem, 2vw, 2.5rem); }
+  .orbit-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1rem; }
+  .orbit-heading h2 { font-size: clamp(1.5rem, 2vw, 2rem); }
+  .orbit-art { margin-block: 1.5rem; min-width: 0; }
+  .orbit-arrangement, .price-list { list-style: none; padding: 0; display: grid; gap: 1.5rem; }
+  .orbit-arrangement { grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+  .orbit-anchor { min-width: 0; }
+  .orbit-photo { margin: 0; }
+  .orbit-frame { position: relative; aspect-ratio: var(--media-aspect); background: #20394b; }
+  .orbit-frame img { display: block; width: 100%; height: auto; }
+  .orbit-frame :global(video) { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+  .orbit-frame:global(.is-video-playing) :global(video) { opacity: 1; }
+  .orbit-photo-error { position: absolute; inset: 0; padding: 1rem; display: grid; place-content: center; }
+  .orbit-photo figcaption { padding-top: 0.5rem; }
+  .orbit-photo h3 { font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .orbit-photo h3:focus { outline: 3px solid var(--color-yellow); outline-offset: 4px; }
+  .orbit-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem 1rem; }
+  .orbit-foot .media-credit { color: #c7d3df; }
+  .orbit-foot a { color: #fff; }
+  .orbit-foot a:focus-visible { outline-color: var(--color-yellow); }
+  .orbit-foot .media-credit { flex: 1 1 22rem; }
+  .audience-video-toggle { min-height: 44px; padding: 0.4rem 0.85rem; border: 1px solid #95a7b7;
+    background: transparent; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  .audience-video-toggle[aria-disabled='true'] { opacity: 0.65; cursor: default; }
+  .audience-video-toggle:focus-visible { outline: 3px solid var(--color-yellow); outline-offset: 4px; }
+  .audience-video-toggle:hover { border-color: var(--color-yellow); }
+  :global(.is-orbit) .orbit-shell { position: sticky; top: var(--orbit-top); height: var(--orbit-height);
+    display: flex; flex-direction: column; gap: 0.5rem; padding-block: 1rem; }
+  :global(.is-orbit) .orbit-art { position: relative; flex: 1; min-height: 0; margin: 0; contain: paint; }
+  :global(.is-orbit) .orbit-arrangement { position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+    margin: 0; display: block; transform: translate(var(--orbit-layout-x), calc(var(--orbit-entry) - var(--orbit-caption-offset))) rotate(var(--orbit-angle)) scale(var(--orbit-scale)); }
+  :global(.is-orbit) .orbit-anchor { position: absolute; left: 0; top: 0; width: 0; height: 0;
+    transform: translate(var(--photo-x), var(--photo-y)); }
+  :global(.is-orbit) .orbit-photo { width: var(--photo-width); position: absolute; left: 0; top: 0;
+    transform-origin: 0 0; transform: rotate(var(--orbit-counterangle)) translate(-50%, -50%); }
+  :global(.is-orbit) .orbit-photo figcaption { position: absolute; top: 50%; left: calc(100% + 12px); width: 7.5rem;
+    padding: 0; opacity: var(--orbit-titles);
+    transform: translateY(calc(-50% + (1 - var(--orbit-titles)) * 8px)); }
+  :global(.is-orbit) .orbit-photo h3 { font-size: 0.875rem; }
+  :global(.is-orbit) .orbit-anchor:is([data-orbit-index="1"], [data-orbit-index="2"], [data-orbit-index="3"]) figcaption {
+    left: auto; right: calc(100% + 12px); text-align: right; }
+  :global(.is-orbit) .orbit-photo figcaption::before { content: ''; display: block; width: 1.5rem; height: 2px;
+    background: var(--color-yellow); margin-bottom: 0.3rem; }
+  :global(.is-orbit) .orbit-anchor:is([data-orbit-index="1"], [data-orbit-index="2"], [data-orbit-index="3"]) figcaption::before { margin-left: auto; }
+  :global(.is-orbit) .orbit-anchor[data-orbit-index="0"] figcaption {
+    top: calc(100% + 2rem); left: 50%; width: max-content; white-space: nowrap; text-align: center;
+    transform: translate(-50%, calc((1 - var(--orbit-titles)) * 8px)); }
+  :global(.is-orbit) .orbit-anchor[data-orbit-index="0"] figcaption::before { margin-inline: auto; }
+  @media print { :global(.is-orbit) .orbit-shell { position: static; height: auto; }
+    :global(.is-orbit) .orbit-scroll { height: auto !important; }
+    :global(.is-orbit) .orbit-art, :global(.is-orbit) .orbit-arrangement, :global(.is-orbit) .orbit-anchor,
+    :global(.is-orbit) .orbit-photo, :global(.is-orbit) .orbit-photo figcaption { position: static; transform: none;
+      width: auto; height: auto; opacity: 1; contain: none; }
+    :global(.is-orbit) .orbit-arrangement { display: grid; grid-template-columns: repeat(3, 1fr); }
   }
 
   .price-list li {

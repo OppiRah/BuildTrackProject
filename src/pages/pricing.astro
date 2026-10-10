@@ -1,15 +1,14 @@
 ---
 import { contactHref } from '../lib/contact-links.ts';
 import CtaBand from '../components/site/CtaBand.astro';
-import PageHeader from '../components/site/PageHeader.astro';
-import PlanCard from '../components/site/PlanCard.astro';
-import Section from '../components/site/Section.astro';
+import Icon from '../components/site/Icon.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { coverage } from '../config/business.ts';
 import {
   allPlanInclusions,
   exclusions,
   formatCount,
+  formatPhp,
   limitDefinitions,
   limitLabels,
   planInclusions,
@@ -17,6 +16,7 @@ import {
   priceBasis,
   priceLabel,
   pricingNote,
+  tierLabels,
   type Plan,
   type PlanLimits,
 } from '../config/pricing.ts';
@@ -29,6 +29,7 @@ const comparisonReady = plans.every(
 // Rows in tier order; the last plan builds on all others, so its inclusions list every capability.
 const capabilityRows = comparisonReady ? planInclusions(plans[plans.length - 1]!) : [];
 const limitKeys = Object.keys(limitLabels) as (keyof PlanLimits)[];
+const baseOf = (plan: Plan) => plans.find((candidate) => candidate.id === plan.buildsOn);
 // Each group is its own <tbody>: its header uses scope="rowgroup", and every data cell lists
 // its plan column, group and feature row in `headers` so the association is explicit.
 const comparisonGroups: { id: string; title: string; rows: { id: string; label: string; value: (plan: Plan) => string }[] }[] =
@@ -66,103 +67,211 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
-  <PageHeader title="Pricing" lead="Proposed Starter, Professional and Enterprise packages, in Philippine pesos.">
-    <p class="notice"><strong>{pricingNote}</strong></p>
-  </PageHeader>
+  <section class="intro on-dark" aria-labelledby="pricing-heading">
+    <div class="container intro-inner">
+      <p class="eyebrow">Pricing</p>
+      <h1 id="pricing-heading">Three proposed packages, in Philippine pesos.</h1>
+      <p class="disclosure">
+        <Icon name="info" size={22} />
+        <strong>{pricingNote}</strong>
+      </p>
+    </div>
+  </section>
 
-  <section class="section" aria-labelledby="packages-heading">
-    <div class="container stack">
+  <section class="section packages" aria-labelledby="packages-heading">
+    <div class="container">
       <h2 id="packages-heading" class="visually-hidden">Packages</h2>
-      <div class="card every-plan">
+
+      <div class="every-plan" data-reveal>
         <h3>Included in every plan</h3>
         <ul class="check-list">
           {allPlanInclusions.map((item) => <li>{item}</li>)}
         </ul>
       </div>
-      <div class="grid grid-3 plans">
-        {plans.map((plan) => <PlanCard plan={plan} />)}
+
+      <div class="plans">
+        {
+          plans.map((plan, index) => {
+            const base = baseOf(plan);
+            return (
+              <article class="plan" aria-labelledby={`plan-${plan.id}`} data-reveal style={`--i: ${index}`}>
+                <div class="plan-head">
+                  <p class="tier">{tierLabels[plan.tier]}</p>
+                  <h3 id={`plan-${plan.id}`}>{plan.name}</h3>
+                </div>
+                <div class="plan-price">
+                  {plan.amountPhp === null ? (
+                    <p class="price pending">{priceLabel(plan)}</p>
+                  ) : (
+                    <p class="price">
+                      <span class="amount">{formatPhp(plan.amountPhp)}</span>
+                      {plan.billingPeriod && <span class="period"> / {plan.billingPeriod}</span>}
+                      <span class="basis">{priceBasis}</span>
+                    </p>
+                  )}
+                </div>
+                <p class="positioning">{plan.positioning}</p>
+                <div class="actions">
+                  <a class="button button-primary" href={contactHref({ type: 'service', plan: plan.id })}>
+                    Avail {plan.name}
+                  </a>
+                  <a class="text-link" href={contactHref({ type: 'quotation', plan: plan.id })}>
+                    Request a quotation<span class="visually-hidden"> for {plan.name}</span>
+                  </a>
+                </div>
+                <div class="plan-block">
+                  <h4>Includes</h4>
+                  {plan.includes && plan.includes.length > 0 ? (
+                    <>
+                      <p class="inherits">
+                        {base ? `All ${base.name} capabilities, plus:` : 'All capabilities included in every plan, plus:'}
+                      </p>
+                      <ul class="check-list">
+                        {plan.includes.map((item) => (
+                          <li>{item}</li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p class="pending">Inclusions pending approval.</p>
+                  )}
+                </div>
+                <div class="plan-block">
+                  <h4>Onboarding and support</h4>
+                  {plan.onboarding && plan.support ? (
+                    <>
+                      {base && <p class="inherits">Replaces {base.name}'s onboarding and support; they are not added together.</p>}
+                      <ul class="plain-list">
+                        <li>{plan.onboarding}</li>
+                        <li>{plan.support}</li>
+                      </ul>
+                    </>
+                  ) : (
+                    <p class="pending">Onboarding and support pending approval.</p>
+                  )}
+                </div>
+                <div class="plan-block">
+                  <h4>Limits per organization</h4>
+                  {plan.limits === null ? (
+                    <p class="pending">Limits pending approval.</p>
+                  ) : (
+                    <ul class="limits">
+                      {limitKeys.map((key) => (
+                        <li>
+                          <strong>{formatCount(plan.limits![key])}</strong> {limitLabels[key].unit}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </article>
+            );
+          })
+        }
       </div>
-      <p class="muted">
-        Prices are monthly, {priceBasis}, in Philippine pesos. Additional capacity is quoted separately. Choosing a
-        package sends an inquiry only.
+      <p class="packages-note">
+        Prices are monthly, {priceBasis}, in Philippine pesos. Additional capacity is quoted separately. Choosing a package
+        sends an inquiry only.
       </p>
     </div>
   </section>
 
-  <Section id="comparison" tone="pale" eyebrow="Compare" title="Package comparison">
-    {
-      comparisonReady ? (
-        <div class="table-scroll" role="region" aria-labelledby="compare-caption" tabindex="0">
-          <table>
-            <caption id="compare-caption">
-              What each proposed package includes. Scroll sideways on small screens to see every package.
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col" id="cmp-feature">Feature</th>
-                {plans.map((plan) => (
-                  <th scope="col" id={`cmp-${plan.id}`}>
-                    {plan.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            {comparisonGroups.map((group) => (
-              <tbody>
-                <tr class="group">
-                  <th scope="rowgroup" colspan={plans.length + 1} id={`cmp-${group.id}`}>
-                    {group.title}
-                  </th>
-                </tr>
-                {group.rows.map((row) => (
-                  <tr>
-                    <th scope="row" id={`cmp-${group.id}-${row.id}`} headers={`cmp-feature cmp-${group.id}`}>
-                      {row.label}
-                    </th>
-                    {plans.map((plan) => (
-                      <td headers={`cmp-${plan.id} cmp-${group.id} cmp-${group.id}-${row.id}`}>{row.value(plan)}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            ))}
-          </table>
-        </div>
-      ) : (
-        <p class="pending">
-          The package comparison will appear here once each package's inclusions, onboarding, support and limits are
-          approved.
-        </p>
-      )
-    }
-  </Section>
-
-  <Section id="limits" eyebrow="Limits" title="How limits are counted">
-    <ul class="check-list">
-      {limitDefinitions.map((item) => <li>{item}</li>)}
-    </ul>
-  </Section>
-
-  <Section id="separately-quoted" tone="pale" eyebrow="Separately quoted" title="Hardware, implementation and integration">
-    <div class="stack">
-      <p>These depend on each project and are quoted separately; they are not part of any package price:</p>
+  <section class="section comparison" id="comparison" aria-labelledby="comparison-heading">
+    <div class="container">
+      <header class="section-head" data-reveal>
+        <p class="eyebrow">Compare</p>
+        <h2 id="comparison-heading">Package comparison</h2>
+      </header>
       {
-        exclusions === null ? (
-          <p class="pending">The full list of exclusions is pending approval.</p>
-        ) : exclusions.length > 0 ? (
-          <ul class="check-list">
-            {exclusions.map((item) => (
-              <li>{item}</li>
-            ))}
-          </ul>
-        ) : null
+        comparisonReady ? (
+          <div class="table-scroll compare-scroll" role="region" aria-labelledby="compare-caption" tabindex="0">
+            <table class="compare">
+              <caption id="compare-caption">
+                <span>What each proposed package includes. Scroll sideways on small screens to see every package.</span>
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" id="cmp-feature">Feature</th>
+                  {plans.map((plan) => (
+                    <th scope="col" id={`cmp-${plan.id}`}>
+                      {plan.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              {comparisonGroups.map((group) => (
+                <tbody class={`group-${group.id}`}>
+                  <tr class="group">
+                    <th scope="rowgroup" colspan={plans.length + 1} id={`cmp-${group.id}`}>
+                      <span>{group.title}</span>
+                    </th>
+                  </tr>
+                  {group.rows.map((row) => (
+                    <tr>
+                      <th scope="row" id={`cmp-${group.id}-${row.id}`} headers={`cmp-feature cmp-${group.id}`}>
+                        {row.label}
+                      </th>
+                      {plans.map((plan) => {
+                        const value = row.value(plan);
+                        return (
+                          <td
+                            headers={`cmp-${plan.id} cmp-${group.id} cmp-${group.id}-${row.id}`}
+                            class:list={{ yes: value === 'Included', no: value === 'Not included' }}
+                          >
+                            {value}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              ))}
+            </table>
+          </div>
+        ) : (
+          <p class="pending">
+            The package comparison will appear here once each package's inclusions, onboarding, support and limits are
+            approved.
+          </p>
+        )
       }
-      <p>Coverage: {coverage.current}-based.</p>
-      <p class="muted">
-        Availing a package sends a request to BuildTrack. It is not a payment, booking or active subscription.
-      </p>
     </div>
-  </Section>
+  </section>
+
+  <section class="section fine-print" aria-labelledby="fine-print-heading">
+    <div class="container">
+      <h2 id="fine-print-heading" class="visually-hidden">Limits and separately quoted items</h2>
+      <div class="fine-grid">
+        <div class="fine-block" id="limits" data-reveal>
+          <p class="eyebrow">Limits</p>
+          <h3>How limits are counted</h3>
+          <ul class="plain-list">
+            {limitDefinitions.map((item) => <li>{item}</li>)}
+          </ul>
+        </div>
+        <div class="fine-block" id="separately-quoted" data-reveal style="--i: 1">
+          <p class="eyebrow">Separately quoted</p>
+          <h3>Hardware, implementation and integration</h3>
+          <p>These depend on each project and are quoted separately; they are not part of any package price:</p>
+          {
+            exclusions === null ? (
+              <p class="pending">The full list of exclusions is pending approval.</p>
+            ) : exclusions.length > 0 ? (
+              <ul class="quoted-list">
+                {exclusions.map((item) => (
+                  <li>{item}</li>
+                ))}
+              </ul>
+            ) : null
+          }
+        </div>
+      </div>
+      <div class="terms" data-reveal>
+        <p>Coverage: {coverage.current}-based.</p>
+        <p>Availing a package sends a request to BuildTrack. It is not a payment, booking or active subscription.</p>
+      </div>
+    </div>
+  </section>
 
   <CtaBand
     title="Interested in a package?"
@@ -172,9 +281,70 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
   />
 </BaseLayout>
 
+<script>
+  import { initReveal } from '../scripts/reveal.ts';
+  initReveal();
+</script>
+
 <style>
-  .plans {
-    align-items: stretch;
+  /* ---- Intro -------------------------------------------------------------------- */
+  .intro {
+    padding-block: var(--space-8);
+    background:
+      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
+      var(--color-navy);
+    color: #fff;
+  }
+
+  @media (min-width: 64rem) {
+    .intro {
+      padding-block: var(--space-10);
+    }
+  }
+
+  .intro-inner > * + * {
+    margin-top: var(--space-5);
+  }
+
+  .intro h1 {
+    max-width: min(100%, 44rem);
+    letter-spacing: -0.02em;
+  }
+
+  .disclosure {
+    display: flex;
+    gap: var(--space-3);
+    max-width: 48rem;
+    padding: var(--space-4) var(--space-5);
+    border-left: 4px solid var(--color-yellow);
+    background: rgb(7 26 43 / 0.55);
+    color: var(--color-blue-pale);
+  }
+
+  .disclosure :global(svg) {
+    flex: none;
+    margin-top: 0.15em;
+    color: var(--color-yellow);
+  }
+
+  .disclosure strong {
+    min-width: 0;
+    font-weight: 600;
+  }
+
+  @media (max-width: 39.99rem) {
+    .disclosure {
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--space-4);
+    }
+  }
+
+  /* ---- Packages: three open columns whose rows line up (subgrid) ------------------ */
+  .every-plan {
+    margin-bottom: var(--space-10);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
   }
 
   .every-plan h3 {
@@ -184,29 +354,205 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
 
   @media (min-width: 48rem) {
     .every-plan .check-list {
-      columns: 2;
-      column-gap: var(--space-6);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2) var(--space-6);
     }
 
-    .every-plan .check-list li {
-      break-inside: avoid;
+    .every-plan .check-list li + li {
+      margin-top: 0;
     }
   }
 
-  th,
-  td {
+  .plans {
+    display: grid;
+    gap: var(--space-10) 0;
+  }
+
+  @media (min-width: 64rem) {
+    .plans {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-rows: repeat(7, auto);
+      gap: 0;
+    }
+
+    .plan {
+      display: grid;
+      grid-row: span 7;
+      grid-template-rows: subgrid;
+      padding-inline: var(--space-6);
+    }
+
+    .plan + .plan {
+      border-left: 1px solid var(--color-border);
+    }
+
+    .plan:first-child {
+      padding-left: 0;
+    }
+
+    .plan:last-child {
+      padding-right: 0;
+    }
+  }
+
+  .plan {
+    min-width: 0;
+  }
+
+  .plan > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .tier {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-blue);
+  }
+
+  .plan h3 {
+    max-width: 100%;
+    font-size: var(--text-2xl);
+  }
+
+  .price {
+    line-height: 1.1;
+  }
+
+  /* Capped by the screen width, so enlarged text never splits a price across lines. */
+  .amount {
+    font-size: min(clamp(2.5rem, 1.7rem + 2.6vw, 3.5rem), 15vw);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--color-navy);
+    white-space: nowrap;
+  }
+
+  .period {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  .basis {
+    display: block;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .price.pending {
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+
+  .positioning,
+  .inherits {
+    color: var(--color-muted);
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .plan-block {
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .plan-block > * + * {
+    margin-top: var(--space-2);
+  }
+
+  h4 {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .plain-list {
+    padding-left: 1.1rem;
+  }
+
+  .plain-list li + li {
+    margin-top: var(--space-1);
+  }
+
+  .limits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+    gap: var(--space-3) var(--space-4);
+    padding: 0;
+    list-style: none;
+  }
+
+  .limits li {
+    min-width: 0;
+    font-size: var(--text-sm);
+    line-height: 1.3;
+    color: var(--color-muted);
+    overflow-wrap: break-word;
+  }
+
+  .limits strong {
+    display: block;
+    font-size: var(--text-2xl);
+    line-height: 1.1;
+    color: var(--color-ink);
+  }
+
+  .packages-note {
+    margin-top: var(--space-8);
+    color: var(--color-muted);
+  }
+
+  /* ---- Comparison ---------------------------------------------------------------- */
+  .comparison {
+    background: var(--color-blue-pale);
+  }
+
+  .section-head {
+    margin-bottom: var(--space-6);
+  }
+
+  .section-head > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .compare-scroll {
+    border: 0;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
+  .compare th,
+  .compare td {
     padding: var(--space-3) var(--space-4);
-    border-top: 1px solid var(--color-border-strong);
+    border-top: 1px solid var(--color-border);
     text-align: left;
     vertical-align: top;
   }
 
-  thead th:not(:first-child),
-  td {
+  .compare thead th {
+    padding-block: var(--space-4);
+    border-top: 0;
+    font-size: var(--text-lg);
+  }
+
+  .compare thead th:not(:first-child),
+  .compare td {
     min-width: 9rem;
   }
 
-  tbody th[scope='row'] {
+  .compare thead th:first-child,
+  .compare tbody th[scope='row'] {
     position: sticky;
     left: 0;
     min-width: 12rem;
@@ -215,11 +561,175 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
     font-weight: 600;
   }
 
-  .group th {
-    background: var(--color-blue-pale);
+  /* The caption text stays in view while the table scrolls sideways. */
+  .compare caption span,
+  .compare .group th span {
+    display: block;
+    position: sticky;
+    left: var(--space-4);
+    max-width: min(40rem, calc(100vw - 2 * var(--gutter) - 2 * var(--space-4)));
+  }
+
+  /* Phones: narrower feature and plan columns, so more of the comparison is in view. */
+  @media (max-width: 39.99rem) {
+    .compare thead th:not(:first-child),
+    .compare td {
+      min-width: 7rem;
+    }
+
+    /* The pinned column never takes more than half the viewport, even with enlarged text. */
+    .compare thead th:first-child,
+    .compare tbody th[scope='row'] {
+      width: min(8rem, 50vw);
+      min-width: min(8rem, 50vw);
+      max-width: 50vw;
+      hyphens: auto;
+      overflow-wrap: break-word;
+    }
+
+    .compare th,
+    .compare td {
+      padding-inline: var(--space-3);
+    }
+
+    .group-price td {
+      font-size: var(--text-base);
+    }
+  }
+
+  /* Narrow relative to the text size (em follows the browser default, so enlarged text
+     qualifies sooner): unpin the feature column so whole words fit and everything scrolls. */
+  @media (max-width: 23.99em) {
+    .compare thead th:first-child,
+    .compare tbody th[scope='row'] {
+      position: static;
+      width: auto;
+      min-width: 8rem;
+      max-width: none;
+      hyphens: manual;
+    }
+  }
+
+  .compare .group th {
+    padding-top: var(--space-5);
+    border-top: 2px solid var(--color-navy);
+    background: var(--color-surface);
     font-size: var(--text-sm);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--color-ink);
+    color: var(--color-blue);
+  }
+
+  .group-price td {
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  /* Visible symbols beside the words; the words stay the accessible value. */
+  .compare td.yes::before,
+  .compare td.no::before {
+    display: inline-block;
+    width: 1.25em;
+    font-weight: 700;
+  }
+
+  .compare td.yes::before {
+    content: '✓';
+    content: '✓' / '';
+    color: var(--color-success);
+  }
+
+  .compare td.no {
+    color: var(--color-muted);
+  }
+
+  .compare td.no::before {
+    content: '–';
+    content: '–' / '';
+  }
+
+  /* ---- Fine print ------------------------------------------------------------------ */
+  .fine-grid {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 64rem) {
+    .fine-grid {
+      grid-template-columns: 2fr 3fr;
+      gap: var(--space-10);
+    }
+  }
+
+  .fine-block {
+    min-width: 0;
+  }
+
+  .fine-block > * + * {
+    margin-top: var(--space-3);
+  }
+
+  .fine-block h3 {
+    max-width: 100%;
+    font-size: var(--text-2xl);
+  }
+
+  /* Separately quoted items are not inclusions, so they carry a neutral marker, not a check. */
+  .quoted-list {
+    padding: 0;
+    list-style: none;
+  }
+
+  .quoted-list li {
+    position: relative;
+    padding: var(--space-3) 0 var(--space-3) 1.75rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .quoted-list li::before {
+    content: '';
+    position: absolute;
+    left: 0.2rem;
+    top: calc(var(--space-3) + 0.35em);
+    width: 0.8rem;
+    height: 0.8rem;
+    border: 2px solid var(--color-border-strong);
+    border-radius: 50%;
+  }
+
+  .terms {
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-muted);
+  }
+
+  .terms > * + * {
+    margin-top: var(--space-2);
+  }
+
+  /* ---- Reveals (src/scripts/reveal.ts) ---------------------------------------------- */
+  :global(.reveal-ready) [data-reveal] {
+    transition:
+      opacity 600ms ease-out,
+      transform 600ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i, 0) * 90ms);
+  }
+
+  :global(.reveal-ready) [data-reveal]:not(:global(.is-revealed)) {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  :global(.reveal-instant),
+  :global(.reveal-instant *) {
+    transition: none !important;
+  }
+
+  @media print {
+    [data-reveal] {
+      opacity: 1 !important;
+      transform: none !important;
+    }
   }
 </style>

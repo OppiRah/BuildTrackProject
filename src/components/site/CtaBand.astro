@@ -38,6 +38,14 @@ const { title, lead, primary, secondary } = Astro.props;
     color: var(--color-blue-pale);
   }
 
+  /* Narrow relative to the text size (em follows the browser default): a smaller heading keeps
+     whole words such as "Questions" and "BuildTrack?" on one line instead of splitting them. */
+  @media (max-width: 22em) {
+    h2 {
+      font-size: var(--text-xl);
+    }
+  }
+
   .actions {
     display: flex;
     flex-wrap: wrap;

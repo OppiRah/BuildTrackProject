@@ -600,7 +600,7 @@ await scenario('disclosure: an endpoint and production URL do not produce delive
   for (const [label, site] of [['configured (endpoint + production URL)', configured], ['unconfigured', unconfigured]] as const) {
     await open(site, '/how-it-works/');
     const columns = await evaluate<Record<string, string[]>>(
-      `Object.fromEntries([...document.querySelectorAll('.card')].filter((c) => c.querySelector('.card-title')).map((c) => [c.querySelector('.card-title').textContent.trim(), [...c.querySelectorAll('li')].map((li) => li.textContent.trim())]))`,
+      `Object.fromEntries([...document.querySelectorAll('#reality h3')].map((h) => [h.textContent.trim(), [...h.parentElement.querySelectorAll('li')].map((li) => li.textContent.trim())]))`,
     );
     const pending = columns['Still to come for this website'] ?? [];
     if (!pending.includes('Confirming that requests sent from the published website reach the BuildTrack contact'))
