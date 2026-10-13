@@ -2,6 +2,18 @@
 
 Updated: 2026-10-13.
 
+## Academic review version published and verified live (2026-10-13)
+
+Source commit `4ac95aec376a5a6dca6aa066f2439cef0937a2d0` was committed on `home-drawn-capabilities` using the owner's configured identity and existing attribution conventions. A fresh origin check found `main` still at `cc93f70`; `main` was fast-forwarded without rewriting history and pushed to `origin/main`, authorizing Cloudflare's automatic deployment. Exact source manifest: 54 paths in PUBLICATION_MANIFEST.md. The personal prompt, evidence, generated output, dependencies, environments and unchanged BaseLayout were excluded.
+
+Live address: https://buildtrack.sunnydelacruz.workers.dev/ . Read-only verification on 2026-10-13 passed 129 independent headless Chromium checks with all non-GET and off-origin browser requests blocked: eight public routes return 200, unknown routes return 404, navigation/current-route metadata and review labels match, Product Demo has the non-sticky shared header, and Pricing links to the standalone simulated payment page. Capabilities fit the three requested laptop viewports, remain stable when scrolling stops, reverse and hold correctly, expose one description, permit pointer hit-testing, and activate Deliveries after keyboard focus followed by scrolling. Preference changes preserve Pricing's reading position, including retained capability focus. Estimator exact/partial batch boundaries, tiny derived remainders, excess-precision rejection, labelled retained results/error focus and example restore pass. All six card/bank simulated outcomes remain explicitly simulated, collect nothing and leave the provider disconnected. Enlarged-text/no-JS fallbacks pass; no runtime errors or external requests were observed.
+
+Exact SHA-256 comparisons match the tested build for both Home and demo scripts, six revised demo screenshots, social image and font. Robots, both sitemap files (including payment-demo) and the canonical slash redirect pass. Inquiry behavior was tested locally only with mocked responses (21 scenarios); no live inquiry was sent. Local validation: 209 unit tests, 55 UI browser scenarios, type checks and build passed; automated release checks passed with both Formspree gates pending.
+
+An initial live probe used a fixed settle timeout that was too short for a description transition under load. The probe was corrected to await rendered frames and actual transition completion; the completed live run passed. This is a probe timing correction, not a physical-device performance claim. Evidence and asset hashes remain ignored under design/references/publication-20261013/.
+
+This record is a separate docs-only follow-up to the source publication. Still pending: CE validation, directly verified provider documentation/eligibility, hosted banking support, Formspree recipient verification and production-request receipt. No provider account, link, keys, transaction or dependency installation was created. Safari/Firefox, real devices, true browser zoom and screen-reader speech remain unverified. The existing BaseLayout line-ending-only status and untracked personal prompt are preserved outside publication.
+
 ## Academic review version authorized for publication (2026-10-13)
 
 The owner explicitly approved publication of the current capabilities, shared navigation, demo shell, estimator and standalone simulated payment page, with CE validation pending. This approval supersedes the historical awaiting-review entries below for this version only. No provider link is connected, no real inquiry or transaction was made, and neither Formspree delivery gate is complete.

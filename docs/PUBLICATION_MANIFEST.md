@@ -1,6 +1,6 @@
 # Academic review-version publication manifest — 2026-10-13
 
-Owner explicitly authorized publication, including the simulated payment page and estimator with CE validation pending. Branch: home-drawn-capabilities; comparison: cc93f70. This records the exact intended source commit; actual commit and live verification follow in a separate docs-only commit. No agent attribution is added; configured Git identity and existing conventions apply.
+Owner explicitly authorized publication, including the simulated payment page and estimator with CE validation pending. Source commit: `4ac95aec376a5a6dca6aa066f2439cef0937a2d0`, created on home-drawn-capabilities against cc93f70, fast-forwarded into main and pushed to origin/main on 2026-10-13. Cloudflare's automatic deployment is verified at https://buildtrack.sunnydelacruz.workers.dev/ . This records the exact source commit; the publication/live record is a separate docs-only follow-up. No agent attribution was added; configured Git identity and existing conventions were used.
 
 ## Exact source commit (54 paths)
 
@@ -88,3 +88,9 @@ Final local validation (Node 24.11.1; headless Chromium 151):
 - Exact manifest, credential patterns, deployed-output exclusions, removed runtime references, disconnected sandbox configuration and `git diff --check` audits passed. Existing provenance records inspected; changed screenshots are local fictional-demo captures.
 
 Unavailable: Safari/Firefox, physical devices, screen-reader speech, true browser zoom, CE review and provider-account evidence. Longer pinning is a design tradeoff. The technical checks support the owner-authorized academic review publication; they do not close external validation gates.
+
+## Live verification and docs-only follow-up
+
+2026-10-13: 129 read-only Chromium checks passed on the public version. Verified all eight routes, unknown-route 404, metadata, current navigation/hover/focus precedence, Pricing link, three laptop capability layouts, rendered holds/reversal/scroll-stop stability, keyboard scrolling and activation, stale-focus/Pricing preference transitions, non-sticky Product Demo header, estimator input precision and retained-result behavior, disconnected payment simulation and every simulated outcome, and enlarged no-JS fallbacks. Browser requests were limited to same-site GET; no inquiries or provider requests were sent. A fixed probe timeout was replaced with waiting for actual frame/transition completion before the completed passing run.
+
+Both published Home/demo scripts, all six updated screenshots, social image and font match the tested build by SHA-256. Robots, both sitemaps and the payment-page trailing-slash redirect pass. Evidence is ignored and excluded. This follow-up changes only `docs/PROJECT_STATE.md` and `docs/PUBLICATION_MANIFEST.md`; the source manifest above is unchanged. The personal prompt and pre-existing BaseLayout line-ending-only status remain outside both commits. CE, provider/banking and both Formspree gates remain pending.
