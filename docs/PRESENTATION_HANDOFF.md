@@ -17,7 +17,7 @@ BuildTrack is an **academic business proposal**. The website is real and public.
 | 3:45–4:30 | `/pricing/` → **Avail Professional** → `/contact/?type=service&plan=professional` | The form opens with "Avail a Service" and "Professional" chosen, and both can still be changed. The phone number, location (Lingayen, Pangasinan) and coverage are in the navy panel. Press **Send service request** with the fields empty to show the error summary. **Do not submit** unless the production test below has passed and you mean to send a real request. |
 | 4:30–5:00 | `/about/` | The three site questions BuildTrack starts from, the proposal, mission and vision, Philippines coverage, and **What is real and what is proposed**. Close by saying what is real and what is proposed. |
 
-**Optional extra minute (academic review version, publication authorized):** in the Product Demo sidebar, under **Tools**, open **Concrete estimate**, change Length to 10 and press **Calculate** (21 batches, 2 h 6 min); point to the exact breakdown and the assumption note, and say "a working calculation for teaching; a civil engineer has not reviewed it yet". Then go to **Pricing**, choose **Try the payment demo** (`/payment-demo/`): read the notice "Academic payment demonstration — no real charge", press **Accept quotation (simulated)**, **Card (simulated)**, **Simulate failure**, then **Start again** and run it to **Simulate success**; say "nothing is charged; no payment provider is connected", and point to "Provider sandbox not connected." The **Avail** buttons on Pricing still send ordinary requests through Contact.
+**Optional extra minute (academic review version, publication authorized):** in the Product Demo sidebar, under **Tools**, open **Concrete estimate**, change Length to 10 and press **Calculate** (21 batches, 2 h 6 min); point to the exact breakdown and the assumption note, and say "a working calculation for teaching; a civil engineer has not reviewed it yet". Then go to **Pricing**, choose **Try the payment demo** (`/payment-demo/`) and follow section 3a. The **Avail** buttons on Pricing still send ordinary requests through Contact.
 
 Use a phone too if you can: below about 1200 px wide (or with enlarged browser text) the navigation becomes a **Menu** button. On phones and with reduced motion, Home shows the audiences and capabilities as simple lists instead of moving sequences.
 
@@ -37,10 +37,37 @@ Use a phone too if you can: below about 1200 px wide (or with enlarged browser t
 | Public website at an HTTPS address, 7 pages + a 404 page, desktop and mobile | The four sample projects and all their figures | The cloud platform that would collect real site data |
 | Navigation, mobile menu, keyboard access, reduced-motion and enlarged-text layouts | Inventory, equipment, deliveries, tracking events and device states | Real QR/RFID/IoT hardware tracking |
 | Links that preselect the request type, service or plan on the Contact form | "Simulate scan" (adds a fake event in the browser only; reset on reload) | Mobile app, accounts, logins, payments and subscriptions |
-| Form validation, error messages and confirmation | | Integrations with other business systems |
+| Form validation, error messages and confirmation | Payment demo: quotation, email previews, checkout and result (no money or email; section 3a) | Integrations with other business systems |
 | Sending the request to Formspree (connected; see the delivery status below) | | |
 
 Delivery status: a labelled **local test** request was received by the contact on 2026-10-04. A test request sent **from the live website** has **not** yet been confirmed as received. Until it is, say "connected, and tested locally", not "proven to deliver".
+
+### 3a. The payment demo: what works, what is simulated, and the real future process
+
+*Approved by the owner for publication on 2026-10-13 (ADR-042).*
+
+**What works:** the page itself, its seven steps, the buttons, keyboard use, focus moving to each step and the restart. It runs entirely in your browser.
+
+**What is simulated:** everything about money and email. Nothing is collected, charged, emailed or verified, and no payment provider is connected. The notice says so on every step: "Academic payment demonstration — no real payment or email is sent."
+
+**How to show it (about one minute):**
+1. **Sample quotation.** The navy **Owner step** label means BuildTrack prepares it. Point to the reference, service and illustrative price. Press **Preview the quotation email**.
+2. **Quotation email preview.** Say: "This is the email BuildTrack would send; nothing is sent." Press **Continue as the customer**.
+3. **Customer decision.** The yellow **Customer step** label means the customer decides, not BuildTrack. Press **Accept quotation (simulated)**. Declining ends the process with no payment invitation.
+4. **Payment invitation email preview.** A real email would contain a payment link; this sample has none.
+5. **Payment method.** Choose **Card (simulated)**.
+6. **Fictional checkout.** Say: "A real payment provider would show this page; we never handle card details." Press **Simulate failure**, then **Start again**.
+7. **Result.** Run it again to **Simulate success**. Read the line "Simulated—no money moved. Not a payment receipt."
+
+**How the real process would work in future (not built; it needs a separate decision):**
+1. A customer sends a request through the Contact form. This part is real today.
+2. The owner prepares a quotation and emails it from their own email account.
+3. The customer accepts by replying to that email.
+4. The owner creates a payment link in a payment provider's dashboard, for example PayMongo, and emails it to the customer.
+5. The customer pays on the provider's own secure page by card or online banking. BuildTrack never sees card or bank details.
+6. The owner confirms payment in the provider's dashboard. A screenshot, a return to the website or a customer's message is never proof.
+
+This needs a provider account, the owner's identity verification, and business registration documents (DTI and BIR) before live payments. That is why it was deferred for this academic project. No backend, database or automatic emails would be needed for this manual version.
 
 ## 4. How an inquiry reaches the recipient
 
@@ -68,6 +95,7 @@ Edit files under `src/`. After you commit and push to `main`, Cloudflare rebuild
 | Home audience videos and posters; workflow and audience photos | `public/media/home/` (sources and licences: `design/media-source/`, `design/home-visual-samples/`) |
 | Website screenshot on How It Works | `public/media/site/website-contact.webp` (how it was captured: `docs/UX_BRAND.md` §11.5) |
 | Demo sample data | `src/data/demo/fixtures.ts` |
+| Payment demo steps and wording | `src/components/payment/PaymentDemo.astro`, `src/lib/payment-walkthrough.ts` |
 | Colours, spacing, fonts | `src/styles/tokens.css`, `src/styles/global.css` |
 | Logo in the header and footer | `src/components/site/Wordmark.astro` uses `public/buildtrack-mark.webp`, the emblem cut from the owner's original `design/BuildTrackLogo.jpeg`. To change it, replace the image with one of the same proportions, or ask the developer to re-crop from a new original. |
 
@@ -93,8 +121,8 @@ Other commands:
 | `npm run build` | Build the final site into `dist/` (what Cloudflare publishes) |
 | `npm run preview` | Serve the built `dist/` locally |
 | `npm run check` | Type and template check (should show 0 errors) |
-| `npm test` | Unit tests (142 should pass) |
-| `npm run test:browser` | Browser tests: 21 form scenarios, then 33 Home/demo/navigation scenarios; needs `CHROME_PATH` set to a Chromium that plays H.264 video (see `docs/ARCHITECTURE.md` §8) |
+| `npm test` | Unit tests (180 should pass) |
+| `npm run test:browser` | Browser tests: 21 inquiry-form scenarios (form-service responses mocked; nothing is sent), then 55 standard UI scenarios (Home, demo, navigation, payment demo). Setting the optional `EVIDENCE_DIR` folder adds two screenshot-capture scenarios, so the UI count becomes 57. Needs `CHROME_PATH` set to a Chromium that plays H.264 video (see `docs/ARCHITECTURE.md` §8) |
 | `npm run check:release` | Release checklist: automated values, the two open manual gates, and recorded approvals |
 
 Do not submit the form from `npm run dev` unless you intend to: the local site posts to the real Formspree endpoint.
@@ -117,6 +145,7 @@ Do not submit the form from `npm run dev` unless you intend to: the local site p
 - **"Is the dashboard live?"** No. It uses fictional sample projects to show how the proposed platform would present data. No site or device is connected.
 - **"Does the form actually work?"** It is connected to Formspree and was tested locally, and the contact received that test. *(Only after the production test passes:)* A test sent from the live site was also received on <date>.
 - **"Where is my data stored?"** The website stores nothing. Formspree receives the request and emails it to the BuildTrack contact. Formspree keeps submissions in its dashboard under its own policy.
+- **"Can customers pay online?"** No. The payment demo shows the proposed process with sample emails and a fictional checkout; nothing is charged or sent. Real payments would go through a payment provider's own page and were deferred because they need a provider account, identity verification and business registration (section 3a).
 - **"How did you choose the prices?"** They are a proposal informed by public pricing of comparable tools (Sortly, Fieldwire, EZOfficeInventory). They are not a currency conversion of those prices and have not been validated with Philippine customers.
 - **"Why is Enterprise labelled 'Custom' when it has a price?"** "Basic / Advanced / Custom" are the capability tiers from the business plan. Enterprise has a proposed starting price, and anything beyond its limits is quoted separately.
 - **"What would QR, RFID and IoT each do?"** QR labels are scanned up close with a phone. RFID tags are read without line of sight, for example at a gate. IoT devices report location or status by themselves. See the table on How It Works.

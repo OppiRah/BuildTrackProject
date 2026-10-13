@@ -2,6 +2,33 @@
 
 Updated: 2026-10-13.
 
+## Payment demo extended to the seven-step journey; provider integration deferred (2026-10-13; approved for publication)
+
+The owner approved the seven-step simulated payment walkthrough for publication on 2026-10-13. The exact source manifest is in PUBLICATION_MANIFEST.md (2026-10-13 payment-journey section). Payments and emails stay simulated, provider integration stays deferred, and CE review and both Formspree gates remain pending. The publication and live-verification record follows separately.
+
+Owner decision (ADR-042): PayMongo setup dropped, payments stay entirely simulated. `/payment-demo/` was extended, not rebuilt:
+- **Journey:** sample quotation (owner) → quotation-email preview → customer accepts or declines → payment-invitation email preview → Card / Bank transfer (simulated) → fictional checkout illustration (no fields) → simulated success / failure / cancellation with restart.
+- **Labels:** owner, customer and illustrated-provider steps are labelled distinctly. The persistent notice reads "Academic payment demonstration — no real payment or email is sent." Every result reads "Simulated—no money moved. Not a payment receipt."
+- **Email previews:** they contain no addresses or links and are not connected to Contact inquiries.
+- **No-JS:** the quotation and notice are shown, with a note listing the remaining steps.
+- **Removed:** the provider-sandbox box, `src/config/payment-sandbox.ts`, `src/lib/payment-sandbox.ts` and their 31 unit tests (nothing else used them).
+- **Wording:** the page intro, meta description and payment disclosure now add "emailed". Pricing's demo link and inquiry CTAs are unchanged.
+- **Docs:** DECISIONS ADR-042, UX_BRAND §16, ARCHITECTURE, PROPOSALS (deferral note; research preserved) and PRESENTATION_HANDOFF §3a (what works, what is simulated, the real future process).
+
+Checks (Node 24.11.1, headless Chromium from the local Playwright cache, off-origin requests blocked, inquiry responses mocked, nothing submitted):
+- `npm run check`: 0 errors/warnings.
+- `npm test`: 13 files, 180 tests.
+- `npm run build`: 9 pages.
+- `npm run test:browser`: 21/21 + 57/57. The rewritten payment scenario covers every method × outcome, role labels, email previews, no fields/links/addresses, decline, Back, Start over from each step, reload, keyboard, every step at 320 px / 32 px and no-JS. The second number includes an `EVIDENCE_DIR` capture scenario.
+- `npm run check:release`: automated requirements met.
+- `git diff --check`: clean.
+
+Visual review found the email/checkout label border stopping at the global paragraph measure; fixed. Screenshots (ignored): `design/references/payment-journey/shots/` (every step at 1440, 390 and 320 px / 32 px; bank checkout, failure, declined and no-JS at 1440). Not tested: Firefox/Safari, real devices, screen-reader speech. Nothing committed, pushed or deployed; no email, inquiry, account or transaction. The entry below is superseded by this decision.
+
+## Provider TEST checkout preparation (2026-10-13; local, uncommitted; superseded the same day by ADR-042)
+
+The PayMongo documentation was retrieved directly (no longer from search snippets) and recorded in PROPOSALS_ENGINEERING_PAYMENT.md B.1. The documented test-link format `https://pm.link/{business_handle}/test/{reference_number}` matches what `src/lib/payment-sandbox.ts` already accepts, so the validator logic is unchanged. Only its source comment was updated. The connected-state copy on `/payment-demo/` now warns against scanning a provider QR code with a real app, because PayMongo says test QR Ph codes are real. The config stays null/false. Planned first flow (manual): inquiry → owner emails quotation → customer accepts by reply → owner emails the TEST link → owner checks the PayMongo test dashboard. No automated emails, backend or database. Checks (Node 24.11.1): `npm run check` 0 errors/warnings; `npm test` 209/209; `npm run build` 9 pages; `npm run test:browser` 21/21 + 55/55; `npm run check:release` automated requirements met; `git diff --check` clean. The connected branch was rendered once with a fictional sample link in a scratch build, and the committed config was then restored. Unresolved and requiring the owner's account: whether test mode works before KYC/wallet activation, whether dashboard Test Mode creates a `/test/` link, and which methods (cards, BPI/UnionBank) the test link offers. No account, key, link, request, email or transaction.
+
 ## Academic review version published and verified live (2026-10-13)
 
 Source commit `4ac95aec376a5a6dca6aa066f2439cef0937a2d0` was committed on `home-drawn-capabilities` using the owner's configured identity and existing attribution conventions. A fresh origin check found `main` still at `cc93f70`; `main` was fast-forwarded without rewriting history and pushed to `origin/main`, authorizing Cloudflare's automatic deployment. Exact source manifest: 54 paths in PUBLICATION_MANIFEST.md. The personal prompt, evidence, generated output, dependencies, environments and unchanged BaseLayout were excluded.

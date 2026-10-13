@@ -279,6 +279,20 @@ Decision: Product Demo gains a "Tools" group beside its six tracking sections. (
 Consequence: `concrete-estimate.ts`, `payment-walkthrough.ts`, `payment-sandbox.ts` (lib), `src/config/payment-sandbox.ts`, `demo-tools.ts`, `EstimatePanel.astro`, `PaymentPanel.astro`; disclosure wording on How It Works and About. Details UX_BRAND §16; proposal and research docs/PROPOSALS_ENGINEERING_PAYMENT.md; checks PROJECT_STATE.
 Update 2026-10-12 (Codex findings and placement): the estimate uses exact decimal arithmetic (inputs limited to six decimal places; no tolerance; the final batch never exceeds rated output) and marks rounded and "< 0.001" results; its reopening announcement no longer claims example values. The sandbox link must be a supported provider's documented test route, parsed structurally (PayMongo `https://pm.link/{handle}/test/{reference}`), in addition to owner verification. The payment walkthrough moved from the Product Demo to a website page, `/payment-demo/` (shared header and footer, persistent "Academic payment demonstration — no real charge" notice, linked from Pricing; outside the main navigation); the Product Demo keeps only the estimate, and its Reset no longer involves payment. `PaymentPanel.astro` was replaced by `src/components/payment/PaymentDemo.astro`, `src/scripts/payment-demo.ts` and `src/pages/payment-demo.astro`.
 
+## ADR-042 — Provider integration deferred; payment demo stays fully simulated (publication approved 2026-10-13)
+Status: **Owner decision 2026-10-13; the seven-step simulated walkthrough was approved for publication the same day.** Supersedes ADR-041's provider sandbox connection point (item 3) only. ADR-041's history and the PayMongo research are preserved.
+Decision: the owner dropped PayMongo setup for this academic project. No provider account, test link or connection is planned, and payments stay entirely simulated. Reasons: direct research (PROPOSALS_ENGINEERING_PAYMENT.md B.1) showed that Payment Links require an activated merchant account with a closed-loop wallet after KYC. Whether test mode works before that is undocumented, and live card capability needs a registered business type. Whether a test link offers online banking is also unconfirmed, and test-mode QR Ph codes are real if scanned. Pursuing this would need the owner's identity verification and account access for a feature the course demonstration does not require. The `/payment-demo/` walkthrough was extended rather than rebuilt into the proposed seven-step journey:
+1. A sample quotation prepared by the owner (service, illustrative price, reference).
+2. A quotation-email preview.
+3. The customer's own acceptance or refusal.
+4. A payment-invitation email preview.
+5. A card or bank choice.
+6. A fictional checkout illustration without fields.
+7. A simulated success, failure or cancellation reading "Simulated—no money moved. Not a payment receipt.", with restart.
+
+Role labels distinguish owner, customer and illustrated provider steps. The persistent notice reads "Academic payment demonstration — no real payment or email is sent." Email previews send nothing, contain no addresses or links, and are not connected to Contact inquiries. The unused provider-sandbox box, `src/config/payment-sandbox.ts` and `src/lib/payment-sandbox.ts` were removed with their tests; nothing else used them.
+Consequence: `payment-walkthrough.ts`, `PaymentDemo.astro`, `payment-demo.ts`, the page intro and meta description, and the payment disclosure ("nothing is collected, charged or emailed") changed. Pricing's demo link and inquiry CTAs are unchanged. A future real process would need a separate decision: provider account and eligibility, the owner's verification, and live activation documents. Details UX_BRAND §16; handoff PRESENTATION_HANDOFF; checks PROJECT_STATE.
+
 ## Deferred release/design decisions
 
 Formspree spam settings; review of proposed font/tokens/layouts (ADR-020; logo supplied, ADR-027); hosting/domain/budget; final image assets/licenses. These do not reopen the settled product scope. They must not be presented as completed or silently fabricated.

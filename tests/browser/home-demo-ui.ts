@@ -1567,62 +1567,125 @@ await scenario('demo tools: the concrete estimate calculates, validates with an 
     { out: ['2.400 m³', '2.520 m³', '13', '1 h 18 min'], disabled: true, note: true }, 'no JavaScript');
 });
 
-await scenario('payment demo page: a clearly simulated walkthrough under the shared header, with a persistent notice, no payment fields, every outcome simulated, the sandbox not connected, and Start again', async () => {
+await scenario('payment demo page: a clearly simulated seven-step journey (quotation, email previews, customer decision, method, fictional checkout, result) with a persistent notice, owner/customer roles, no payment fields or links, no provider box, and restart', async () => {
   await send('Page.navigate', { url: 'about:blank' });
   await sleep(150);
   await open('/payment-demo/', { width: 1440, height: 900 });
-  const visibleStep = () => evaluate<string>(`[...document.querySelectorAll('[data-pay-step]')].filter((s) => !s.hidden).map((s) => s.dataset.payStep).join()`);
-  const notice = () => evaluate<boolean>(`(() => { const n = document.querySelector('.pay-notice'); return !!n && n.checkVisibility() && /^Academic payment demonstration — no real charge\\./.test(n.textContent.trim()); })()`);
+  const visibleStep = () => evaluate<string>(`[...document.querySelectorAll('[data-pay-step]')].filter((s) => s.checkVisibility()).map((s) => s.dataset.payStep).join()`);
+  const notice = () => evaluate<boolean>(`(() => { const n = document.querySelector('.pay-notice'); return !!n && n.checkVisibility() && /^Academic payment demonstration — no real payment or email is sent\\./.test(n.textContent.trim()); })()`);
+  const actor = () => evaluate<string>(`[...document.querySelectorAll('[data-pay-step]')].find((s) => s.checkVisibility())?.querySelector('.pay-actor')?.dataset.actor ?? ''`);
+  const current = () => evaluate<string>(`document.querySelector('[data-pay-progress-step][aria-current="step"]')?.dataset.payProgressStep ?? ''`);
   expectEqual({ header: await evaluate(`!!document.querySelector('[data-site-header] #site-nav') && !!document.querySelector('footer.site-footer')`), h1: await evaluate(`[...document.querySelectorAll('h1')].map((h) => h.textContent.trim())`),
-    step: await visibleStep(), notice: await notice(),
-    fictional: await evaluate(`/fictional/.test(document.querySelector('.pay-quote').textContent) && /illustrative only; nothing will be charged/.test(document.querySelector('.pay-quote').textContent)`),
-    sandbox: await evaluate(`document.querySelector('[data-sandbox-status]').textContent.trim()`), sandboxLinks: await evaluate(`document.querySelectorAll('.pay-sandbox a').length`),
-    demoHasPayment: false },
-    { header: true, h1: ['How a quotation could be paid.'], step: 'quotation', notice: true, fictional: true, sandbox: 'Provider sandbox not connected.', sandboxLinks: 0, demoHasPayment: false }, 'start');
+    step: await visibleStep(), notice: await notice(), actor: await actor(), current: await current(),
+    quote: await evaluate(`(() => { const t = document.querySelector('[data-pay-step="quotation"] .pay-rows').textContent; return /Q-DEMO-0001/.test(t) && /Service/.test(t) && /Professional plan, first month/.test(t) && /illustrative only; nothing will be charged/.test(t); })()`),
+    providerBox: await evaluate(`!!document.querySelector('.pay-sandbox, [data-sandbox-status]') || /sandbox/i.test(document.querySelector('main').textContent)`),
+    progress: await evaluate(`[...document.querySelectorAll('[data-pay-progress-step]')].map((li) => li.textContent.trim())`) },
+    { header: true, h1: ['How a quotation could be paid.'], step: 'quotation', notice: true, actor: 'owner', current: 'quotation', quote: true, providerBox: false,
+      progress: ['1. Quotation', '2. Quotation email', '3. Customer decision', '4. Payment invitation', '5. Payment method', '6. Checkout', '7. Result'] }, 'start');
   expectEqual(await evaluate(`(() => { const pay = document.querySelector('[data-pay]');
-    return { inputs: pay.querySelectorAll('input, select, textarea').length, forms: document.querySelectorAll('main form').length, media: pay.querySelectorAll('img, canvas, svg:not([aria-hidden="true"])').length,
+    return { inputs: pay.querySelectorAll('input, select, textarea').length, forms: document.querySelectorAll('main form').length, links: pay.querySelectorAll('a').length, media: pay.querySelectorAll('img, canvas, svg:not([aria-hidden="true"])').length,
+      emails: /@|https?:|www\\./i.test(pay.textContent),
       words: /\\b(card number|cvv|cvc|expiry|account number|account name|routing|iban|swift|qr ?code|upload|receipt number|reference number for your transfer)\\b/i.test(pay.textContent) }; })()`),
-    { inputs: 0, forms: 0, media: 0, words: false }, 'no payment fields, forms, codes, uploads or banking details');
-  const step = async (selector: string, expected: string, heading: string) => {
+    { inputs: 0, forms: 0, links: 0, media: 0, emails: false, words: false }, 'no payment fields, forms, links, addresses, codes, uploads or banking details (all steps)');
+  const step = async (selector: string, expected: string, heading: string, role: string) => {
     await click(selector);
-    expectEqual({ step: await visibleStep(), focus: await evaluate(`document.activeElement.id`), notice: await notice() }, { step: expected, focus: heading, notice: true }, `${selector} → ${expected}`);
+    expectEqual({ step: await visibleStep(), focus: await evaluate(`document.activeElement.id`), notice: await notice(), actor: await actor() }, { step: expected, focus: heading, notice: true, actor: role }, `${selector} → ${expected}`);
   };
-  for (const [method, label] of [['card', 'Card (simulated)'], ['bank', 'Bank transfer (simulated)']] as const) {
+  const emailPreview = (name: string) => evaluate<boolean>(`(() => { const e = document.querySelector('[data-pay-step="${name}"] .pay-email'); return e.checkVisibility() && /illustrative, not sent/.test(e.querySelector('.pay-email-label').textContent) && /From/.test(e.textContent) && /Subject/.test(e.textContent) && /Q-DEMO-0001/.test(e.textContent); })()`);
+  const toMethod = async () => {
+    await step('[data-pay-step="quotation"] [data-pay-action="next"]', 'quoteEmail', 'pay-quote-email-heading', 'owner');
+    expectEqual(await emailPreview('quoteEmail'), true, 'quotation email preview');
+    await step('[data-pay-step="quoteEmail"] [data-pay-action="next"]', 'decision', 'pay-decision-heading', 'customer');
+    await step('[data-pay-action="accept"]', 'invite', 'pay-invite-heading', 'owner');
+    expectEqual({ preview: await emailPreview('invite'), noLink: await evaluate(`/This sample contains no link\\./.test(document.querySelector('[data-pay-step="invite"]').textContent)`) }, { preview: true, noLink: true }, 'payment invitation preview');
+    await step('[data-pay-step="invite"] [data-pay-action="next"]', 'method', 'pay-method-heading', 'customer');
+  };
+  for (const [method, label, note] of [['card', 'Card (simulated)', /no fields/], ['bank', 'Bank transfer (simulated)', /no bank details or transfer instructions/]] as const) {
     for (const outcome of ['success', 'failure', 'cancelled'] as const) {
-      await step('[data-pay-action="accept"]', 'method', 'pay-method-heading');
-      await step(`[data-method="${method}"]`, 'confirm', 'pay-confirm-heading');
-      expectEqual(await evaluate(`document.querySelector('[data-pay-method]').textContent`), label, `${method}: method shown`);
-      await step(`[data-outcome="${outcome}"]`, 'result', 'pay-result-heading');
-      const result = await evaluate<{ title: string; text: string; status: string }>(`({ title: document.querySelector('[data-pay-result-title]').textContent, text: document.querySelector('[data-pay-result-text]').textContent + ' ' + document.querySelector('.pay-record').textContent, status: document.querySelector('[data-pay-status]').textContent })`);
-      if (!(/^Simulated /.test(result.title) && /No money moved/.test(result.text) && /Not a payment record/.test(result.text) && /^Simulated .*No money moved\.$/.test(result.status)) || /\bverified (the|this) payment\b|payment (is|was) (verified|confirmed)/i.test(result.text))
+      await toMethod();
+      await step(`[data-method="${method}"]`, 'checkout', 'pay-checkout-heading', 'provider');
+      const checkout = await evaluate<{ method: string; note: string; bar: string; current: string }>(`({ method: document.querySelector('[data-pay-method]').textContent, note: document.querySelector('[data-pay-checkout-note]').textContent,
+        bar: document.querySelector('.pay-checkout-bar').textContent, current: document.querySelector('[data-pay-progress-step][aria-current="step"]').dataset.payProgressStep })`);
+      if (checkout.method !== label || !note.test(checkout.note) || !/illustration only, not a real checkout/.test(checkout.bar) || checkout.current !== 'checkout') throw new Error(`${method} checkout: ${JSON.stringify(checkout)}`);
+      await step(`[data-outcome="${outcome}"]`, 'result', 'pay-result-heading', 'result');
+      const result = await evaluate<{ title: string; text: string; disclaimer: string; status: string }>(`({ title: document.querySelector('[data-pay-result-title]').textContent, text: document.querySelector('[data-pay-result-text]').textContent + ' ' + document.querySelector('.pay-record').textContent,
+        disclaimer: document.querySelector('[data-pay-disclaimer]').textContent, status: document.querySelector('[data-pay-status]').textContent })`);
+      if (!(/^Simulated /.test(result.title) && result.disclaimer === 'Simulated—no money moved. Not a payment receipt.' && /^Simulated .*Simulated—no money moved\. Not a payment receipt\.$/.test(result.status)) || /\bverified (the|this) payment\b|payment (is|was) (verified|confirmed)/i.test(result.text))
         throw new Error(`${method} ${outcome}: ${JSON.stringify(result)}`);
-      await step('[data-pay-step="result"] [data-pay-action="restart"]', 'quotation', 'pay-quotation-heading');
+      await step('[data-pay-step="result"] [data-pay-action="restart"]', 'quotation', 'pay-quotation-heading', 'owner');
     }
   }
-  // Back, Start over, decline and Start again; a reload also restarts.
-  await step('[data-pay-action="accept"]', 'method', 'pay-method-heading');
-  await step('[data-method="card"]', 'confirm', 'pay-confirm-heading');
-  await step('[data-pay-action="back"]', 'method', 'pay-method-heading');
-  await step('[data-pay-step="method"] [data-pay-action="restart"]', 'quotation', 'pay-quotation-heading');
-  await step('[data-pay-action="decline"]', 'declined', 'pay-declined-heading');
-  await step('[data-pay-step="declined"] [data-pay-action="restart"]', 'quotation', 'pay-quotation-heading');
-  await step('[data-pay-action="accept"]', 'method', 'pay-method-heading');
+  // Back, Start over from each intermediate step, decline and Start again; a reload also restarts.
+  await toMethod();
+  await step('[data-method="card"]', 'checkout', 'pay-checkout-heading', 'provider');
+  await step('[data-pay-action="back"]', 'method', 'pay-method-heading', 'customer');
+  await step('[data-pay-step="method"] [data-pay-action="restart"]', 'quotation', 'pay-quotation-heading', 'owner');
+  for (const [at, path] of [['quoteEmail', 1], ['decision', 2]] as const) {
+    for (let i = 0; i < path; i++) await click(`[data-pay-step="${i === 0 ? 'quotation' : 'quoteEmail'}"] [data-pay-action="next"]`);
+    await step(`[data-pay-step="${at}"] [data-pay-action="restart"]`, 'quotation', 'pay-quotation-heading', 'owner');
+  }
+  await step('[data-pay-step="quotation"] [data-pay-action="next"]', 'quoteEmail', 'pay-quote-email-heading', 'owner');
+  await step('[data-pay-step="quoteEmail"] [data-pay-action="next"]', 'decision', 'pay-decision-heading', 'customer');
+  await step('[data-pay-action="decline"]', 'declined', 'pay-declined-heading', 'customer');
+  expectEqual(await current(), 'decision', 'declined stays at the customer decision in the progress list');
+  await step('[data-pay-step="declined"] [data-pay-action="restart"]', 'quotation', 'pay-quotation-heading', 'owner');
+  await step('[data-pay-step="quotation"] [data-pay-action="next"]', 'quoteEmail', 'pay-quote-email-heading', 'owner');
   await open('/payment-demo/', { width: 1440, height: 900 });
   expectEqual(await visibleStep(), 'quotation', 'reload restarts');
-  // Keyboard: Enter on the focused action moves on, and each step's heading receives focus.
-  await evaluate(`document.querySelector('[data-pay-action="accept"]').focus()`);
+  // Keyboard: Enter on the focused action moves on, and each step's heading receives focus; Tab continues to its actions.
+  await evaluate(`document.querySelector('[data-pay-step="quotation"] [data-pay-action="next"]').focus()`);
   await press('Enter');
-  expectEqual({ step: await visibleStep(), focus: await evaluate(`document.activeElement.id`) }, { step: 'method', focus: 'pay-method-heading' }, 'keyboard');
+  expectEqual({ step: await visibleStep(), focus: await evaluate(`document.activeElement.id`) }, { step: 'quoteEmail', focus: 'pay-quote-email-heading' }, 'keyboard');
   await press('Tab');
-  expectEqual(await evaluate(`document.activeElement.dataset.method`), 'card', 'Tab continues to the first choice');
-  // Without JavaScript: the quotation, the notice and the not-connected sandbox, with a note.
+  expectEqual(await evaluate(`document.activeElement.textContent.trim()`), 'Continue as the customer', 'Tab continues to the step action');
+  await press('Enter');
+  await press('Tab');
+  expectEqual({ step: await visibleStep(), focus: await evaluate(`document.activeElement.dataset.payAction`) }, { step: 'decision', focus: 'accept' }, 'Tab reaches Accept');
+  // Every step reflows at 320 px with a 32 px default font.
+  await open('/payment-demo/', { width: 320, height: 700, fontSize: 32 });
+  const reflowAt = async (name: string) => { const problems = await reflowProblems(); if (problems.length) throw new Error(`${name} at 320/32: ${problems.slice(0, 4).join('; ')}`); };
+  await reflowAt('quotation');
+  for (const [selector, name] of [['[data-pay-step="quotation"] [data-pay-action="next"]', 'quoteEmail'], ['[data-pay-step="quoteEmail"] [data-pay-action="next"]', 'decision'], ['[data-pay-action="accept"]', 'invite'],
+    ['[data-pay-step="invite"] [data-pay-action="next"]', 'method'], ['[data-method="bank"]', 'checkout'], ['[data-outcome="success"]', 'result']] as const) {
+    await click(selector);
+    expectEqual(await visibleStep(), name, `320/32 ${name}`);
+    await reflowAt(name);
+  }
+  // Without JavaScript: the quotation, the notice and an explanation of the journey; no buttons.
   await open('/payment-demo/', { width: 1440, height: 900, js: false });
-  expectEqual(await evaluate(`({ quote: document.querySelector('[data-pay-step="quotation"]').checkVisibility(), note: document.querySelector('.pay-nojs').checkVisibility(), notice: document.querySelector('.pay-notice').checkVisibility(),
-      buttons: [...document.querySelectorAll('[data-pay-action]')].filter((b) => b.checkVisibility()).length, sandbox: document.querySelector('[data-sandbox-status]').checkVisibility() })`),
-    { quote: true, note: true, notice: true, buttons: 0, sandbox: true }, 'no JavaScript');
+  expectEqual(await evaluate(`({ quote: document.querySelector('[data-pay-step="quotation"]').checkVisibility(), others: [...document.querySelectorAll('[data-pay-step]')].filter((s) => s.checkVisibility()).length,
+      note: document.querySelector('.pay-nojs').checkVisibility() && /quotation email preview.*customer's decision.*payment-invitation email preview.*card or bank choice.*fictional checkout.*simulated result/.test(document.querySelector('.pay-nojs').textContent.replace(/\\s+/g, ' ')),
+      notice: document.querySelector('.pay-notice').checkVisibility(), buttons: [...document.querySelectorAll('[data-pay-action]')].filter((b) => b.checkVisibility()).length })`),
+    { quote: true, others: 1, note: true, notice: true, buttons: 0 }, 'no JavaScript');
   // The Product Demo no longer contains it.
   await open('/product-demo/', { width: 1440, height: 900 });
   expectEqual(await evaluate(`({ panel: !!document.querySelector('[data-panel="payment"]'), button: !!document.querySelector('[data-section-button="payment"]') })`), { panel: false, button: false }, 'not in the Product Demo');
+});
+
+if (process.env.EVIDENCE_DIR) await scenario('payment demo: capture each step (1440, 390, 320 px / 32 px, no JavaScript)', async () => {
+  const dir = resolve(process.env.EVIDENCE_DIR!); mkdirSync(dir, { recursive: true });
+  const capture = async (name: string) => {
+    // From the top of the page, so the sticky header stays in its own place rather than over the steps.
+    const r = await evaluate<{ x: number; y: number; width: number; height: number }>(`(() => { scrollTo({ top: 0, behavior: 'instant' }); const r = document.querySelector('[data-pay]').getBoundingClientRect(); const pad = 16;
+      return { x: Math.max(0, r.left + scrollX - pad), y: Math.max(0, r.top + scrollY - pad), width: Math.min(document.documentElement.clientWidth, r.width + pad * 2), height: r.height + pad * 2 }; })()`);
+    const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, clip: { ...r, scale: 1 } });
+    writeFileSync(join(dir, name), Buffer.from(shot.data, 'base64'));
+  };
+  const walk: [string, string][] = [['[data-pay-step="quotation"] [data-pay-action="next"]', '2-quotation-email'], ['[data-pay-step="quoteEmail"] [data-pay-action="next"]', '3-customer-decision'],
+    ['[data-pay-action="accept"]', '4-payment-invitation'], ['[data-pay-step="invite"] [data-pay-action="next"]', '5-method'], ['[data-method="card"]', '6-checkout-card'], ['[data-outcome="success"]', '7-result-success']];
+  for (const [size, options] of [['1440', { width: 1440, height: 900 }], ['390', { width: 390, height: 844 }], ['320-32px', { width: 320, height: 700, fontSize: 32 }]] as const) {
+    await open('/payment-demo/', options);
+    await capture(`${size}-1-quotation.png`);
+    for (const [selector, name] of walk) { await click(selector); await capture(`${size}-${name}.png`); }
+  }
+  await open('/payment-demo/', { width: 1440, height: 900 });
+  for (const [selector] of walk.slice(0, 4)) await click(selector);
+  await click('[data-method="bank"]'); await capture('1440-6-checkout-bank.png');
+  await click('[data-outcome="failure"]'); await capture('1440-7-result-failure.png');
+  await click('[data-pay-step="result"] [data-pay-action="restart"]');
+  for (const [selector] of walk.slice(0, 2)) await click(selector);
+  await click('[data-pay-action="decline"]'); await capture('1440-3-declined.png');
+  await open('/payment-demo/', { width: 1440, height: 900, js: false }); await capture('1440-no-javascript.png');
 });
 
 await scenario('pricing: "Try the payment demo" opens /payment-demo/ while Avail and quotation links still open inquiries; the sitemap lists the eight public pages', async () => {

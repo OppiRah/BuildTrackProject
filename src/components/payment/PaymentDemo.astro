@@ -1,26 +1,27 @@
 ---
 // Academic payment demonstration (/payment-demo/): a simulated walkthrough
-// (src/lib/payment-walkthrough.ts), never a payment. Fictional quotation → simulated acceptance →
-// card or bank choice → explicitly simulated outcome. No card, CVV or banking fields, no account
-// details or banking instructions, no QR codes, uploads or payment records; nothing is collected,
-// charged, sent or verified, and no provider is contacted. Independent of the inquiry form. The
-// optional provider sandbox link (src/config/payment-sandbox.ts) is off by default.
-import { providerSandbox } from '../../config/payment-sandbox.ts';
+// (src/lib/payment-walkthrough.ts), never a payment. Sample quotation (owner) → quotation email
+// preview → customer accepts or declines → payment-invitation email preview → card or bank choice →
+// fictional checkout illustration → explicitly simulated outcome. Email previews are illustrative:
+// nothing is sent and they are not connected to Contact inquiries. No card, CVV or banking fields, no
+// account details or banking instructions, no QR codes, uploads, links or payment records; nothing is
+// collected, charged, sent or verified, and no provider is contacted. Independent of the inquiry form.
 import { formatPhp, plans } from '../../config/pricing.ts';
-import { sandboxLink } from '../../lib/payment-sandbox.ts';
-import { methodLabels, outcomeMessages, stepLabels } from '../../lib/payment-walkthrough.ts';
+import { checkoutNotes, methodLabels, outcomeMessages, resultDisclaimer, stepLabels } from '../../lib/payment-walkthrough.ts';
 
 const plan = plans.find((p) => p.id === 'professional')!;
 // The proposed academic price, used only as an illustrative amount.
 const amount = plan.amountPhp === null ? 'an illustrative amount' : formatPhp(plan.amountPhp);
-const sandbox = sandboxLink(providerSandbox);
+const reference = 'Q-DEMO-0001';
+const client = 'Sample Client Builders (fictional)';
+const service = `${plan.name} plan, first month`;
 ---
 
 <div class="pay" data-pay>
   <p class="pay-notice" role="note">
-    <strong>Academic payment demonstration — no real charge.</strong>
+    <strong>Academic payment demonstration — no real payment or email is sent.</strong>
     Every step below is simulated: nothing is collected, charged, sent or verified, and no payment provider is
-    contacted.
+    contacted. The emails are previews only.
   </p>
 
   <ol class="pay-progress" aria-label="Walkthrough steps" data-pay-controls hidden>
@@ -34,27 +35,98 @@ const sandbox = sandboxLink(providerSandbox);
   <p class="visually-hidden" role="status" aria-live="polite" data-pay-status></p>
 
   <section class="pay-step" data-pay-step="quotation" aria-labelledby="pay-quotation-heading">
-    <h2 id="pay-quotation-heading" tabindex="-1">Fictional quotation</h2>
-    <dl class="pay-quote">
-      <div><dt>Reference</dt><dd>Q-DEMO-0001 (fictional)</dd></div>
-      <div><dt>Client</dt><dd>Sample Client Builders (fictional)</dd></div>
-      <div><dt>Item</dt><dd>{plan.name} plan, first month (proposed academic pricing)</dd></div>
+    <p class="pay-actor" data-actor="owner">Owner step: BuildTrack prepares the quotation</p>
+    <h2 id="pay-quotation-heading" tabindex="-1">Sample quotation</h2>
+    <dl class="pay-rows">
+      <div><dt>Reference</dt><dd>{reference} (fictional)</dd></div>
+      <div><dt>Client</dt><dd>{client}</dd></div>
+      <div><dt>Service</dt><dd>{service} (proposed academic pricing)</dd></div>
       <div><dt>Amount</dt><dd>{amount} (illustrative only; nothing will be charged)</dd></div>
     </dl>
     <div class="pay-actions" data-pay-controls hidden>
-      <button type="button" class="button button-primary" data-pay-action="accept">Accept quotation (simulated)</button>
-      <button type="button" class="button button-secondary" data-pay-action="decline">Decline</button>
+      <button type="button" class="button button-primary" data-pay-action="next">Preview the quotation email</button>
     </div>
-    <p class="pay-nojs" data-pay-nojs>The walkthrough's steps need JavaScript. Nothing on this page ever takes a payment.</p>
+    <p class="pay-nojs" data-pay-nojs>
+      The walkthrough's steps need JavaScript. With it, this sample quotation continues to a quotation email preview,
+      the customer's decision, a payment-invitation email preview, a card or bank choice, a fictional checkout and a
+      simulated result. Nothing on this page ever takes a payment or sends an email.
+    </p>
+  </section>
+
+  <section class="pay-step" data-pay-step="quoteEmail" aria-labelledby="pay-quote-email-heading" hidden>
+    <p class="pay-actor" data-actor="owner">Owner step: BuildTrack emails the quotation to the customer</p>
+    <h2 id="pay-quote-email-heading" tabindex="-1">Quotation email preview</h2>
+    <div class="pay-email" role="group" aria-label="Quotation email preview (illustrative, not sent)">
+      <p class="pay-email-label">Email preview: illustrative, not sent</p>
+      <dl class="pay-rows pay-email-head">
+        <div><dt>From</dt><dd>BuildTrack (sample sender)</dd></div>
+        <div><dt>To</dt><dd>{client}</dd></div>
+        <div><dt>Subject</dt><dd>Quotation {reference}: {service} (sample)</dd></div>
+      </dl>
+      <div class="pay-email-body">
+        <p>Good day,</p>
+        <p>
+          Here is quotation {reference} for the {service}, at {amount} (proposed academic pricing, illustrative). To
+          accept it, simply reply to this email. If you have questions, reply and we will be glad to help.
+        </p>
+        <p>BuildTrack</p>
+      </div>
+    </div>
+    <div class="pay-actions">
+      <button type="button" class="button button-primary" data-pay-action="next">Continue as the customer</button>
+      <button type="button" class="button button-secondary" data-pay-action="restart">Start over</button>
+    </div>
+  </section>
+
+  <section class="pay-step" data-pay-step="decision" aria-labelledby="pay-decision-heading" hidden>
+    <p class="pay-actor" data-actor="customer">Customer step: the customer decides, not BuildTrack</p>
+    <h2 id="pay-decision-heading" tabindex="-1">Customer decision</h2>
+    <p>
+      The customer reads quotation {reference} and answers by replying to the email. Choose how the sample customer
+      responds.
+    </p>
+    <div class="pay-actions">
+      <button type="button" class="button button-primary" data-pay-action="accept">Accept quotation (simulated)</button>
+      <button type="button" class="button button-secondary" data-pay-action="decline">Decline quotation (simulated)</button>
+      <button type="button" class="button button-secondary" data-pay-action="restart">Start over</button>
+    </div>
   </section>
 
   <section class="pay-step" data-pay-step="declined" aria-labelledby="pay-declined-heading" hidden>
+    <p class="pay-actor" data-actor="customer">Customer step: the customer declined</p>
     <h2 id="pay-declined-heading" tabindex="-1">Quotation declined (simulated)</h2>
-    <p>Nothing was sent. In a real flow BuildTrack would simply not issue a payment request.</p>
+    <p>Nothing was sent. In a real process BuildTrack would simply not send a payment invitation.</p>
     <div class="pay-actions"><button type="button" class="button button-secondary" data-pay-action="restart">Start again</button></div>
   </section>
 
+  <section class="pay-step" data-pay-step="invite" aria-labelledby="pay-invite-heading" hidden>
+    <p class="pay-actor" data-actor="owner">Owner step: after the customer accepts, BuildTrack sends a payment invitation</p>
+    <h2 id="pay-invite-heading" tabindex="-1">Payment invitation email preview</h2>
+    <div class="pay-email" role="group" aria-label="Payment invitation email preview (illustrative, not sent)">
+      <p class="pay-email-label">Email preview: illustrative, not sent</p>
+      <dl class="pay-rows pay-email-head">
+        <div><dt>From</dt><dd>BuildTrack (sample sender)</dd></div>
+        <div><dt>To</dt><dd>{client}</dd></div>
+        <div><dt>Subject</dt><dd>Payment invitation for quotation {reference} (sample)</dd></div>
+      </dl>
+      <div class="pay-email-body">
+        <p>Good day,</p>
+        <p>
+          Thank you for accepting quotation {reference}. In a real process, this email would contain a link to a payment
+          provider's secure checkout for {amount}, where you could pay by card or through your bank.
+        </p>
+        <p>This sample contains no link.</p>
+        <p>BuildTrack</p>
+      </div>
+    </div>
+    <div class="pay-actions">
+      <button type="button" class="button button-primary" data-pay-action="next">Continue to the payment method</button>
+      <button type="button" class="button button-secondary" data-pay-action="restart">Start over</button>
+    </div>
+  </section>
+
   <section class="pay-step" data-pay-step="method" aria-labelledby="pay-method-heading" hidden>
+    <p class="pay-actor" data-actor="customer">Customer step: the customer chooses how to pay</p>
     <h2 id="pay-method-heading" tabindex="-1">Choose a payment method (simulated)</h2>
     <p>
       Card details would be entered only on a payment provider's own secure page, never on BuildTrack, so this
@@ -67,12 +139,20 @@ const sandbox = sandboxLink(providerSandbox);
     </div>
   </section>
 
-  <section class="pay-step" data-pay-step="confirm" aria-labelledby="pay-confirm-heading" hidden>
-    <h2 id="pay-confirm-heading" tabindex="-1">Simulated payment</h2>
-    <p>
-      <span data-pay-method>{methodLabels.card}</span> for {amount}. In a real flow the provider would show its own page
-      and report the result. Here you choose a simulated result to see how each case is handled.
-    </p>
+  <section class="pay-step" data-pay-step="checkout" aria-labelledby="pay-checkout-heading" hidden>
+    <p class="pay-actor" data-actor="provider">Provider step: in a real process a payment provider shows this page</p>
+    <h2 id="pay-checkout-heading" tabindex="-1">Fictional checkout illustration</h2>
+    <div class="pay-checkout" role="group" aria-label="Fictional checkout illustration (not a real checkout)">
+      <p class="pay-checkout-bar">Sample payment provider · illustration only, not a real checkout</p>
+      <dl class="pay-rows">
+        <div><dt>Pay to</dt><dd>BuildTrack (sample)</dd></div>
+        <div><dt>Reference</dt><dd>{reference}</dd></div>
+        <div><dt>Amount</dt><dd>{amount} (illustrative)</dd></div>
+        <div><dt>Method</dt><dd data-pay-method>{methodLabels.card}</dd></div>
+      </dl>
+      <p class="pay-checkout-note" data-pay-checkout-note>{checkoutNotes.card}</p>
+    </div>
+    <p>Choose a simulated result to see how each case is handled.</p>
     <div class="pay-actions">
       <button type="button" class="button button-primary" data-pay-action="outcome" data-outcome="success">Simulate success</button>
       <button type="button" class="button button-secondary" data-pay-action="outcome" data-outcome="failure">Simulate failure</button>
@@ -82,44 +162,15 @@ const sandbox = sandboxLink(providerSandbox);
   </section>
 
   <section class="pay-step" data-pay-step="result" aria-labelledby="pay-result-heading" hidden>
+    <p class="pay-actor" data-actor="result">Result: simulated</p>
     <h2 id="pay-result-heading" tabindex="-1" data-pay-result-title>{outcomeMessages.success.title}</h2>
     <p data-pay-result-text>{outcomeMessages.success.text}</p>
     <p class="pay-record">
-      <strong>Not a payment record.</strong> A real payment's status would come only from the provider's own records, never
-      from this page, a return link, a screenshot or a customer's message.
+      <strong data-pay-disclaimer>{resultDisclaimer}</strong> A real payment's status would come only from the provider's
+      own records, never from this page, a return link, a screenshot or a customer's message.
     </p>
     <div class="pay-actions"><button type="button" class="button button-secondary" data-pay-action="restart">Start again</button></div>
   </section>
-
-  <aside class="pay-sandbox" aria-labelledby="pay-sandbox-heading">
-    <h2 id="pay-sandbox-heading">Provider sandbox</h2>
-    {
-      sandbox ? (
-        <>
-          <p>
-            A test checkout hosted by {sandbox.providerName}, in its test mode: no real charge. Its result is not proof of
-            payment; status is checked in the provider's own test dashboard.
-          </p>
-          <p>
-            <a class="text-link" href={sandbox.url} rel="noopener noreferrer" target="_blank">
-              Open the {sandbox.providerName} test checkout (opens a new tab)
-            </a>
-          </p>
-        </>
-      ) : (
-        <>
-          <p class="pay-sandbox-status" data-sandbox-status>
-            <strong>Provider sandbox not connected.</strong>
-          </p>
-          <p>
-            A provider-hosted test checkout can be linked here only after the owner verifies one in their own provider
-            account. Until then nothing on this page connects to a payment provider. Account eligibility and bank
-            channels are not confirmed, and live payments are outside this academic prototype.
-          </p>
-        </>
-      )
-    }
-  </aside>
 </div>
 
 <script>
@@ -177,8 +228,7 @@ const sandbox = sandboxLink(providerSandbox);
     font-weight: 700;
   }
 
-  .pay-step,
-  .pay-sandbox {
+  .pay-step {
     padding: var(--space-5);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -203,30 +253,104 @@ const sandbox = sandboxLink(providerSandbox);
     outline-offset: 2px;
   }
 
+  /* Who acts at this step: the owner, the customer, or (illustrated) the provider. */
+  .pay-actor {
+    display: inline-block;
+    max-width: 100%;
+    margin-bottom: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .pay-actor[data-actor='owner'] {
+    background: var(--color-navy);
+    color: #fff;
+  }
+
+  .pay-actor[data-actor='customer'] {
+    background: var(--color-yellow);
+    color: var(--color-ink);
+  }
+
+  .pay-actor[data-actor='provider'],
+  .pay-actor[data-actor='result'] {
+    border: 1px dashed var(--color-border-strong);
+    color: var(--color-ink);
+  }
+
   /* Label beside value; the value moves under its label when there is no room. */
-  .pay-quote {
+  .pay-rows {
     display: grid;
     gap: var(--space-2);
     margin: 0;
   }
 
-  .pay-quote div {
+  .pay-rows div {
     display: flex;
     flex-wrap: wrap;
     gap: 0 var(--space-3);
   }
 
-  .pay-quote dt {
+  .pay-rows dt {
     flex: 0 0 7rem;
     max-width: 100%;
     font-weight: 600;
   }
 
-  .pay-quote dd {
+  .pay-rows dd {
     flex: 1 1 12rem;
     min-width: 0;
     margin: 0;
     overflow-wrap: anywhere;
+  }
+
+  .pay-email,
+  .pay-checkout {
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .pay-email-label,
+  .pay-checkout-bar {
+    max-width: none;
+    padding: var(--space-2) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-muted);
+  }
+
+  .pay-email-head {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .pay-email-body {
+    padding: var(--space-4);
+  }
+
+  .pay-email-body p + p {
+    margin-top: var(--space-3);
+  }
+
+  .pay-checkout {
+    border-style: dashed;
+  }
+
+  .pay-checkout .pay-rows {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .pay-checkout-note {
+    padding: 0 var(--space-4) var(--space-4);
+    font-size: var(--text-sm);
+  }
+
+  .pay-step > .pay-checkout + p {
+    margin-top: var(--space-4);
   }
 
   .pay-actions {
@@ -245,15 +369,5 @@ const sandbox = sandboxLink(providerSandbox);
 
   .pay-record strong {
     color: var(--color-ink);
-  }
-
-  .pay-sandbox {
-    border: 2px dashed var(--color-border-strong);
-    background: transparent;
-    font-size: var(--text-sm);
-  }
-
-  .pay-sandbox p + p {
-    margin-top: var(--space-2);
   }
 </style>

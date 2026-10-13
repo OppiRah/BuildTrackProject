@@ -1,12 +1,15 @@
 // Payment demo page (/payment-demo/): the simulated walkthrough (src/lib/payment-walkthrough.ts).
 // In-memory only: no storage, timers or network requests; a reload or "Start again" / "Start over"
-// returns to the fictional quotation. Focus moves to each step's heading and each step is announced.
+// returns to the sample quotation. Focus moves to each step's heading and each step is announced.
 
 import {
+  checkoutNotes,
   initialPaymentState,
   methodLabels,
   outcomeMessages,
   reducePayment,
+  resultDisclaimer,
+  stepLabels,
   type PaymentAction,
   type PaymentMethod,
   type PaymentOutcome,
@@ -23,15 +26,19 @@ export function initPaymentDemo(): void {
 
   const render = (moveFocus: boolean) => {
     for (const step of container.querySelectorAll<HTMLElement>('[data-pay-step]')) step.hidden = step.dataset.payStep !== state.step;
-    const order = ['quotation', 'method', 'confirm', 'result'];
-    const current = state.step === 'declined' ? 0 : order.indexOf(state.step);
+    const order = Object.keys(stepLabels);
+    // A declined quotation stays at the customer's decision in the progress list.
+    const current = order.indexOf(state.step === 'declined' ? 'decision' : state.step);
     for (const item of container.querySelectorAll<HTMLElement>('[data-pay-progress-step]')) {
       const index = order.indexOf(item.dataset.payProgressStep ?? '');
       if (index === current) item.setAttribute('aria-current', 'step');
       else item.removeAttribute('aria-current');
       item.classList.toggle('is-done', index < current);
     }
-    if (state.method) container.querySelector('[data-pay-method]')!.textContent = methodLabels[state.method];
+    if (state.method) {
+      container.querySelector('[data-pay-method]')!.textContent = methodLabels[state.method];
+      container.querySelector('[data-pay-checkout-note]')!.textContent = checkoutNotes[state.method];
+    }
     if (state.outcome) {
       container.querySelector('[data-pay-result-title]')!.textContent = outcomeMessages[state.outcome].title;
       container.querySelector('[data-pay-result-text]')!.textContent = outcomeMessages[state.outcome].text;
@@ -40,11 +47,14 @@ export function initPaymentDemo(): void {
   };
 
   const messages: Record<PaymentState['step'], () => string> = {
-    quotation: () => 'Walkthrough restarted at the fictional quotation.',
+    quotation: () => 'Walkthrough restarted at the sample quotation.',
+    quoteEmail: () => 'Quotation email preview. Illustrative only; nothing was sent.',
+    decision: () => 'Customer decision. Accept or decline the sample quotation.',
     declined: () => 'Quotation declined (simulated). Nothing was sent.',
-    method: () => 'Quotation accepted (simulated). Choose a payment method.',
-    confirm: () => `${state.method ? methodLabels[state.method] : ''} chosen. Choose a simulated result.`,
-    result: () => (state.outcome ? `${outcomeMessages[state.outcome].title}. No money moved.` : ''),
+    invite: () => 'Quotation accepted (simulated). Payment invitation email preview; nothing was sent.',
+    method: () => 'Choose a payment method.',
+    checkout: () => `${state.method ? methodLabels[state.method] : ''} chosen. Fictional checkout illustration; choose a simulated result.`,
+    result: () => (state.outcome ? `${outcomeMessages[state.outcome].title}. ${resultDisclaimer}` : ''),
   };
 
   container.addEventListener('click', (event) => {

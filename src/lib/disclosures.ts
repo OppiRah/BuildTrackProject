@@ -20,9 +20,9 @@ export interface Disclosure {
 /** Owner authorization to build is not Civil Engineering validation. */
 const ESTIMATOR =
   "The demo's concrete estimate calculates volume, mixer batches and idealized time from your inputs: a working calculation for teaching, not yet reviewed by a civil engineer.";
-/** No provider is connected; a provider sandbox would need the owner's own verification first. */
+/** No provider is connected; provider integration is deferred (ADR-042). */
 const PAYMENT =
-  'The payment demo page is an academic simulation: nothing is collected or charged, and no payment provider is connected.';
+  'The payment demo page is an academic simulation: nothing is collected, charged or emailed, and no payment provider is connected.';
 
 const PRODUCTION_RECEIPT = 'Confirming that requests sent from the published website reach the BuildTrack contact';
 

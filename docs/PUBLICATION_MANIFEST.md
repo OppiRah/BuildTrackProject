@@ -1,3 +1,43 @@
+# Publication manifests
+
+## Seven-step simulated payment walkthrough — 2026-10-13
+
+On 2026-10-13 the owner explicitly approved the seven-step simulated payment walkthrough (ADR-042) for publication. Base: published source `4ac95aec376a5a6dca6aa066f2439cef0937a2d0` with its docs-only follow-up `dd59c82dc229e4e10c85d6f22964f6f3ad7f919e` (origin/main). Committed with the owner's configured Git identity and existing conventions (no agent attribution), merged into main without rewriting history, and pushed to origin/main, which authorizes Cloudflare's automatic deployment. Payments and emails stay simulated, provider integration stays deferred, and CE review and both Formspree gates remain pending.
+
+### Exact source commit (17 paths)
+
+- `docs/ARCHITECTURE.md`
+- `docs/DECISIONS.md`
+- `docs/PRESENTATION_HANDOFF.md`
+- `docs/PROJECT_STATE.md`
+- `docs/PROPOSALS_ENGINEERING_PAYMENT.md`
+- `docs/PUBLICATION_MANIFEST.md`
+- `docs/UX_BRAND.md`
+- `src/components/payment/PaymentDemo.astro`
+- `src/config/payment-sandbox.ts` (deleted)
+- `src/config/site.ts`
+- `src/lib/disclosures.ts`
+- `src/lib/payment-sandbox.ts` (deleted)
+- `src/lib/payment-walkthrough.ts`
+- `src/pages/payment-demo.astro`
+- `src/scripts/payment-demo.ts`
+- `tests/browser/home-demo-ui.ts`
+- `tests/payment-walkthrough.test.ts`
+
+### Exclusions
+
+- `docs/anotherpromptthatistoolongforclaudecodetoread.md`: personal prompt, untracked, must stay uncommitted.
+- `src/layouts/BaseLayout.astro`: line-ending-only working-copy status, with no content change when line endings are ignored.
+- Ignored and temporary artifacts: `design/references/` (including the `payment-journey/shots/` screenshots), `dist/`, `.astro/`, `node_modules/`, `.wrangler/`, `.claude/`, environment files and scratch builds.
+
+### Validation before commit
+
+The results are recorded in PROJECT_STATE.md. In summary: type check, 180 unit tests, build, 21 inquiry scenarios (mocked) and 55 standard UI scenarios (57 with optional evidence capture), release check and `git diff --check`. No real inquiry, email, payment, provider request, account or dependency installation.
+
+---
+
+## Historical manifest (preserved as evidence; describes source 4ac95ae)
+
 # Academic review-version publication manifest — 2026-10-13
 
 Owner explicitly authorized publication, including the simulated payment page and estimator with CE validation pending. Source commit: `4ac95aec376a5a6dca6aa066f2439cef0937a2d0`, created on home-drawn-capabilities against cc93f70, fast-forwarded into main and pushed to origin/main on 2026-10-13. Cloudflare's automatic deployment is verified at https://buildtrack.sunnydelacruz.workers.dev/ . This records the exact source commit; the publication/live record is a separate docs-only follow-up. No agent attribution was added; configured Git identity and existing conventions were used.

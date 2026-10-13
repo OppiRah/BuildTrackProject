@@ -1,6 +1,6 @@
 # BuildTrack Architecture
 
-Status: academic review-version implementation approved for publication 2026-10-13. Static hosting and the inquiry endpoint are configured; recipient verification and production-request receipt remain pending. Estimator and disconnected payment simulation are authorized teaching features; CE validation and provider integration remain unresolved.
+Status: academic review-version implementation approved for publication 2026-10-13. Static hosting and the inquiry endpoint are configured; recipient verification and production-request receipt remain pending. Estimator and disconnected payment simulation are authorized teaching features; CE validation remains unresolved; provider integration is deferred and the payment demo stays fully simulated (ADR-042).
 
 ## 1. Stack
 | Concern | Choice | Notes |
@@ -38,7 +38,6 @@ src/
     services.ts         # service catalogue (ids, names, summaries)
     pricing.ts          # Starter/Professional/Enterprise packages
     inquiry.ts          # request types, form provider settings, field limits
-    payment-sandbox.ts  # optional provider-hosted TEST link for the payment demo page; null (not connected) by default
   data/demo/
     types.ts            # demo entity types
     fixtures.ts         # DEMO_AS_OF, projects, materials, equipment, deliveries, events,
@@ -49,7 +48,6 @@ src/
     demo-state.ts       # pure demo state, actions and visibility predicates (six tracking sections + two tools)
     concrete-estimate.ts # pure batch-mixer concrete estimate: exact decimal arithmetic (≤ 6 decimal places per input), bounds, marked rounding, breakdown, sketch
     payment-walkthrough.ts # pure simulated payment walkthrough (steps, transitions, outcome wording)
-    payment-sandbox.ts  # pure check: supported provider, structurally parsed documented test route (PayMongo pm.link/{handle}/test/{ref}), owner-verified
     inquiry-params.ts   # pure URL-preselection parsing against allowlists
     inquiry-validate.ts # pure field validation
     inquiry-submit.ts   # pure response classification + submit state transitions
@@ -113,7 +111,7 @@ Trailing-slash directory URLs (Astro `build.format: 'directory'`, `trailingSlash
 ## 4. Boundaries
 - **Marketing pages** read only from `src/config/*` (plus `contact-links.ts` for CTA URLs). They render to static HTML and need no JavaScript except `nav.ts` (the Home prototype adds `reveal.ts`, `hero-video.ts`, `capability-stage.ts`, `audience-sequence.ts`, `audience-videos.ts`, `device-entrance.ts` and `stable-position.ts`, all optional enhancements; Solutions, How It Works, Pricing and About add only `reveal.ts` for one-time fade-ins; the demo adds `demo-layout.ts`; Contact and 404 add nothing beyond `nav.ts` and, on Contact, the inquiry script). `BaseLayout` takes `stickyHeader={false}` for the application-style demo page (the shared site header stays, non-sticky, above the application shell).
 - **Demo** reads only `src/data/demo/*`, `src/lib/demo-metrics.ts`, `src/lib/demo-state.ts` and, for its concrete estimate, `src/lib/concrete-estimate.ts`. It never imports pricing, contact or inquiry config and makes no network requests. Only `/product-demo/` loads `demo.ts`. Home's "demo preview" is a static, build-time render from the same fixtures (no script).
-- **Payment demo** (`/payment-demo/`) reads `src/lib/payment-walkthrough.ts`, `payment-sandbox.ts`, `src/config/payment-sandbox.ts` and the Professional plan's proposed price from `src/config/pricing.ts` (its illustrative amount). It has no form, collects nothing and makes no network requests; a configured sandbox link would be an ordinary link the visitor chooses to open.
+- **Payment demo** (`/payment-demo/`) reads `src/lib/payment-walkthrough.ts` and the Professional plan's proposed price from `src/config/pricing.ts` (its illustrative amount). It has no form, collects nothing, contains no links or addresses in its steps and makes no network requests; its email previews send nothing and are not connected to Contact inquiries. Provider integration is deferred and the sandbox configuration was removed (ADR-042).
 - **Inquiry** reads `src/config/inquiry.ts`, `services.ts` and `pricing.ts` (for allowlists and labels). Only `/contact/` loads `inquiry.ts`. The only network call in the whole site is the form POST to the provider.
 - **Pure logic** in `src/lib/` has no DOM access, so it is unit-testable; scripts in `src/scripts/` wire it to the DOM.
 

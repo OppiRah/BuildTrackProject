@@ -71,7 +71,7 @@ export const secondaryPages = [
     path: '/payment-demo/',
     navLabel: 'Payment demo',
     title: 'Payment Demo | BuildTrack',
-    description: 'An academic payment demonstration for BuildTrack: a fictional quotation and a simulated payment. No real charge.',
+    description: 'An academic payment demonstration for BuildTrack: a sample quotation, illustrative emails and a simulated payment. No real payment or email is sent.',
   },
 ] as const satisfies readonly PageMeta[];
 
