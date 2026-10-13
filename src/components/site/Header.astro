@@ -8,6 +8,7 @@ interface Props {
 }
 
 const { sticky = true } = Astro.props;
+
 const current = Astro.url.pathname;
 ---
 
@@ -33,6 +34,7 @@ const current = Astro.url.pathname;
           ))
         }
       </ul>
+      <span class="nav-indicator" aria-hidden="true" data-nav-indicator></span>
       <a class="button button-primary nav-cta" href={primaryCta.href}>{primaryCta.label}</a>
     </nav>
   </div>
@@ -49,7 +51,9 @@ const current = Astro.url.pathname;
   .site-header {
     position: relative;
     z-index: 50;
-    background: var(--color-navy);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid-quiet);
+    background-size: var(--blueprint-grid-size);
     border-bottom: 1px solid rgb(234 246 255 / 0.16);
   }
 
@@ -116,8 +120,12 @@ const current = Astro.url.pathname;
     white-space: nowrap;
   }
 
+  .nav-list a:hover,
+  .nav-list a:focus-visible {
+    color: var(--color-yellow);
+  }
+
   .nav-list a:hover {
-    color: #fff;
     text-decoration: underline;
   }
 
@@ -147,7 +155,9 @@ const current = Astro.url.pathname;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: var(--space-2) var(--gutter) var(--space-5);
-    background: var(--color-navy);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid-quiet);
+    background-size: var(--blueprint-grid-size);
     border-bottom: 1px solid rgb(234 246 255 / 0.16);
     box-shadow: var(--shadow-md);
   }
@@ -176,6 +186,12 @@ const current = Astro.url.pathname;
     margin-top: var(--space-4);
   }
 
+  /* Desktop only, with JavaScript (nav.ts): one yellow indicator that sits under the current page
+     and moves under a hovered or keyboard-focused link. */
+  .nav-indicator {
+    display: none;
+  }
+
   /* Desktop header breakpoint: set by the header fit check (docs/UX_BRAND.md §3.1).
      Must match DESKTOP_NAV_QUERY in src/scripts/nav.ts. */
   @media (min-width: 75rem) {
@@ -195,7 +211,7 @@ const current = Astro.url.pathname;
     .site-nav,
     .js-nav .site-nav {
       display: flex;
-      position: static;
+      position: relative;
       flex-basis: auto;
       align-items: center;
       gap: var(--space-5);
@@ -206,22 +222,55 @@ const current = Astro.url.pathname;
       box-shadow: none;
     }
 
+    /* Modest padding widens each link's target; the smaller gap keeps the text spacing (and the
+       header fit) unchanged. */
     .nav-list,
     .js-nav .nav-list {
       flex-direction: row;
       flex-wrap: nowrap;
-      gap: var(--space-5);
+      gap: var(--space-2);
     }
 
     .nav-list a,
     .js-nav .nav-list a {
       min-height: var(--header-height);
+      padding-inline: var(--space-2);
       border-bottom: 0;
     }
 
     .js-nav .nav-list a[aria-current='page'] {
       box-shadow: inset 0 -3px 0 var(--color-yellow);
-      padding-left: 0;
+      padding-left: var(--space-2);
+    }
+
+    /* The moving indicator replaces the static marker and the hover underline once placed. It is
+       100 px wide, moved and scaled to the target's text by a transform (no layout). */
+    .has-indicator .nav-list a[aria-current='page'] {
+      box-shadow: none;
+    }
+
+    .has-indicator .nav-list a:hover {
+      text-decoration: none;
+    }
+
+    .has-indicator .nav-indicator {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100px;
+      height: 3px;
+      background: var(--color-yellow);
+      transform-origin: 0 0;
+      transform: translate(var(--x, 0), var(--y, 0)) scaleX(var(--w, 0));
+      opacity: var(--o, 0);
+      pointer-events: none;
+    }
+
+    .has-indicator.is-indicator-ready .nav-indicator {
+      transition:
+        transform 250ms ease,
+        opacity 150ms ease;
     }
 
     .nav-cta,
@@ -231,6 +280,7 @@ const current = Astro.url.pathname;
       white-space: nowrap;
     }
   }
+
 
   /* Application-style pages (BaseLayout stickyHeader={false}): never sticky. */
   .site-header.is-static,

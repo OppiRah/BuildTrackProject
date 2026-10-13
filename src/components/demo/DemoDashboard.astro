@@ -1,16 +1,19 @@
 ---
-// Interactive Platform Demo, laid out as an application: dark sidebar (a drawer on small
-// screens), light workspace with a compact toolbar. Every row, card and chart for every
+// Interactive Platform Demo, laid out as an application below the (non-sticky) site header: a
+// full-height navy sidebar (application name, Back to website, sections, simulation note; a drawer
+// on small screens) and a light workspace with a compact header (section title, project, Reset),
+// then a short introduction and the fictional-data disclosure. Every row, card and chart for every
 // project is rendered at build time from the fixtures; src/scripts/demo.ts only shows/hides
 // them from in-memory state, so figures cannot diverge between views.
 import { DEMO_AS_OF, projects } from '../../data/demo/fixtures.ts';
 import { sectionLabels } from '../../data/demo/labels.ts';
 import { formatDateTime } from '../../lib/demo-metrics.ts';
-import { demoSections } from '../../lib/demo-state.ts';
+import { toolSections, trackingSections } from '../../lib/demo-state.ts';
 import '../../styles/demo.css';
 import DeliveriesPanel from './DeliveriesPanel.astro';
 import DevicesPanel from './DevicesPanel.astro';
 import EquipmentPanel from './EquipmentPanel.astro';
+import EstimatePanel from './EstimatePanel.astro';
 import EventsPanel from './EventsPanel.astro';
 import InventoryPanel from './InventoryPanel.astro';
 import OverviewPanel from './OverviewPanel.astro';
@@ -22,6 +25,7 @@ import OverviewPanel from './OverviewPanel.astro';
 
   <aside class="app-sidebar" id="demo-sidebar" aria-label="Demo navigation" data-demo-sidebar>
     <div class="sidebar-inner" data-sidebar-inner>
+      <p class="app-name">BuildTrack <span>Platform demo</span></p>
       <div class="sidebar-top">
         <a class="back-link" href="/">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
@@ -32,11 +36,10 @@ import OverviewPanel from './OverviewPanel.astro';
           Close<span class="visually-hidden"> sections</span>
         </button>
       </div>
-      <p class="app-name">BuildTrack <span>Platform demo</span></p>
       <nav class="demo-nav" aria-label="Demo sections" data-demo-controls hidden>
         <ul>
           {
-            demoSections.map((section) => (
+            trackingSections.map((section) => (
               <li>
                 <button
                   type="button"
@@ -50,8 +53,20 @@ import OverviewPanel from './OverviewPanel.astro';
             ))
           }
         </ul>
+        <p class="nav-group" id="demo-tools-label">Tools</p>
+        <ul aria-labelledby="demo-tools-label">
+          {
+            toolSections.map((section) => (
+              <li>
+                <button type="button" data-section-button={section} aria-controls={`demo-panel-${section}`}>
+                  {sectionLabels[section]}
+                </button>
+              </li>
+            ))
+          }
+        </ul>
       </nav>
-      <p class="sidebar-note">Simulated data. No live hardware is connected.</p>
+      <p class="sidebar-note">Academic review version. Simulated data. No live hardware is connected.</p>
     </div>
   </aside>
 
@@ -65,7 +80,7 @@ import OverviewPanel from './OverviewPanel.astro';
         <p class="toolbar-title" data-section-title aria-hidden="true">{sectionLabels.overview}</p>
       </div>
       <div class="toolbar-controls" data-demo-controls hidden>
-        <label class="field">
+        <label class="field" data-project-field>
           <span>Project</span>
           <select data-project-select>
             <option value="all">All sample projects</option>
@@ -76,9 +91,21 @@ import OverviewPanel from './OverviewPanel.astro';
       </div>
     </div>
 
+    <div class="app-intro">
+      <h1 id="demo-title">Interactive Platform Demo</h1>
+      <p>
+        How the proposed BuildTrack platform would show materials, equipment, deliveries and site activity for four
+        fictional sample projects.
+      </p>
+    </div>
+
     <p class="app-disclosure">
       <span class="sim-badge">Simulated data</span>
-      <span>Fictional projects and figures; no live hardware is connected. Snapshot as of <time datetime={DEMO_AS_OF}>{formatDateTime(DEMO_AS_OF)}</time>.</span>
+      <span>
+        <strong>Demonstration data for illustration only.</strong> Fictional projects, quantities, suppliers and events;
+        no live hardware is connected (no real construction site, QR/RFID hardware or IoT device).
+        Snapshot as of <time datetime={DEMO_AS_OF}>{formatDateTime(DEMO_AS_OF)}</time>.
+      </span>
     </p>
 
     <p class="notice demo-nojs" data-demo-nojs>
@@ -94,6 +121,7 @@ import OverviewPanel from './OverviewPanel.astro';
       <DeliveriesPanel />
       <EventsPanel />
       <DevicesPanel />
+      <EstimatePanel />
     </div>
   </div>
 </section>
@@ -101,6 +129,8 @@ import OverviewPanel from './OverviewPanel.astro';
 <script>
   import { initDemo } from '../../scripts/demo.ts';
   import { initDemoLayout } from '../../scripts/demo-layout.ts';
+  import { initDemoTools } from '../../scripts/demo-tools.ts';
   initDemo();
   initDemoLayout();
+  initDemoTools();
 </script>

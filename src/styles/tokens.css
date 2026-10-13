@@ -74,6 +74,25 @@
 
   /* Motion */
   --duration-fast: 150ms;
+
+  /* Blueprint grid for navy and ink background surfaces (from How It Works' prototype blueprint):
+     pale-blue minor lines every 24 px and major lines every 120 px. Layer it first, above the
+     surface's colour and any glow:
+       background-image: var(--blueprint-grid), <glow>;
+       background-size: var(--blueprint-grid-size), auto;
+     Backgrounds only: never over forms, tables, charts, screenshots, photos or video. The quiet
+     version is for the shared header and the demo sidebar. Static (never animated). */
+  --blueprint-grid:
+    linear-gradient(rgb(125 211 252 / 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(125 211 252 / 0.1) 1px, transparent 1px),
+    linear-gradient(rgb(125 211 252 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(125 211 252 / 0.04) 1px, transparent 1px);
+  --blueprint-grid-quiet:
+    linear-gradient(rgb(125 211 252 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(125 211 252 / 0.055) 1px, transparent 1px),
+    linear-gradient(rgb(125 211 252 / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(125 211 252 / 0.025) 1px, transparent 1px);
+  --blueprint-grid-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
 }
 
 /* Breakpoints are literal in media queries: 40rem, 48rem, 64rem, 75rem. */

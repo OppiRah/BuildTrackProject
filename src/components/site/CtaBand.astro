@@ -28,7 +28,8 @@ const { title, lead, primary, secondary } = Astro.props;
 <style>
   .cta-band {
     padding-block: var(--space-10);
-    background: linear-gradient(135deg, var(--color-ink), var(--color-navy));
+    background-image: var(--blueprint-grid), linear-gradient(135deg, var(--color-ink), var(--color-navy));
+    background-size: var(--blueprint-grid-size), auto;
     color: #fff;
   }
 

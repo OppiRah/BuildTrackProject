@@ -20,11 +20,11 @@ const questions = [
 
 // What is real, grouped by status; every approved disclosure statement is kept.
 const layers = [
-  { kind: 'working', label: 'Working', items: [status.aboutSite, status.aboutForm] },
+  { kind: 'working', label: 'Working', items: [status.aboutSite, status.aboutForm, status.estimator] },
   {
     kind: 'simulated',
     label: 'Simulated',
-    items: ['The Interactive Platform Demo uses fictional sample data; no real site or device is connected.'],
+    items: ['The Interactive Platform Demo uses fictional sample data; no real site or device is connected.', status.payment],
   },
   {
     kind: 'concept',
@@ -211,9 +211,9 @@ const layers = [
   /* ---- Intro: statement left, academic disclosure right ------------------------- */
   .intro {
     padding-block: var(--space-10);
-    background:
-      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
-      var(--color-navy);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid), radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%);
+    background-size: var(--blueprint-grid-size), auto;
     color: #fff;
   }
 
@@ -398,7 +398,9 @@ const layers = [
 
   /* ---- Mission and vision ----------------------------------------------------------- */
   .purpose {
-    background: var(--color-ink);
+    background-color: var(--color-ink);
+    background-image: var(--blueprint-grid);
+    background-size: var(--blueprint-grid-size);
     color: #fff;
   }
 

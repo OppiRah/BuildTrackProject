@@ -1,0 +1,50 @@
+---
+import PaymentDemo from '../components/payment/PaymentDemo.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { pageMeta } from '../config/site.ts';
+
+const meta = pageMeta('/payment-demo/');
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <section class="intro on-dark" aria-labelledby="payment-demo-heading">
+    <div class="container intro-inner">
+      <p class="eyebrow">Academic review version · Payment demo</p>
+      <h1 id="payment-demo-heading">How a quotation could be paid.</h1>
+      <p class="lead">
+        A simulated walkthrough for this academic prototype: a fictional quotation, a simulated acceptance, a card or
+        bank choice and a simulated result. Requests on the Contact page stay separate and are never payments.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <PaymentDemo />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .intro {
+    padding-block: var(--space-8);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid), radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%);
+    background-size: var(--blueprint-grid-size), auto;
+    color: #fff;
+  }
+
+  .intro-inner > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .intro h1 {
+    max-width: 100%;
+    letter-spacing: -0.02em;
+  }
+
+  .intro .lead {
+    max-width: 46rem;
+    color: var(--color-blue-pale);
+  }
+</style>

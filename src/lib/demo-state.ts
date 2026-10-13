@@ -13,8 +13,14 @@ import type {
 } from '../data/demo/types.ts';
 import { inScope, isLowStock, type Alert, type ProjectScope } from './demo-metrics.ts';
 
-export const demoSections = ['overview', 'inventory', 'equipment', 'deliveries', 'events', 'devices'] as const;
+/** The six tracking sections, which show the fictional fixtures. */
+export const trackingSections = ['overview', 'inventory', 'equipment', 'deliveries', 'events', 'devices'] as const;
+/** Tools beside the tracking sections: a working academic calculation. They never read or change the
+ * tracking fixtures, metrics or filters. (The payment demo is a website page, /payment-demo/.) */
+export const toolSections = ['estimate'] as const;
+export const demoSections = [...trackingSections, ...toolSections] as const;
 export type DemoSection = (typeof demoSections)[number];
+export const isToolSection = (section: DemoSection): boolean => (toolSections as readonly string[]).includes(section);
 
 export const MAX_SIMULATED_EVENTS = 5;
 

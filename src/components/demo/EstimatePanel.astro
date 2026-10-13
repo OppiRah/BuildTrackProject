@@ -1,0 +1,117 @@
+---
+// Concrete estimate: a working academic calculation (src/lib/concrete-estimate.ts, exact decimal
+// arithmetic) beside the tracking sections. The fictional example is calculated at build time, so it
+// is shown without JavaScript; src/scripts/demo-tools.ts recalculates from the visitor's values. It
+// never reads or changes the tracking fixtures.
+import {
+  breakdown,
+  defaultEstimateInput,
+  estimate,
+  estimateFields,
+  MAX_DECIMALS,
+  showDuration,
+  showQuantity,
+  sketch,
+} from '../../lib/concrete-estimate.ts';
+import Panel from './Panel.astro';
+
+const input = defaultEstimateInput;
+const result = estimate(input);
+const shape = sketch(Number(input.length), Number(input.width), Number(input.depth));
+const steps = breakdown(input, result);
+---
+
+<Panel
+  section="estimate"
+  title="Concrete estimate"
+  badge="Academic calculation"
+  lead="Concrete volume and batch-mixer time for one rectangular element, such as a slab or footing. A working calculation for teaching: a simple formula, not AI, and not structural, mix-design or safety advice. Civil Engineering review is still pending."
+>
+  <div class="estimate" data-estimate>
+    <form class="estimate-form" data-estimate-form novalidate aria-labelledby="estimate-form-heading">
+      <h3 id="estimate-form-heading">Inputs</h3>
+      <div class="estimate-errors" data-estimate-errors tabindex="-1" role="group" aria-labelledby="estimate-errors-heading" hidden>
+        <p id="estimate-errors-heading"><strong>Check these values:</strong></p>
+        <ul data-estimate-error-list></ul>
+      </div>
+      <p class="estimate-hint">Plain numbers with up to {MAX_DECIMALS} decimal places; extra trailing zeros are allowed. Inputs are never rounded to fit this limit.</p>
+      <div class="estimate-fields">
+        {
+          estimateFields.map((field) => (
+            <div class="estimate-field">
+              <label for={`estimate-${field.key}`}>
+                {field.label} <span class="unit">({field.unit})</span>
+              </label>
+              {field.hint && (
+                <p class="estimate-hint" id={`estimate-${field.key}-hint`}>
+                  {field.hint}
+                </p>
+              )}
+              <input
+                id={`estimate-${field.key}`}
+                name={field.key}
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                value={input[field.key]}
+                aria-describedby={[field.hint ? `estimate-${field.key}-hint` : '', `estimate-${field.key}-range`].filter(Boolean).join(' ')}
+                data-estimate-input={field.key}
+                disabled
+              />
+              <p class="estimate-range" id={`estimate-${field.key}-range`}>
+                {field.min} to {field.max} {field.unit}
+              </p>
+              <p class="estimate-error" id={`estimate-${field.key}-error`} data-estimate-error={field.key} hidden></p>
+            </div>
+          ))
+        }
+      </div>
+      <div class="estimate-actions" data-demo-controls hidden>
+        <button type="submit" class="demo-button">Calculate</button>
+        <button type="button" class="demo-button demo-button-quiet" data-estimate-example>Use the example values</button>
+      </div>
+      <p class="estimate-nojs" data-tools-nojs>Calculating your own values needs JavaScript; the example result is shown below.</p>
+    </form>
+
+    <div class="estimate-results" data-estimate-results>
+      <h3>Result</h3>
+      <p class="estimate-hint" data-estimate-result-state role="status">Result for the example values shown in Inputs.</p>
+      <figure class="estimate-sketch">
+        <svg viewBox="0 0 400 220" role="img" aria-labelledby="estimate-sketch-label" data-estimate-sketch>
+          <title id="estimate-sketch-label" data-estimate-sketch-label>
+            Rectangular element, {input.length} m long, {input.width} m wide and {input.depth} m deep
+          </title>
+          <polygon class="face-top" points={shape.top} data-face="top"></polygon>
+          <polygon class="face-side" points={shape.side} data-face="side"></polygon>
+          <polygon class="face-front" points={shape.front} data-face="front"></polygon>
+          <text x={shape.labels.length[0]} y={shape.labels.length[1]} text-anchor="middle" data-label="length">L = {input.length} m</text>
+          <text x={shape.labels.width[0]} y={shape.labels.width[1]} data-label="width">W = {input.width} m</text>
+          <text x={shape.labels.depth[0]} y={shape.labels.depth[1]} text-anchor="end" data-label="depth">D = {input.depth} m</text>
+        </svg>
+        <figcaption data-estimate-scale>{shape.depthToScale ? 'Drawn to scale.' : 'Schematic; depth not drawn to scale.'}</figcaption>
+      </figure>
+      <dl class="estimate-figures">
+        <div><dt>Concrete volume</dt><dd data-estimate-out="volume">{showQuantity(result.volume, 'm³').text}</dd></div>
+        <div><dt>With waste allowance</dt><dd data-estimate-out="adjusted">{showQuantity(result.adjustedVolume, 'm³').text}</dd></div>
+        <div><dt>Mixer batches</dt><dd data-estimate-out="batches">{String(result.batches)}</dd></div>
+        <div><dt>Idealized production time</dt><dd data-estimate-out="time">{showDuration(result.minutes).text}</dd></div>
+      </dl>
+      <p class="estimate-legend">
+        Results show volumes to 0.001 m³ and time to the minute. "≈" marks a rounded figure and "&lt; 0.001" a volume
+        smaller than that; the calculation itself uses exact values, shown below.
+      </p>
+
+      <h4>How it is calculated (exact values)</h4>
+      <ol class="estimate-steps" data-estimate-steps>
+        {steps.map((line) => <li>{line}</li>)}
+      </ol>
+
+      <ul class="estimate-notes">
+        <li><strong>Assumption:</strong> every batch, including a final partial batch, takes the same cycle time. This simplification is pending Civil Engineering review; it is not an established physical rule and is not shown to be conservative.</li>
+        <li>"Idealized" means one batch mixer working back to back: no waiting, placing, breaks or breakdowns.</li>
+        <li>Mixer output is the rated mixed-concrete output per batch, not the drum's volume; the final batch is never more than that. Truck and continuous mixers are not modelled.</li>
+        <li>Cement bags, sand, gravel and water are not estimated: they depend on a mix design. Nothing here changes the tracking sections' figures.</li>
+      </ul>
+    </div>
+  </div>
+</Panel>

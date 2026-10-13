@@ -105,8 +105,13 @@ const realityColumns = [
   { kind: 'pending', title: 'Still to come for this website', items: status.stillToCome },
   {
     kind: 'simulated',
-    title: 'Simulated in the demo',
-    items: ['Construction projects and their figures', 'Inventory, equipment and deliveries', 'Tracking events and device states'],
+    title: 'Simulated',
+    items: [
+      'Construction projects and their figures',
+      'Inventory, equipment and deliveries',
+      'Tracking events and device states',
+      'The payment demo page: nothing is charged and no payment provider is connected',
+    ],
   },
   {
     kind: 'concept',
@@ -310,7 +315,8 @@ const concepts: { name: string; paths: string[] }[] = [
           <h3 id="part-simulated-heading">Simulated platform</h3>
           <p>
             The Interactive Platform Demo runs in your browser. Its projects, figures, inventory, equipment, deliveries,
-            events and device states are fictional, and it is not connected to any hardware.
+            events and device states are fictional, and it is not connected to any hardware. {status.payment}
+            {status.estimator}
           </p>
           <figure class="frame frame-simulated" data-reveal>
             <img
@@ -397,9 +403,9 @@ const concepts: { name: string; paths: string[] }[] = [
   .intro {
     overflow: hidden;
     padding-block: var(--space-8) var(--space-10);
-    background:
-      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
-      var(--color-navy);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid), radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%);
+    background-size: var(--blueprint-grid-size), auto;
     color: #fff;
   }
 
@@ -439,13 +445,15 @@ const concepts: { name: string; paths: string[] }[] = [
     min-width: 0;
   }
 
-  /* Connector from each node to the next. */
-  .flow li + li::before {
+  /* Connector from each node's outer edge to the next node's outer edge, never inside a circle.
+     Anchored to the fixed-size node at the top of its column, so wrapped names cannot move it; the
+     next node starts at the left edge of the next column (equal columns, no gap). */
+  .flow li:not(:last-child)::after {
     content: '';
     position: absolute;
-    top: 1.75rem;
-    right: calc(100% - 1.75rem);
-    width: 100%;
+    top: calc(1.75rem - 1px);
+    left: 3.5rem;
+    width: calc(100% - 3.5rem);
     height: 2px;
     background: linear-gradient(90deg, var(--color-yellow), rgb(255 212 59 / 0.35));
   }
@@ -487,8 +495,15 @@ const concepts: { name: string; paths: string[] }[] = [
       gap: var(--space-3);
     }
 
-    .flow li + li::before {
-      display: none;
+    /* Stacked: from the node's bottom edge down to the next node's top edge (the next row starts
+       one row gap below this item, whose node sits at its top). */
+    .flow li:not(:last-child)::after {
+      top: 3.5rem;
+      bottom: calc(-1 * var(--space-3));
+      left: calc(1.75rem - 1px);
+      width: 2px;
+      height: auto;
+      background: linear-gradient(180deg, var(--color-yellow), rgb(255 212 59 / 0.35));
     }
 
     .flow a {
@@ -830,16 +845,8 @@ const concepts: { name: string; paths: string[] }[] = [
   .reality {
     --line: #7dd3fc;
     background-color: var(--color-navy);
-    background-image:
-      linear-gradient(rgb(125 211 252 / 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(125 211 252 / 0.1) 1px, transparent 1px),
-      linear-gradient(rgb(125 211 252 / 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(125 211 252 / 0.04) 1px, transparent 1px);
-    background-size:
-      120px 120px,
-      120px 120px,
-      24px 24px,
-      24px 24px;
+    background-image: var(--blueprint-grid);
+    background-size: var(--blueprint-grid-size);
     color: #fff;
   }
 

@@ -9,6 +9,7 @@ export const sectionLabels = {
   deliveries: 'Deliveries',
   events: 'Activity',
   devices: 'Devices',
+  estimate: 'Concrete estimate',
 } as const;
 
 export const categoryLabels: Record<MaterialCategory, string> = {

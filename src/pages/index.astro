@@ -29,7 +29,7 @@ const capabilities: { id: string; label: string; title: string; text: string; im
     title: 'Assignments, utilization and maintenance',
     text: 'Where each tagged unit is assigned, how much it worked in the last seven days, and which units are idle or under maintenance.',
     image: '/media/demo/demo-equipment.webp',
-    alt: 'Equipment section of the demo, marked Simulated data: seven-day utilization bars for sample units with their status, such as a tower crane active at 90% and a dump truck under maintenance.',
+    alt: 'Equipment section of the demo, marked Simulated data: seven-day utilization bars for sample units with their status, such as a tower crane active at 90% and a concrete pump idle at 10%.',
     caption: 'Equipment utilization and status. Fictional sample data.',
     href: '/product-demo/#demo-panel-equipment',
     linkText: 'Open Equipment in the demo',
@@ -57,6 +57,121 @@ const capabilities: { id: string; label: string; title: string; text: string; im
     linkText: 'Open the Overview in the demo',
   },
 ];
+
+// Illustrative layout drawings, one per capability, in the screenshots' 1088x816 space: outlines of
+// the demo page's own regions, measured from each screenshot (title and project picker, the
+// simulated-data notice, filters or summary cards, then that section's bars or table). Not data
+// and not a device. Each drawing is split into horizontal bands that tile the screenshot from top
+// to bottom; in the enhanced layout the outlines draw in one after another, and each band of the
+// screenshot is revealed gradually as its outlines resolve, while they fade
+// (src/scripts/capability-stage.ts).
+type Band = { y0: number; y1: number; strokes: string[] };
+const box = (x: number, y: number, w: number, h: number) => `M${x} ${y}h${w}v${h}h${-w}z`;
+const line = (x1: number, y: number, x2: number) => `M${x1} ${y}H${x2}`;
+/** A panel continuing past the bottom of the screenshot: sides and top edge only. */
+const openBox = (x: number, y: number, w: number) => `M${x} 816V${y}H${x + w}V816`;
+const pageHeader = (titleEnd: number): Band => ({
+  y0: 0,
+  y1: 116,
+  strokes: [line(18, 74, titleEnd), line(688, 29, 740), box(688, 46, 281, 46), box(983, 42, 87, 52), line(16, 110, 1072)],
+});
+/** The workspace introduction and disclosure: heading, sentence, Simulated data badge, two disclosure
+ * lines and the status line (whose length depends on the section). */
+const intro = (statusEnd: number): Band => ({
+  y0: 116,
+  y1: 310,
+  strokes: [line(18, 135, 263), line(18, 161, 963), box(16, 185, 163, 34), line(18, 237, 1045), line(18, 262, 603), line(18, 295, statusEnd)],
+});
+/** Bar chart rows: a label line and the bar's track. */
+const barRows = (rows: number, labelY: number) =>
+  Array.from({ length: rows }, (_, i) => [line(18, labelY + i * 56.5, 430), box(17, labelY + 17 + i * 56.5, 1054, 11)]).flat();
+const drawings: Record<string, Band[]> = {
+  materials: [
+    pageHeader(158),
+    intro(399),
+    { y0: 310, y1: 490, strokes: [line(18, 334, 771), line(18, 364, 184), line(18, 408, 84), box(17, 424, 380, 48), box(423, 436, 22, 22), line(453, 447, 562)] },
+    { y0: 490, y1: 780, strokes: [line(18, 512, 457), ...barRows(4, 562)] },
+    { y0: 780, y1: 816, strokes: [openBox(17, 794, 1054)] },
+  ],
+  equipment: [
+    pageHeader(181),
+    intro(461),
+    { y0: 310, y1: 490, strokes: [line(18, 334, 745), line(18, 364, 371), line(18, 408, 63), box(17, 424, 380, 48)] },
+    { y0: 490, y1: 816, strokes: [line(18, 512, 293), ...barRows(5, 562)] },
+  ],
+  deliveries: [
+    pageHeader(165),
+    intro(415),
+    {
+      y0: 310,
+      y1: 535,
+      strokes: [line(18, 334, 767), line(18, 379, 63), box(17, 394, 380, 48), box(18, 468, 163, 51), box(190, 468, 148, 51), box(347, 468, 153, 51), box(509, 468, 139, 51)],
+    },
+    { y0: 535, y1: 816, strokes: [openBox(17, 545, 1054), line(36, 574, 179), box(17, 605, 1054, 48), line(17, 767, 1071)] },
+  ],
+  reporting: [
+    pageHeader(160),
+    intro(311),
+    {
+      y0: 310,
+      y1: 625,
+      strokes: [
+        line(18, 334, 747), line(18, 364, 88),
+        box(17, 403, 341, 167), box(373, 403, 342, 167), box(729, 403, 342, 167), line(45, 436, 192), line(400, 436, 639), line(756, 436, 895),
+        line(18, 596, 458),
+      ],
+    },
+    {
+      y0: 625,
+      y1: 816,
+      strokes: [
+        line(17, 658, 517), line(18, 699, 188), line(18, 744, 493), box(17, 792, 500, 10), box(17, 806, 500, 10),
+        line(570, 658, 1071), line(570, 699, 642), line(570, 757, 647), line(570, 790, 1058),
+      ],
+    },
+  ],
+};
+// Pacing within each capability's share of the scroll (fractions of that segment; the script sets
+// the progress as --t). Outlines draw one after another in reading order between DRAW_START and
+// DRAW_END, each over STROKE_SPAN, so about four are in progress at once. Each band's screenshot
+// region is revealed from just before its first outline completes until REVEAL_END - DRAW_END after
+// its last one does, so the last band finishes at REVEAL_END and the finished screen holds for the
+// rest of the segment (about 40% drawing, overlapping reveal to 75%, 25% hold).
+const DRAW_START = 0.03;
+const DRAW_END = 0.43;
+const STROKE_SPAN = 0.07;
+const REVEAL_LEAD = 0.02;
+const REVEAL_END = 0.75;
+const pacing = (bands: Band[]) => {
+  const total = bands.reduce((sum, band) => sum + band.strokes.length, 0);
+  const step = (DRAW_END - DRAW_START - STROKE_SPAN) / (total - 1);
+  let i = 0;
+  return bands.map((band) => {
+    const starts = band.strokes.map(() => DRAW_START + i++ * step);
+    return { starts, reveal: [starts[0]! + STROKE_SPAN - REVEAL_LEAD, starts.at(-1)! + STROKE_SPAN + REVEAL_END - DRAW_END] };
+  });
+};
+/** Each band's reveal window as "start,end;start,end;..." for the script (data-cap-windows: its own
+ * attribute, never the entrance reveals' [data-reveal], whose 500 ms transition would smooth and
+ * delay every scroll-driven change). */
+const revealWindows = (bands: Band[]) => pacing(bands).map(({ reveal }) => reveal.map((x) => x.toFixed(4)).join(',')).join(';');
+
+/** The screenshot's reveal mask in the enhanced layout: one full layer (shown once every band is
+ * revealed, so the finished screen is exact) and one layer per band, each a soft top-to-bottom
+ * sweep driven by that band's reveal progress (--r0, --r1, ...). Custom properties, so the static
+ * layout (which never uses them) always shows the whole screenshot. */
+const revealMask = (bands: Band[]) => {
+  const layers = ['linear-gradient(rgb(0 0 0 / var(--done, 0)), rgb(0 0 0 / var(--done, 0)))'];
+  const sizes = ['100% 100%'];
+  const positions = ['0 0'];
+  bands.forEach((band, k) => {
+    const height = band.y1 - band.y0;
+    layers.push(`linear-gradient(#000 calc(var(--r${k}, 0) * 140% - 40%), transparent calc(var(--r${k}, 0) * 140%))`);
+    sizes.push(`100% ${((height / 816) * 100).toFixed(3)}%`);
+    positions.push(`0 ${height === 816 ? 0 : ((band.y0 / (816 - height)) * 100).toFixed(3)}%`);
+  });
+  return `--cap-mask: ${layers.join(', ')}; --cap-mask-size: ${sizes.join(', ')}; --cap-mask-position: ${positions.join(', ')}`;
+};
 
 // Three steps, each led by an illustrative stock photo (crops recorded in
 // design/home-visual-samples/CROPS.json). The section lead states what is simulated.
@@ -117,7 +232,7 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
     </div>
     <div class="container hero-inner">
       <div class="hero-copy">
-        <p class="hero-label">Academic business prototype</p>
+        <p class="hero-label">Academic review version</p>
         <h1 id="hero-heading">Know your materials. Track your equipment. Keep projects moving.</h1>
         <p class="hero-lead">
           Explore BuildTrack’s proposed approach to construction resource management—from inventory and equipment to
@@ -166,7 +281,7 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
                 height="800"
                 loading="lazy"
                 decoding="async"
-                alt="The Interactive Platform Demo on a laptop: a navy sidebar with its six sections and a light Overview workspace with the project picker, Reset, a Simulated data label and low-stock, utilization and delivery figures."
+                alt="The Interactive Platform Demo on a laptop: a navy sidebar with the BuildTrack name, Back to website and its six sections, and a light Overview workspace with the project picker, Reset, a short introduction, a Simulated data label and low-stock, utilization and delivery figures."
               />
             </div>
             <div class="laptop-base"></div>
@@ -178,7 +293,7 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
               height="952"
               loading="lazy"
               decoding="async"
-              alt="The demo in this website on a phone-sized screen: a Sections button, project picker and Reset above the Simulated data label and Overview figures."
+              alt="The demo in this website on a phone-sized screen: Back to website, a Sections button, project picker and Reset above a short introduction, the Simulated data label and Overview figures."
             />
           </div>
         </div>
@@ -187,44 +302,93 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
     </div>
   </section>
 
-  <section class="capabilities" id="capabilities" aria-labelledby="capabilities-heading" data-scrolly>
-    <div class="scrolly-sticky" data-scrolly-sticky>
-      <div class="scrolly-content" data-scrolly-content>
-        <div class="container scrolly-head">
-          <header class="section-intro stack" data-reveal>
-            <p class="eyebrow">Capabilities</p>
-            <h2 id="capabilities-heading">Four things BuildTrack proposes to keep track of</h2>
-            <p class="lead">Each panel shows a screen from the simulated demo and opens that part of it.</p>
-          </header>
-          <p class="scrolly-more">
-            <a class="text-link" href="/solutions/">Explore all solutions and services <Icon name="arrow" size={20} /></a>
-          </p>
-        </div>
-        <div class="scrolly-viewport" data-scrolly-viewport>
-          <ol class="scrolly-track" data-scrolly-track>
-            {
-              capabilities.map((item, index) => (
-                <li class="scrolly-panel" id={`capability-${item.id}`}>
-                  <figure class="panel-media">
-                    <img src={item.image} width="1088" height="816" loading="lazy" decoding="async" alt={item.alt} />
-                    <figcaption>{item.caption}</figcaption>
-                  </figure>
-                  <div class="panel-body">
-                    <p class="panel-label">
-                      <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span> {item.label}
+  <section class="capabilities" id="capabilities" aria-labelledby="capabilities-heading" data-cap>
+    <div class="container">
+      <header class="cap-head stack" data-reveal>
+        <p class="eyebrow">Capabilities</p>
+        <h2 id="capabilities-heading">Four things BuildTrack proposes to keep track of</h2>
+        <p class="lead">Each screen comes from the simulated demo and opens that part of it.</p>
+      </header>
+    </div>
+    <div class="cap-track" data-cap-track>
+      <div class="cap-pin" data-cap-pin>
+        <div class="container cap-layout" data-cap-layout>
+          <div class="cap-text">
+            <ol class="cap-list" data-cap-list>
+              {
+                capabilities.map((item, index) => (
+                  <li class="cap-item" id={`capability-${item.id}`} data-cap-item>
+                    <p class="cap-label">
+                      <span class="cap-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span> {item.label}
                     </p>
                     <h3>{item.title}</h3>
-                    <p>{item.text}</p>
-                    <a class="text-link" href={item.href}>
-                      {item.linkText} <Icon name="arrow" size={20} />
-                    </a>
-                  </div>
-                </li>
-              ))
-            }
-          </ol>
+                    <div
+                      class="cap-detail"
+                      role="group"
+                      aria-label={`${item.label}: ${item.title}`}
+                      data-cap-detail
+                      data-for={`capability-${item.id}`}
+                    >
+                      <div class="cap-detail-inner">
+                        <p>{item.text}</p>
+                        <a class="text-link" href={item.href}>
+                          {item.linkText} <Icon name="arrow" size={20} />
+                        </a>
+                      </div>
+                    </div>
+                    <figure
+                      class="cap-figure"
+                      data-cap-figure
+                      data-for={`capability-${item.id}`}
+                      data-cap-windows={revealWindows(drawings[item.id]!)}
+                    >
+                      <div class="cap-frame">
+                        <img
+                          src={item.image}
+                          width="1088"
+                          height="816"
+                          loading="lazy"
+                          decoding="async"
+                          alt={item.alt}
+                          style={revealMask(drawings[item.id]!)}
+                        />
+                        <svg class="cap-drawing" viewBox="0 0 1088 816" aria-hidden="true" focusable="false">
+                          {drawings[item.id]!.map((band, k) => (
+                            <g class="cap-band" style={`--r: var(--r${k}, 0)`}>
+                              <g class="cap-ghost">
+                                {band.strokes.map((d) => (
+                                  <path d={d} />
+                                ))}
+                              </g>
+                              <g class="cap-strokes">
+                                {band.strokes.map((d, i) => (
+                                  <path d={d} pathLength="1" style={`--s: ${pacing(drawings[item.id]!)[k]!.starts[i]!.toFixed(4)}`} />
+                                ))}
+                              </g>
+                            </g>
+                          ))}
+                        </svg>
+                      </div>
+                      <figcaption>{item.caption}</figcaption>
+                    </figure>
+                  </li>
+                ))
+              }
+            </ol>
+          </div>
+          <div class="cap-stage" data-cap-stage hidden>
+            <p class="sim-label">Simulated platform demo</p>
+            <div class="cap-stage-frame" data-cap-stage-frame>
+              <span class="cap-drawing-note">Illustrative layout drawing</span>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+    <div class="container">
+      <p class="cap-more">
+        <a class="text-link" href="/solutions/">Explore all solutions and services <Icon name="arrow" size={20} /></a>
+      </p>
     </div>
   </section>
 
@@ -353,12 +517,12 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
 <script>
   import { initHeroVideo } from '../scripts/hero-video.ts';
   import { initReveal } from '../scripts/reveal.ts';
-  import { initScrolly } from '../scripts/scrolly.ts';
+  import { initCapabilityStage } from '../scripts/capability-stage.ts';
   import { initAudienceSequence } from '../scripts/audience-sequence.ts';
   import { initDeviceEntrance } from '../scripts/device-entrance.ts';
   initReveal();
   initHeroVideo();
-  initScrolly();
+  initCapabilityStage();
   initAudienceSequence();
   initDeviceEntrance();
 </script>
@@ -431,8 +595,7 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
   }
 
   /* Grid and flex children may shrink below their longest word, so enlarged text wraps. */
-  .hero-inner > *,
-  .scrolly-head > * {
+  .hero-inner > * {
     min-width: 0;
   }
 
@@ -586,7 +749,9 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
 
   /* ---- Showcase -------------------------------------------------------------- */
   .showcase {
-    background: var(--color-navy);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid);
+    background-size: var(--blueprint-grid-size);
     color: #fff;
     overflow: hidden;
   }
@@ -692,12 +857,16 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
 
   /* One-time coordinated entrance is progressive enhancement in device-entrance.ts. */
 
-  /* ---- Capability showcase (src/scripts/scrolly.ts) ------------------------------ */
+  /* ---- Section intros ------------------------------------------------------------- */
   .section-intro {
     max-width: 48rem;
     margin-bottom: var(--space-8);
   }
 
+  /* ---- Capabilities: "drawn, then built" (src/scripts/capability-stage.ts) ------------ */
+  /* Default (mobile, reduced motion, enlarged text, short windows, no JavaScript or a failed
+     start): an open list. Each capability shows its label, title, description, demo link and
+     real screenshot; the drawings are not shown. */
   .capabilities {
     padding-block: var(--space-8);
   }
@@ -708,165 +877,331 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
     }
   }
 
-  .scrolly-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 0 var(--space-6);
+  .cap-head {
+    max-width: 48rem;
+    margin-bottom: var(--space-6);
   }
 
-  .scrolly-more {
-    margin-bottom: var(--space-8);
-  }
-
-  /* Default (mobile, reduced motion, no JavaScript, or not enough room): a vertical stack. */
-  .scrolly-track {
-    --scrolly-inset: max(var(--gutter), calc((100% - var(--container-max)) / 2 + var(--gutter)));
+  .cap-list {
     display: grid;
-    gap: var(--space-6);
-    margin: 0;
-    padding: 0 var(--scrolly-inset);
+    gap: var(--space-8);
+    padding: 0;
     list-style: none;
   }
 
-  .scrolly-panel {
+  .cap-item {
     display: grid;
+    gap: var(--space-3) var(--space-8);
     min-width: 0;
-    overflow: hidden;
-    border-radius: var(--radius-lg);
-    background: var(--color-navy);
-    color: #fff;
+    padding-top: var(--space-5);
+    border-top: 2px solid var(--color-navy);
   }
 
   @media (min-width: 48rem) {
-    .scrolly-panel {
-      grid-template-columns: 3fr 2fr;
-      align-items: stretch;
+    .cap-item {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+      align-items: start;
+    }
+
+    .cap-item > :not(.cap-figure) {
+      grid-column: 1;
+    }
+
+    .cap-figure {
+      grid-column: 2;
+      grid-row: 1 / span 3;
     }
   }
 
-  .panel-media {
+  .cap-item > * {
     min-width: 0;
-    background: var(--color-ink);
   }
 
-  .panel-media img {
-    width: 100%;
-    height: auto;
-  }
-
-  .panel-media figcaption {
-    padding: var(--space-2) var(--space-5);
-    font-size: var(--text-sm);
-    color: var(--color-blue-pale);
-  }
-
-  .panel-body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-    min-width: 0;
-    padding: var(--space-5);
-  }
-
-  @media (min-width: 48rem) {
-    .panel-body {
-      justify-content: center;
-      padding: var(--space-6);
-    }
-  }
-
-  .panel-label {
+  .cap-label {
     font-size: var(--text-sm);
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--color-yellow);
+    color: var(--color-blue);
   }
 
-  .panel-label span {
+  .cap-number {
     margin-right: var(--space-2);
-    color: var(--color-blue-pale);
+    color: var(--color-navy);
   }
 
-  .panel-body h3 {
+  .cap-item h3 {
+    max-width: 100%;
     font-size: var(--text-2xl);
     letter-spacing: -0.01em;
   }
 
-  .panel-body p:not(.panel-label) {
-    color: var(--color-blue-pale);
+  .cap-detail-inner {
+    padding-top: var(--space-2);
   }
 
-  .panel-body .text-link {
+  .cap-detail-inner > * + * {
     margin-top: var(--space-2);
-    color: #fff;
   }
 
-  .panel-body .text-link:focus-visible {
-    outline-color: var(--color-yellow);
+  .cap-detail p {
+    color: var(--color-muted);
   }
 
-  /* Enhanced (desktop, set by scrolly.ts only when it fits): a pinned block whose track moves
-     horizontally with the page's own vertical scrolling. No scrollbar; overflow is clipped. */
-  .capabilities:global(.is-scrolly) {
-    padding-block: 0;
+  .cap-figure {
+    margin: 0;
   }
 
-  :global(.is-scrolly) .scrolly-sticky {
+  .cap-frame {
+    position: relative;
+  }
+
+  .cap-frame img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .cap-figure figcaption {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .cap-drawing,
+  .cap-stage {
+    display: none;
+  }
+
+  .cap-more {
+    margin-top: var(--space-6);
+  }
+
+  /* ---- Enhanced: pinned schedule + drawing stage ------------------------------------- */
+  /* The section intro and the closing link scroll normally; only the schedule and the stage pin,
+     inside the track, so the pinned layout fits common laptop windows. */
+  :global(.is-drawn) .cap-pin {
     position: sticky;
     top: var(--header-rendered, var(--header-height));
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
     height: calc(100vh - var(--header-rendered, var(--header-height)));
     overflow: clip;
   }
 
-  :global(.is-scrolly) .scrolly-content {
-    padding-block: var(--space-4);
+  :global(.is-drawn) .cap-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+    gap: var(--space-8);
+    align-items: center;
   }
 
-  :global(.is-scrolly) .section-intro,
-  :global(.is-scrolly) .scrolly-more {
-    margin-bottom: var(--space-4);
+  /* The schedule: every capability listed, each description under its own heading. The column
+     keeps the height of its tallest open state (capability-stage.ts), so the stage never moves. */
+  :global(.is-drawn) .cap-list {
+    gap: 0;
+    border-bottom: 1px solid var(--color-border);
   }
 
-  :global(.is-scrolly) .section-intro > * + * {
-    margin-top: var(--space-2);
-  }
-
-  :global(.is-scrolly) .scrolly-viewport {
-    overflow: clip;
-  }
-
-  :global(.is-scrolly) .scrolly-track {
+  :global(.is-drawn) .cap-item {
+    display: block;
     position: relative;
-    display: flex;
-    gap: var(--space-6);
-    width: max-content;
-    will-change: transform;
+    padding: var(--space-3) 0 var(--space-3) var(--space-5);
+    border-top: 1px solid var(--color-border);
   }
 
-  /* Width is also capped by the height left for the panel (its image height follows its width),
-     so common laptop viewports fit; scrolly.ts still falls back whenever the block does not fit. */
-  :global(.is-scrolly) .scrolly-panel {
-    flex: none;
-    width: min(52rem, 62vw, calc((100vh - var(--header-rendered, var(--header-height)) - 16rem) * 2.1));
+  :global(.is-drawn) .cap-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: -1px;
+    bottom: 0;
+    width: 4px;
+    background: var(--color-yellow);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 300ms ease;
   }
 
-  :global(.is-scrolly) .panel-body {
-    padding: var(--space-5);
+  /* Only the active capability's description is open. The others collapse to no height but stay
+     in the tab order (keyboard focus on one makes it active at once) and in the accessibility tree.
+     Opening is instant with a short fade; closing is instant. */
+  :global(.is-drawn) .cap-list .cap-detail {
+    height: 0;
+    overflow: clip;
+    opacity: 0;
   }
 
-  :global(.is-scrolly) .panel-body h3 {
-    font-size: var(--text-xl);
+  :global(.is-drawn) .cap-list .cap-item.is-active .cap-detail {
+    height: auto;
+    overflow: visible;
+    opacity: 1;
+    transition: opacity 200ms ease;
+  }
+
+  :global(.is-drawn) .cap-item h3 {
+    margin-top: var(--space-1);
+    font-size: var(--text-lg);
+    color: var(--color-muted);
+    transition: color 200ms ease;
+  }
+
+  :global(.is-drawn) .cap-label,
+  :global(.is-drawn) .cap-number {
+    color: var(--color-muted);
+    transition: color 200ms ease;
+  }
+
+  :global(.is-drawn) .cap-item.is-active::before {
+    transform: none;
+  }
+
+  :global(.is-drawn) .cap-item.is-active h3 {
+    color: var(--color-ink);
+  }
+
+  :global(.is-drawn) .cap-item.is-active .cap-label {
+    color: var(--color-blue);
+  }
+
+  :global(.is-drawn) .cap-item.is-active .cap-number {
+    color: var(--color-navy);
+  }
+
+  :global(.is-drawn.is-instant) .cap-item::before,
+  :global(.is-drawn.is-instant) .cap-list .cap-item.is-active .cap-detail,
+  :global(.is-drawn.is-instant) .cap-item h3,
+  :global(.is-drawn.is-instant) .cap-label,
+  :global(.is-drawn.is-instant) .cap-number {
+    transition: none;
+  }
+
+  /* The stage: one frame over a faint construction grid; the four figures are moved into it. */
+  :global(.is-drawn) .cap-stage {
+    display: block;
+    min-width: 0;
+  }
+
+  .cap-stage .sim-label {
+    display: inline-block;
+    margin-bottom: var(--space-3);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-navy);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-navy);
+  }
+
+  .cap-stage-frame {
+    position: relative;
+    width: min(100%, calc((100vh - var(--header-rendered, var(--header-height)) - 9rem) * 1088 / 816));
+    aspect-ratio: 1088 / 816;
+    border: 1px solid #b9cfe3;
+    border-radius: var(--radius-md);
+    background-color: #f3f8fc;
+    background-image:
+      linear-gradient(#dbe8f3 1px, transparent 1px),
+      linear-gradient(90deg, #dbe8f3 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+    box-shadow: 0 30px 60px -28px rgb(7 26 43 / 0.35);
+  }
+
+  .cap-drawing-note {
+    position: absolute;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    z-index: 2;
+    padding: 2px var(--space-2);
+    background: #f3f8fc;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-blue);
+    opacity: var(--note, 1);
+  }
+
+  :global(.is-drawn) .cap-figure {
+    position: absolute;
+    inset: 0;
+    opacity: var(--show, 0);
+    visibility: var(--visible, hidden);
+  }
+
+  :global(.is-drawn) .cap-frame {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Drawn over the screenshot. capability-stage.ts sets the segment progress --t and each band's
+     eased reveal --r0, --r1, ... on the figure; each band reads its own as --r. Every outline draws
+     from its own start (--s, index.astro) over 7% of the segment; a band's outlines and faint
+     schematic fade as that band of the screenshot is revealed. */
+  :global(.is-drawn) .cap-drawing {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cap-drawing path {
+    fill: none;
+    stroke: var(--color-blue);
+    stroke-width: 2;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .cap-ghost {
+    opacity: calc(0.22 * (1 - var(--r)));
+  }
+
+  .cap-strokes {
+    opacity: calc(1 - var(--r));
+  }
+
+  .cap-strokes path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: calc(1 - clamp(0, (var(--t, 0) - var(--s)) / 0.07, 1));
+  }
+
+  /* The screenshot is revealed band by band through its mask (--cap-mask, set per image from the
+     band geometry): a soft top-to-bottom sweep per band, then one full layer once every band is
+     revealed, so the finished screen is exactly the screenshot. */
+  :global(.is-drawn) .cap-frame img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: var(--radius-md);
+    mask-image: var(--cap-mask);
+    mask-size: var(--cap-mask-size);
+    mask-position: var(--cap-mask-position);
+    mask-repeat: no-repeat;
+  }
+
+  :global(.is-drawn) .cap-figure figcaption {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    left: 0;
+    margin: 0;
+    opacity: var(--caption, 1);
+  }
+
+  @media print {
+    :global(.is-drawn) .cap-pin {
+      position: static;
+      height: auto;
+    }
   }
 
   /* Three image-backed links; essential text is visible on touch and without JS. */
-  .workflow { background: var(--color-ink); color: #fff; }
+  .workflow { background-color: var(--color-ink); background-image: var(--blueprint-grid); background-size: var(--blueprint-grid-size); color: #fff; }
   .steps { display: grid; gap: 1.5rem; padding: 0; list-style: none; }
   @media (min-width: 48rem) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .step { min-width: 0; }
@@ -908,7 +1243,7 @@ const audienceImages: Record<(typeof customerSegments)[number]['id'], { src: str
   }
 
   /* Full-frame audience sequence. Static title grid is the default. */
-  .segments { background: var(--color-navy); color: #fff; }
+  .segments { background-color: var(--color-navy); background-image: var(--blueprint-grid); background-size: var(--blueprint-grid-size); color: #fff; }
   .orbit-shell { width: min(100%, 1920px); margin-inline: auto; padding: 2rem clamp(1rem, 2vw, 2.5rem); }
   .orbit-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1rem; }
   .orbit-heading h2 { font-size: clamp(1.5rem, 2vw, 2rem); }

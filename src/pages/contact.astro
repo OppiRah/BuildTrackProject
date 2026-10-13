@@ -155,10 +155,8 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
   .details::before,
   .panel {
     background-color: var(--color-navy);
-    background-image:
-      linear-gradient(rgb(125 211 252 / 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(125 211 252 / 0.08) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-image: var(--blueprint-grid);
+    background-size: var(--blueprint-grid-size);
   }
 
   .intro::before,

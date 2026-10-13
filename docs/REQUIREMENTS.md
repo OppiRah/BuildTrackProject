@@ -1,6 +1,6 @@
 # BuildTrack Requirements
 
-Status: settled discovery baseline, 2026-10-04. Exact pricing/contact/provider configuration deferred, not invented.
+Status: accepted discovery baseline with academic review-version publication approved 2026-10-13 (ADR-041). Approved proposed prices/contact details and Formspree configuration are implemented; recipient verification and production-request receipt remain pending. Seven main pages plus a standalone simulated payment page; CE validation and provider integration remain unresolved.
 
 ## Required website
 - Seven pages: Home, Solutions, How It Works, Product Demo, Pricing, About, Contact.
@@ -47,7 +47,7 @@ No fake clients, testimonials, contracts, awards, offices, partner logos, measur
 FAQ, concise tracking animation, coverage graphic, richer filters or downloadable brochure only after core requirements work. Structured data only when supported by truthful final content; do not imply a purchasable operational SaaS.
 
 ## Excluded scope
-Authentication/customer accounts, customer portal, persistent inventory backend, custom API/server, database, admin/CMS, online payments/billing, real QR/RFID/IoT integration, telemetry, native mobile app, multi-tenancy/RBAC and microservices.
+Authentication/customer accounts, customer portal, persistent inventory backend, custom API/server, database, admin/CMS, online payments/billing, real QR/RFID/IoT integration, telemetry, native mobile app, multi-tenancy/RBAC and microservices. ADR-041 does not change this: the payment demo page (`/payment-demo/`) is a simulation that accepts no money, its provider sandbox link is off by default and would only open a provider's own test checkout, and the Product Demo's concrete estimate is a teaching calculation pending Civil Engineering review.
 
 ## Release acceptance evidence
 Record public URL/HTTPS; representative page and device checks; successful build/type/lint checks that exist; demo interactions and disclosures; all business placeholders resolved; form validation and failure behavior; a deployed test request and explicit receipt confirmation from the contact; metadata/navigation checks; review findings resolved or consciously accepted. No release claim while real inquiry delivery is unverified.

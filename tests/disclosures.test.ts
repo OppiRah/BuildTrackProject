@@ -7,7 +7,7 @@ const UNSUPPORTED_CLAIM =
 
 const allText = (formRendered: boolean) => {
   const d = disclosure(formRendered);
-  return [...d.working, ...d.stillToCome, d.aboutSite, d.aboutForm];
+  return [...d.working, ...d.stillToCome, d.aboutSite, d.aboutForm, d.estimator, d.payment];
 };
 
 describe('disclosure', () => {
@@ -29,6 +29,18 @@ describe('disclosure', () => {
     expect(disclosure(true).aboutForm).toMatch(/still to come/);
     expect(disclosure(false).working).not.toContain('An editable request form that starts with your chosen request, service or plan');
     expect(disclosure(false).stillToCome).toContain('Sending requests to the BuildTrack contact');
+  });
+
+  it.each([true, false])('keeps the estimate unreviewed and the payment walkthrough simulated, with no provider connected (form rendered: %s)', (formRendered) => {
+    const d = disclosure(formRendered);
+    expect(d.working.some((line) => /estimate/.test(line) && /not yet reviewed by a civil engineer/.test(line))).toBe(true);
+    expect(d.estimator).toMatch(/not yet reviewed by a civil engineer/);
+    expect(d.payment).toMatch(/simulation/);
+    expect(d.payment).toMatch(/no payment provider is connected/);
+    for (const line of allText(formRendered)) {
+      expect(line).not.toMatch(/\b(approved|validated|certified) by\b|\bengineer-approved\b/i);
+      expect(line).not.toMatch(/\b(accepts|takes|processes) (card )?payments?\b|\bpayment (is|was) (verified|confirmed)\b/i);
+    }
   });
 
   it('takes only whether the form is rendered, never a production URL', () => {

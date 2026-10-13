@@ -1,6 +1,6 @@
 # BuildTrack Architecture
 
-Status: Phase 1 specification, 2026-10-04, revised after independent review the same day. Phases 3–5 implement sections 2, 3, 5, 8, 9 and 10; Phase 6 implements the inquiry form (§6); the Formspree endpoint is configured and local delivery was verified on 2026-10-04 (production delivery pending); hosting (§7) remains unimplemented.
+Status: academic review-version implementation approved for publication 2026-10-13. Static hosting and the inquiry endpoint are configured; recipient verification and production-request receipt remain pending. Estimator and disconnected payment simulation are authorized teaching features; CE validation and provider integration remain unresolved.
 
 ## 1. Stack
 | Concern | Choice | Notes |
@@ -11,8 +11,8 @@ Status: Phase 1 specification, 2026-10-04, revised after independent review the 
 | Styling | Plain CSS: one global token file + Astro scoped `<style>` | No Tailwind, Bootstrap, CSS-in-JS or component kits. |
 | Client behavior | Small focused modules in `src/scripts/`, loaded by Astro `<script>` tags | Plain DOM APIs; no state-management, animation or chart libraries. |
 | Charts | Accessible HTML/CSS bars and simple inline SVG | Each chart paired with a text/table equivalent. |
-| Inquiries | External form provider (Formspree preferred, unconfigured) | Section 6. |
-| Hosting | Static files on Cloudflare Workers static assets (preferred, unconfigured) | Section 7. No Astro adapter, no SSR. |
+| Inquiries | External form provider (Formspree configured; delivery gates pending) | Section 6. |
+| Hosting | Static files on Cloudflare Workers static assets (configured) | Section 7. No Astro adapter, no SSR. |
 
 **Runtime dependencies:** `astro` only. It is a build-time framework; shipped pages contain only the small scripts written here. Any further runtime dependency requires a written requirement, alternatives considered and tradeoff, recorded in `DECISIONS.md` before installation.
 
@@ -38,6 +38,7 @@ src/
     services.ts         # service catalogue (ids, names, summaries)
     pricing.ts          # Starter/Professional/Enterprise packages
     inquiry.ts          # request types, form provider settings, field limits
+    payment-sandbox.ts  # optional provider-hosted TEST link for the payment demo page; null (not connected) by default
   data/demo/
     types.ts            # demo entity types
     fixtures.ts         # DEMO_AS_OF, projects, materials, equipment, deliveries, events,
@@ -45,7 +46,10 @@ src/
     labels.ts           # display labels and status tones
   lib/
     demo-metrics.ts     # pure derived metrics, alerts and number/date formatting
-    demo-state.ts       # pure demo state, actions and visibility predicates
+    demo-state.ts       # pure demo state, actions and visibility predicates (six tracking sections + two tools)
+    concrete-estimate.ts # pure batch-mixer concrete estimate: exact decimal arithmetic (≤ 6 decimal places per input), bounds, marked rounding, breakdown, sketch
+    payment-walkthrough.ts # pure simulated payment walkthrough (steps, transitions, outcome wording)
+    payment-sandbox.ts  # pure check: supported provider, structurally parsed documented test route (PayMongo pm.link/{handle}/test/{ref}), owner-verified
     inquiry-params.ts   # pure URL-preselection parsing against allowlists
     inquiry-validate.ts # pure field validation
     inquiry-submit.ts   # pure response classification + submit state transitions
@@ -60,16 +64,18 @@ src/
                         # Equipment/Deliveries/Events/DevicesPanel, StatusBadge, EmptyState
     form/               # InquiryForm (form, error summary, status, confirmation), Field
   scripts/
-    nav.ts              # mobile menu; keeps focus on an equivalent visible header control when text-size changes switch desktop links and the Menu button (the rem query fires no change event, so a ResizeObserver detects the switch)
+    nav.ts              # mobile menu; keeps focus on an equivalent visible header control when text-size changes switch desktop links and the Menu button (the rem query fires no change event, so a ResizeObserver detects the switch); desktop moving indicator under the current, hovered or keyboard-focused link (UX_BRAND §14)
     demo.ts             # in-memory state; shows/hides build-time markup; opens #demo-panel-<section> entry points
     inquiry.ts          # preselection, validation display, submission
     reveal.ts           # Home hero entrance completion and one-time section reveals (Home, Solutions, How It Works, Pricing, About); follows reduced-motion changes
-    scrolly.ts          # Home prototype: desktop pinned capability section driven by native vertical scrolling; re-measured on live text-size changes
+    capability-stage.ts # Home prototype: desktop pinned capabilities, each screen drawn then revealed band by band from the native scroll position; focus policy and live re-measuring (UX_BRAND §13)
     audience-sequence.ts # Full-frame native sticky sequence; titles/hold/release and live static fallbacks
     audience-videos.ts   # Optional local stock playback; shared pause, eligibility and decoder/poster fallback
     device-entrance.ts   # One-time coordinated full-frame laptop/phone entrance, live cancellation
     stable-position.ts  # Home prototype: keeps the visible content in place when a section switches layout
     demo-layout.ts      # Demo: mobile sidebar drawer and sticky-when-fits sidebar
+    demo-tools.ts       # Demo tool: concrete estimate form/results; keeps the last calculation, restores the example on the demo's "demo:reset" event
+    payment-demo.ts     # /payment-demo/: simulated payment walkthrough steps, focus and announcements
     hero-video.ts       # Home prototype: optional background video and its pause/play control
   styles/
     tokens.css          # all design tokens (UX_BRAND §Tokens)
@@ -93,6 +99,7 @@ Component list is the expected set, not a quota; merge components that end up tr
 | `/product-demo/` | Product Demo | `/contact/?type=demo` |
 | `/pricing/` | Pricing | `/contact/?type=service&plan=<id>` |
 | `/about/` | About | `/contact/` |
+| `/payment-demo/` | Payment demo (not in the main navigation; linked from Pricing) | none: a simulated walkthrough, no payment |
 | `/contact/` | Contact | form submit |
 | `/404` | Not found | `/` and main nav |
 
@@ -104,8 +111,9 @@ Trailing-slash directory URLs (Astro `build.format: 'directory'`, `trailingSlash
 - **Progressive enhancement:** without JavaScript, nav links render as a visible wrapped list; the Menu button is hidden until `nav.ts` runs.
 
 ## 4. Boundaries
-- **Marketing pages** read only from `src/config/*` (plus `contact-links.ts` for CTA URLs). They render to static HTML and need no JavaScript except `nav.ts` (the Home prototype adds `reveal.ts`, `hero-video.ts`, `scrolly.ts`, `audience-sequence.ts`, `audience-videos.ts`, `device-entrance.ts` and `stable-position.ts`, all optional enhancements; Solutions, How It Works, Pricing and About add only `reveal.ts` for one-time fade-ins; the demo adds `demo-layout.ts`; Contact and 404 add nothing beyond `nav.ts` and, on Contact, the inquiry script). `BaseLayout` takes `stickyHeader={false}` for the application-style demo page.
-- **Demo** reads only `src/data/demo/*`, `src/lib/demo-metrics.ts` and `src/lib/demo-state.ts`. It never imports pricing/contact config and makes no network requests. Only `/product-demo/` loads `demo.ts`. Home's "demo preview" is a static, build-time render from the same fixtures (no script).
+- **Marketing pages** read only from `src/config/*` (plus `contact-links.ts` for CTA URLs). They render to static HTML and need no JavaScript except `nav.ts` (the Home prototype adds `reveal.ts`, `hero-video.ts`, `capability-stage.ts`, `audience-sequence.ts`, `audience-videos.ts`, `device-entrance.ts` and `stable-position.ts`, all optional enhancements; Solutions, How It Works, Pricing and About add only `reveal.ts` for one-time fade-ins; the demo adds `demo-layout.ts`; Contact and 404 add nothing beyond `nav.ts` and, on Contact, the inquiry script). `BaseLayout` takes `stickyHeader={false}` for the application-style demo page (the shared site header stays, non-sticky, above the application shell).
+- **Demo** reads only `src/data/demo/*`, `src/lib/demo-metrics.ts`, `src/lib/demo-state.ts` and, for its concrete estimate, `src/lib/concrete-estimate.ts`. It never imports pricing, contact or inquiry config and makes no network requests. Only `/product-demo/` loads `demo.ts`. Home's "demo preview" is a static, build-time render from the same fixtures (no script).
+- **Payment demo** (`/payment-demo/`) reads `src/lib/payment-walkthrough.ts`, `payment-sandbox.ts`, `src/config/payment-sandbox.ts` and the Professional plan's proposed price from `src/config/pricing.ts` (its illustrative amount). It has no form, collects nothing and makes no network requests; a configured sandbox link would be an ordinary link the visitor chooses to open.
 - **Inquiry** reads `src/config/inquiry.ts`, `services.ts` and `pricing.ts` (for allowlists and labels). Only `/contact/` loads `inquiry.ts`. The only network call in the whole site is the form POST to the provider.
 - **Pure logic** in `src/lib/` has no DOM access, so it is unit-testable; scripts in `src/scripts/` wire it to the DOM.
 
@@ -338,7 +346,7 @@ Required unit tests:
 - Browser (`npm run test:browser`, not part of `npm test`): builds two temporary copies of the site in which a Vite `resolveId` hook swaps `src/config/*.ts` modules for fixtures: "configured" (`tests/browser/fixtures/inquiry-configured.ts`: synthetic endpoint `https://form-test.invalid/f/browser-test` and a 1.5 s limit; `site-with-production-url.ts`: a synthetic production URL) and "unconfigured" (`inquiry-unconfigured.ts`: endpoint `null`). It never edits or depends on the real endpoint value, so it keeps working once a real endpoint is configured. Each copy is served locally and driven in headless Chromium over the DevTools protocol with **every** page request intercepted: local test-server requests continue; synthetic-endpoint requests are answered (200/422/429/500, unrecognised 2xx bodies), failed (network), held (timeout before headers) or routed to a local route that sends headers then stalls (timeout during body); any other destination is blocked and fails the run (a self-test proves the block). Before any submission the test asserts the rendered form `action` equals the synthetic endpoint. Also covers preselection, validation/focus, single in-flight submission, confirmation (and that `next` is not followed), failure/retry with preserved values, the no-JS native POST, and the unconfigured build (no form, no submit, no inquiry script, with and without JS). Adds no dependency; nothing test-related reaches the repository config or `dist/`. It also checks, in both copies, that About and How It Works make no publication or delivery claim and keep publication and production receipt as still to come; that every pricing comparison cell is associated (via `headers`) with its plan column, `scope="rowgroup"` category and `scope="row"` feature header, with Chromium roles columnheader/rowheader/cell; and that the error summary is a focused, named and described group with no duplicate live announcement.
 - **Initial three-section motion checkpoint (ADR-033; historical):** static Astro markup is the baseline. `audience-sequence.ts` progressively applies native sticky pinning and a transform-only scroll timeline, fixed natural image dimensions per layout, counterrotation, delayed title reveal and bounded scroll hold/release. Same figure DOM supports all static fallbacks/live focus and reading-position handling; no selected-description UI. `device-entrance.ts` uses one-time native Web Animations with reduced-motion cancellation. Workflow cards link to IDs in detailed ProcessSteps without changing How It Works content. No dependency added; GSAP comparison is in DECISIONS. Video sourcing/playback and full suite deferred. Recoverable source/tests/poster and captures outside deployment output in ignored `design/references/home-sequence/`.
 - **Historical local centre-poster checkpoint (ADR-032, 2026-10-08):** the existing orbit/selection is resized around a fixed poster using upright-rectangle clearance and a tighter adaptive perimeter. The subsequent dense visual revision grows variable photo edges into free space, compares fill orders by actual image area, and reserves a fixed centre occupying 44% of stage width/height. Full-angle samples include caption/control bounds and focus clearance; transient corner gaps remain documented in PROJECT_STATE. Dense-revision evidence/recovery is ignored under `design/references/orbit-dense/`. No centre video source or playback yet. Type/build and focused capture/fallback checks run now; complete suite and playback checks await visual approval. The Stage 2 full-suite results below describe the preserved baseline; visual motion assertions need adaptation after this direction is reviewed. Recovery/raw clips/captures remain ignored outside deployment output. Poster/proposed montage provenance is `design/media-source/AUDIENCE_CENTRE_PROPOSAL.json`.
-- Home/demo interaction (`tests/browser/home-demo-ui.ts`, second part of `npm run test:browser`): builds a fresh temporary site and drives Chromium over CDP with off-site requests blocked; no inquiry is submitted. Covers hero autoplay/reduced motion, shared navigation, demo drawer/fixtures and workflow. Audience coverage: all seven native photo buttons via click, Tab, Enter and Space; selected state, polite status, stable description dimensions, rapid selection, image failure, 21 motion/bounds samples, upright/readable labels, reverse scrolling, idle behavior, focus pause and jump-free resume. Static grids expose all seven photos/descriptions at 320/390px with genuine 16/32px browser default text (Page.setFontSizes), JS on/off, reduced motion and short desktop windows. Live width, height, text-size and reduced-motion transitions preserve selection/focus below the header and reading position; idle observer checks detect churn. Capability checks retain travel/live sizing and stable content below. Optional EVIDENCE_DIR saves local review screenshots outside shipped assets. Stage 2 awaits review; actual results are in PROJECT_STATE. Video tests require Chromium with H.264 support.
+- Home/demo interaction (`tests/browser/home-demo-ui.ts`, second part of `npm run test:browser`): builds a fresh temporary site and drives Chromium over CDP with off-site requests blocked; no inquiry is submitted. Covers hero autoplay/reduced motion, shared navigation, demo drawer/fixtures and workflow. Audience coverage: all seven native photo buttons via click, Tab, Enter and Space; selected state, polite status, stable description dimensions, rapid selection, image failure, 21 motion/bounds samples, upright/readable labels, reverse scrolling, idle behavior, focus pause and jump-free resume. Static grids expose all seven photos/descriptions at 320/390px with genuine 16/32px browser default text (Page.setFontSizes), JS on/off, reduced motion and short desktop windows. Live width, height, text-size and reduced-motion transitions preserve selection/focus below the header and reading position; idle observer checks detect churn. Demo estimate: calculation, exact precision cases (tiny remainders, more than six decimals refused), validation summary and focus, exact breakdown, retained calculation and reopening announcement, example restore, Reset, unchanged tracking figures, no-JS example; payment demo page: shared header/footer, persistent notice, steps and focus, every outcome's simulated wording, no payment fields/forms/codes/uploads/banking details, sandbox "not connected", Start again/over, reload, no-JS; Pricing's payment-demo link with Avail/quotation links still opening inquiries; the built sitemap (eight pages, no 404); sidebar outlines in short windows and the drawer. Capability checks: band-by-band drawing and overlapping reveal, exact finished hold, reverse scrolling, one open description under its own heading, steady stage and column, named description groups, laptop viewports (1366x650, 1440x790, 1536x730) at full text size, Tab/Shift+Tab, pointer and Ctrl+click without page movement, retained focus following the shown capability (Enter after scrolling), retained focus never overriding the reading position across reduced-motion, viewport and text-size switches, live re-measuring and stable content below. Optional EVIDENCE_DIR saves local review screenshots outside shipped assets. Stage 2 awaits review; actual results are in PROJECT_STATE. Video tests require Chromium with H.264 support.
 - `demo-metrics` and fixtures: referential integrity, unit consistency, derived totals (section 9.3).
 - `release-check`: with synthetic configs: a complete config passes; each missing required field is reported individually; null `publicEmail` is not reported; empty `limits`/`exclusions` arrays pass; non-https URLs are reported. The real config is checked only for shape, so `npm test` passes while values are unresolved.
 
@@ -392,7 +400,8 @@ Invariants enforced by tests:
 ### 9.5 Interactive state
 ```ts
 interface DemoState {
-  section: 'overview'|'inventory'|'equipment'|'deliveries'|'events'|'devices';
+  section: 'overview'|'inventory'|'equipment'|'deliveries'|'events'|'devices'  // tracking
+         | 'estimate';                                                             // tool
   projectId: 'all' | ProjectId;
   filters: { materialCategory: 'all'|Category; lowStockOnly: boolean;
              equipmentStatus: 'all'|Status; deliveryStatus: 'all'|Status };
@@ -404,6 +413,7 @@ interface DemoState {
 - "Clear filters" (in each empty state) resets the section filters only and moves focus to the panel's first filter.
 - One polite `role="status"` message per user action (section, project, filter, simulate, reset); nothing is announced on load.
 - No `localStorage`, cookies, URL writes, timers or network calls. Reload restores fixtures.
+- **Tool** (`estimate`): listed under "Tools" in the sidebar, opened like a section (also `#demo-panel-estimate`); the project picker is hidden there. Its in-memory state in `demo-tools.ts` keeps the last calculation while the visitor switches sections, never reads or changes tracking state, and returns to the example values on Reset (the `demo:reset` event) or reload. The example is rendered at build time.
 - Without JavaScript all six panels are shown stacked for all projects (simulated events stay hidden), the controls stay hidden, and a note explains that interactive controls need JavaScript.
 
 ## 10. Content, metadata and performance

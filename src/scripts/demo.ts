@@ -17,6 +17,7 @@ import {
   equipmentVisible,
   eventVisible,
   initialDemoState,
+  isToolSection,
   materialVisible,
   MAX_SIMULATED_EVENTS,
   reduce,
@@ -45,6 +46,13 @@ const nouns: Record<DemoSection, [string, string]> = {
   deliveries: ['delivery', 'deliveries'],
   events: ['tracking event', 'tracking events'],
   devices: ['device', 'devices'],
+  estimate: ['', ''],
+};
+
+/** What each tool is, said when it is opened. The estimate keeps the visitor's last calculation
+ * until Reset or reload, so this does not claim which values are shown. */
+const toolSummaries: Partial<Record<DemoSection, string>> = {
+  estimate: 'Showing Concrete estimate, an academic calculation.',
 };
 
 export function initDemo(): void {
@@ -59,6 +67,7 @@ export function initDemo(): void {
   const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]');
   const simulateCount = root.querySelector<HTMLElement>('[data-simulate-count]');
   const sectionTitle = root.querySelector<HTMLElement>('[data-section-title]');
+  const projectField = root.querySelector<HTMLElement>('[data-project-field]');
 
   const isVisible = (el: HTMLElement): boolean => {
     const id = el.dataset.id ?? '';
@@ -90,6 +99,8 @@ export function initDemo(): void {
   const render = () => {
     for (const panel of all('[data-panel]')) panel.hidden = panel.dataset.panel !== state.section;
     if (sectionTitle) sectionTitle.textContent = sectionLabels[state.section];
+    // The project applies to the tracking sections only.
+    if (projectField) projectField.hidden = isToolSection(state.section);
     for (const button of all('[data-section-button]')) {
       if (button.dataset.sectionButton === state.section) button.setAttribute('aria-current', 'true');
       else button.removeAttribute('aria-current');
@@ -137,6 +148,8 @@ export function initDemo(): void {
 
   const viewSummary = () => {
     const label = sectionLabels[state.section];
+    const tool = toolSummaries[state.section];
+    if (tool) return `${tool} ${root.querySelector('[data-estimate-result-state]')?.textContent ?? ''}`.trim();
     if (state.section === 'overview') return `Showing ${label} for ${scopeLabel()}.`;
     const count = visibleCount(state.section);
     const [one, many] = nouns[state.section];
@@ -198,7 +211,9 @@ export function initDemo(): void {
 
   resetButton?.addEventListener('click', () => {
     dispatch({ type: 'reset' });
-    announce('Demo reset: overview of all sample projects, no simulated scans.');
+    // The estimate returns to its example values too (src/scripts/demo-tools.ts).
+    root.dispatchEvent(new CustomEvent('demo:reset'));
+    announce('Demo reset: overview of all sample projects, no simulated scans; the concrete estimate is back at its example values.');
   });
 
   // Stable entry points: /product-demo/#demo-panel-<section> opens that section (Home links

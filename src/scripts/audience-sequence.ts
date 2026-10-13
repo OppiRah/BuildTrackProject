@@ -105,7 +105,9 @@ export function initAudienceSequence(): void {
       return rect.top >= headerHeight && rect.top < innerHeight * 0.8;
     });
     const before = anchor?.getBoundingClientRect().top;
-    const viewing = track.getBoundingClientRect().top < innerHeight * 0.65 && track.getBoundingClientRect().bottom > headerHeight;
+    // A narrow trailing strip above Pricing does not mean the visitor is still reading the audience
+    // sequence. Match withStablePosition's midpoint boundary: below it, preserve the following content.
+    const viewing = track.getBoundingClientRect().top < innerHeight * 0.65 && track.getBoundingClientRect().bottom > innerHeight / 2;
     const artEstimate = available - heading.offsetHeight - foot.offsetHeight - 3.5 * font;
     enabled = !reduced.matches && !connection?.saveData && innerWidth >= 1024 && font <= 20
       && shell.clientWidth >= 58 * font && artEstimate >= 440;

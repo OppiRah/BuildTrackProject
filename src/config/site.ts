@@ -65,10 +65,20 @@ export const pages = [
   },
 ] as const satisfies readonly PageMeta[];
 
-export type PagePath = (typeof pages)[number]['path'];
+/** Public pages outside the main navigation, linked from other pages. */
+export const secondaryPages = [
+  {
+    path: '/payment-demo/',
+    navLabel: 'Payment demo',
+    title: 'Payment Demo | BuildTrack',
+    description: 'An academic payment demonstration for BuildTrack: a fictional quotation and a simulated payment. No real charge.',
+  },
+] as const satisfies readonly PageMeta[];
+
+export type PagePath = (typeof pages)[number]['path'] | (typeof secondaryPages)[number]['path'];
 
 export function pageMeta(path: PagePath): PageMeta {
-  const page = pages.find((candidate) => candidate.path === path);
+  const page = [...pages, ...secondaryPages].find((candidate) => candidate.path === path);
   if (!page) throw new Error(`No page metadata for ${path}`);
   return page;
 }

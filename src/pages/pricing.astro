@@ -269,6 +269,10 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
       <div class="terms" data-reveal>
         <p>Coverage: {coverage.current}-based.</p>
         <p>Availing a package sends a request to BuildTrack. It is not a payment, booking or active subscription.</p>
+        <p>
+          <a class="text-link" href="/payment-demo/">Try the payment demo <Icon name="arrow" size={20} /></a>
+          An academic simulation of how a quotation could be paid; no real charge.
+        </p>
       </div>
     </div>
   </section>
@@ -290,9 +294,9 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
   /* ---- Intro -------------------------------------------------------------------- */
   .intro {
     padding-block: var(--space-8);
-    background:
-      radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%),
-      var(--color-navy);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid), radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%);
+    background-size: var(--blueprint-grid-size), auto;
     color: #fff;
   }
 

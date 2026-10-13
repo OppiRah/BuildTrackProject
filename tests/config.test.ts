@@ -12,7 +12,7 @@ import {
   pricingNote,
 } from '../src/config/pricing.ts';
 import { services } from '../src/config/services.ts';
-import { pages } from '../src/config/site.ts';
+import { pages, secondaryPages } from '../src/config/site.ts';
 
 const unique = (values: readonly string[]) => new Set(values).size === values.length;
 
@@ -29,9 +29,16 @@ describe('site config', () => {
     ]);
   });
 
-  it('gives every page a unique title and description', () => {
-    expect(unique(pages.map((page) => page.title))).toBe(true);
-    expect(unique(pages.map((page) => page.description))).toBe(true);
+  it('keeps the payment demo as a public page outside the main navigation', () => {
+    expect(secondaryPages.map((page) => page.path)).toEqual(['/payment-demo/']);
+    expect(pages.map((page) => page.path)).not.toContain('/payment-demo/');
+  });
+
+  it('gives every page a unique path, title and description', () => {
+    const all = [...pages, ...secondaryPages];
+    expect(unique(all.map((page) => page.path))).toBe(true);
+    expect(unique(all.map((page) => page.title))).toBe(true);
+    expect(unique(all.map((page) => page.description))).toBe(true);
   });
 });
 
