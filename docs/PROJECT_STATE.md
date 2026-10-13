@@ -2,6 +2,24 @@
 
 Updated: 2026-10-13.
 
+## Seven-step payment walkthrough published and verified live (2026-10-13)
+
+Source commit `8263494165b4f568c7a1734c59e56a99f708bf00` (17 paths; PUBLICATION_MANIFEST.md) was committed on `payment-journey` with the owner's configured identity. A fresh origin check found `main` still at `dd59c82`; `main` was fast-forwarded without rewriting history and pushed to `origin/main`, authorizing Cloudflare's automatic deployment, which was serving the new page on the first poll.
+
+Live read-only verification at https://buildtrack.sunnydelacruz.workers.dev/ passed **117 headless Chromium checks**. Browser requests were limited to same-site GET and every other request was failed in the browser:
+- **Routes:** eight routes return 200 and an unknown route returns 404.
+- **Pricing:** "Try the payment demo" opens `/payment-demo/`; Avail and quotation links still open Contact inquiries.
+- **Disclosures:** About and How It Works carry the shared disclosure "nothing is collected, charged or emailed, and no payment provider is connected", with the estimator still pending CE review.
+- **Payment page basics:** metadata and the seven-step progress list are correct. There is no provider-sandbox box and no fields, forms, links, images, addresses or payment/bank detail terms.
+- **Journey:** all six card/bank × success/failure/cancellation journeys pass, with the owner/customer/provider role labels, the persistent notice, focus on each heading, "illustrative, not sent" email previews, "This sample contains no link" and the exact "Simulated—no money moved. Not a payment receipt.".
+- **Other paths:** decline (progress stays at Customer decision), Back, Start over, reload restart and keyboard Enter/Tab pass.
+- **Layouts:** every step fits at 390 px and at 320 px / 32 px; the no-JS view shows the notice, quotation and explanation.
+- **Inquiry regressions:** Contact preselects service + Professional, and an empty submit focuses the error summary. A completed fictional submit was blocked in the browser before sending, and the page showed "We couldn't send your request", not success. No runtime errors.
+
+The live HTML for `/payment-demo/` (scripts inlined), About, How It Works and Pricing matches the tested local build by SHA-256. Evidence is ignored under `design/references/payment-journey-live/` (probe, results, screenshots).
+
+No real inquiry, email, payment, provider request, account or dependency installation. Payments and emails stay simulated, provider integration stays deferred, and CE review and both Formspree gates (recipient verification, production-request receipt) remain pending. Safari/Firefox, real devices and screen-reader speech remain unverified. The personal prompt and BaseLayout line-ending-only status stay outside both commits.
+
 ## Payment demo extended to the seven-step journey; provider integration deferred (2026-10-13; approved for publication)
 
 The owner approved the seven-step simulated payment walkthrough for publication on 2026-10-13. The exact source manifest is in PUBLICATION_MANIFEST.md (2026-10-13 payment-journey section). Payments and emails stay simulated, provider integration stays deferred, and CE review and both Formspree gates remain pending. The publication and live-verification record follows separately.

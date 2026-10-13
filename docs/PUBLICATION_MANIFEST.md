@@ -34,6 +34,10 @@ On 2026-10-13 the owner explicitly approved the seven-step simulated payment wal
 
 The results are recorded in PROJECT_STATE.md. In summary: type check, 180 unit tests, build, 21 inquiry scenarios (mocked) and 55 standard UI scenarios (57 with optional evidence capture), release check and `git diff --check`. No real inquiry, email, payment, provider request, account or dependency installation.
 
+### Live verification and docs-only follow-up
+
+2026-10-13: source commit `8263494165b4f568c7a1734c59e56a99f708bf00` fast-forwarded into main and pushed to origin/main; Cloudflare deployed it automatically. 117 read-only live checks passed (details in PROJECT_STATE.md), with only same-site GET requests allowed. The single blocked request was the probe's deliberate inquiry submission, failed in the browser before sending. Live payment-page, About, How It Works and Pricing HTML match the tested build by SHA-256. This follow-up changes only `docs/PROJECT_STATE.md` and `docs/PUBLICATION_MANIFEST.md`. The source manifest above is unchanged.
+
 ---
 
 ## Historical manifest (preserved as evidence; describes source 4ac95ae)
