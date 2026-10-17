@@ -1,0 +1,38 @@
+// LOCAL DEVELOPMENT ONLY: the owner Worker for the quotation workflow (ADR-043,
+// docs/PROPOSAL_QUOTATION_WORKFLOW.md §2.1, §14). Nothing deploys this file: no Workers Builds
+// project uses it, and the production wrangler.jsonc stays assets-only. It shares the local D1
+// database of wrangler.workflow.jsonc (same database_id placeholder; no Cloudflare database exists).
+//
+// It fails closed: every request gets 503. The deployable entry accepts only an HTTPS OWNER_ORIGIN,
+// so the loopback HTTP value below is refused (loopback HTTP is allowed only by the test wrapper);
+// WORKFLOW_ENABLED is off; and the Access settings and the secrets OWNER_FORM_KEY and
+// QUOTE_LINK_KEY_V1 are absent. Even fully configured, every request would still need a valid
+// Cloudflare Access JWT signed by the team domain's published keys. Local owner-page tests use the test-only wrapper
+// tests/worker/owner-test-worker.ts with keys generated for each run (npm run test:worker:owner).
+// Secrets are never written here; for a deployment they are set with `wrangler secret put`.
+{
+  "name": "buildtrack-owner-local",
+  "compatibility_date": "2026-10-04",
+  "main": "./worker/owner/index.ts",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buildtrack-quotes-local",
+      "database_id": "00000000-0000-4000-8000-000000000000",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "vars": {
+    "WORKFLOW_ENABLED": "off",
+    "OWNER_ORIGIN": "http://127.0.0.1:8788",
+    "QUOTE_LINK_KEY_CURRENT": "1"
+  },
+  // Email runs every 5 minutes (checkpoint 3). Sending stays off: SENDING_ENABLED is unset, and the
+  // deployable entry sends only with EMAIL_MODE=resend, RESEND_API_KEY, MAIL_FROM, HTTPS origins
+  // and the rest of the owner configuration (worker/owner/scheduled.ts); otherwise a run does nothing.
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
+  }
+}

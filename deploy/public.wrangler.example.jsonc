@@ -1,0 +1,58 @@
+// TEMPLATE — NOT USED BY ANY BUILD OR DEPLOYMENT. Reviewed cutover configuration for the PUBLIC
+// BuildTrack Worker with the quotation workflow (docs/QUOTATION_RUNBOOK.md, step "Cutover").
+// Production stays on the repository's assets-only wrangler.jsonc until the owner approves the
+// cutover; then this file's contents replace it (or are merged into it) in a reviewed change.
+// Values in <ANGLE_BRACKETS> must be filled from the owner's real Cloudflare resources; nothing here
+// has been created. Secrets are NEVER written here; set them with `wrangler secret put` (listed below).
+//
+// WHERE A FILLED COPY GOES: the paths below (main, assets.directory, migrations_dir) are relative to
+// the REPOSITORY ROOT, and Wrangler resolves them relative to the folder of the config file. This
+// template therefore does not work in place (`-c deploy/...` would look for deploy/worker/...). Save
+// filled copies at the repository root under exactly these names (runbook, "Where filled configs go"):
+//   wrangler.preview.jsonc   the preview Worker (runbook step 6)
+//   wrangler.jsonc           production, merged in at the reviewed cutover only (runbook step 7)
+// Checked with Wrangler itself by `npm run test:deploy:templates`.
+//
+// Secrets for this Worker:
+//   INTAKE_HMAC_KEY        32+ random bytes, base64 (keyed hashes for rate limits and duplicates)
+//   TURNSTILE_SECRET_KEY   only if the owner approves the Turnstile/no-JS decision (see runbook)
+{
+  "name": "buildtrack",
+  "compatibility_date": "2026-10-04",
+  "main": "./worker/public/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash",
+    // Only the API and the private customer page run the Worker first; every other page is static.
+    "run_worker_first": ["/api/*", "/quote/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buildtrack-quotes",
+      // From `wrangler d1 create buildtrack-quotes` (an id, not a secret).
+      "database_id": "<D1_DATABASE_ID>",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "vars": {
+    // Kill switch: requests get 503 until this is "on" (activation step, after preview checks).
+    "WORKFLOW_ENABLED": "off",
+    // The exact public origin (no path, no trailing slash).
+    "PUBLIC_ORIGIN": "https://buildtrack.sunnydelacruz.workers.dev",
+    "INTAKE_HMAC_KEY_VERSION": "1",
+    // Unapproved: turning this on ends no-JS quotation intake (runbook, Turnstile).
+    "TURNSTILE_ENABLED": "off",
+    // The release mode: no owner-notification email is queued; the owner checks the dashboard.
+    "EMAIL_MODE": "manual"
+  },
+  // Hourly cleanup: rate-limit counters after 48 hours, daily totals after 8 days.
+  "triggers": { "crons": ["17 * * * *"] },
+  "observability": {
+    "enabled": true,
+    // Never capture request details in invocation logs; the Worker writes only fixed codes.
+    "logs": { "invocation_logs": false }
+  }
+}

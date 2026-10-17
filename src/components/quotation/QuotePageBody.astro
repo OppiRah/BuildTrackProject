@@ -1,0 +1,807 @@
+---
+// The customer quotation page body (markup and styles), shared by the real customer page
+// (src/routes/quote.astro, built only while the quotation workflow is enabled) and the public
+// academic demo (src/pages/academic-demo/quote.astro). Moved here unchanged from quote.astro.
+// The page script that drives it is supplied by each page; this component holds no data.
+import { contact } from '../../config/business.ts';
+import { checkoutMethodLabels, demoCodeLabel } from '../../lib/quotation/customer.ts';
+import { resultDisclaimer } from '../../lib/payment-walkthrough.ts';
+
+interface Props {
+  /** Academic demo: an "Academic demo" eyebrow and explanation in the intro. */
+  demo?: boolean;
+}
+const { demo = false } = Astro.props;
+---
+
+<section class="intro on-dark" aria-labelledby="quote-title">
+  <div class="container intro-inner">
+    <p class="eyebrow">{demo ? 'Academic demo · Quotation' : 'Quotation'}</p>
+    <h1 id="quote-title">Your BuildTrack quotation</h1>
+    {
+      demo && (
+        <p class="notice-bar" data-demo-disclosure>
+          Academic demo: a fictional quotation kept only in this browser. It demonstrates how a customer would open
+          the invitation, accept and try the checkout. No request, email or payment is real.
+        </p>
+      )
+    }
+    <p class="notice-bar" data-q-disclosure>
+      Academic project — no real payment. BuildTrack never asks for card or bank details. Do not enter real financial information.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container quote-wrap" data-quote>
+    <noscript>
+      <div class="panel">
+        <h2>JavaScript is needed to open this quotation</h2>
+        <p>
+          This page opens your quotation link securely in your browser. Turn on JavaScript and open the link from your email again{
+            contact.phone ? (
+              <>
+                , or call BuildTrack at <a class="text-link" href={contact.phoneHref ?? undefined}>{contact.phone}</a>
+              </>
+            ) : null
+          }.
+        </p>
+      </div>
+    </noscript>
+
+    <p class="status" data-q-status role="status" aria-live="polite" hidden></p>
+    <button type="button" class="button button-secondary retry" data-q-retry hidden>Check again</button>
+
+    <div class="panel" data-q-problem hidden>
+      <h2 tabindex="-1" data-q-problem-heading>This quotation link cannot be used</h2>
+      <p data-q-problem-text></p>
+      {contact.phone && (
+        <p>
+          BuildTrack: <a class="text-link" href={contact.phoneHref ?? undefined}>{contact.phone}</a>
+        </p>
+      )}
+    </div>
+
+    <article class="panel" data-q-quote hidden aria-labelledby="q-heading">
+      <h2 id="q-heading" tabindex="-1">Quotation <span data-q-ref></span></h2>
+      <p data-q-greeting></p>
+      <dl class="details">
+        <dt>Request</dt><dd data-q-request></dd>
+        <dt>Scope</dt><dd class="text" data-q-scope></dd>
+        <dt>Amount</dt><dd data-q-amount></dd>
+        <dt>Valid until</dt><dd data-q-expires></dd>
+        <dt>Quotation version</dt><dd data-q-version></dd>
+      </dl>
+      <p class="answer" data-q-answer hidden></p>
+
+      <div class="actions" data-q-decision hidden>
+        <button type="button" class="button button-primary" data-q-ask="accept">Accept quotation</button>
+        <button type="button" class="button button-secondary" data-q-ask="decline">Decline quotation</button>
+      </div>
+      <div class="confirm" role="group" aria-labelledby="q-confirm-text" data-q-confirm hidden>
+        <p id="q-confirm-text" tabindex="-1" data-q-confirm-text></p>
+        <div class="actions">
+          <button type="button" class="button button-primary" data-q-confirm-yes></button>
+          <button type="button" class="button button-secondary" data-q-confirm-no>Go back</button>
+        </div>
+      </div>
+    </article>
+
+    <section class="checkout" data-q-checkout hidden aria-labelledby="q-checkout-heading">
+      <header class="checkout-head">
+        <p class="checkout-brand"><span class="brand-dot" aria-hidden="true"></span>BuildTrack</p>
+        <h2 id="q-checkout-heading" tabindex="-1">Demo checkout</h2>
+        <p class="demo-notice" role="note">
+          <svg class="notice-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="8.5" fill="none" stroke="currentColor" stroke-width="2"></circle><path d="M10 5.5v5.5M10 13.5v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+          <span>Academic demonstration. No money moves and nothing is charged.</span>
+        </p>
+      </header>
+
+      <div class="checkout-grid">
+        <aside class="summary" aria-labelledby="q-summary-heading">
+          <h3 id="q-summary-heading">Order summary</h3>
+          <dl class="summary-list">
+            <div><dt>Quotation</dt><dd data-q-sum-ref></dd></div>
+            <div><dt>Request</dt><dd data-q-sum-request></dd></div>
+            <div class="summary-scope"><dt>Scope</dt><dd class="text" data-q-sum-scope></dd></div>
+          </dl>
+          <div class="summary-total">
+            <span>Total (demo)</span>
+            <strong data-q-sum-amount></strong>
+          </div>
+          <p class="summary-note">The amount BuildTrack approved in your quotation. This demonstration never charges it.</p>
+        </aside>
+
+        <div class="pay">
+          <fieldset class="methods" data-q-step="method code">
+            <legend>Payment method</legend>
+            <label class="method">
+              <input type="radio" name="q-method" value="card" data-q-method="card" />
+              <svg class="method-icon" viewBox="0 0 48 32" aria-hidden="true" focusable="false">
+                <rect x="1" y="1" width="46" height="30" rx="5" fill="#0b2742"></rect>
+                <rect x="1" y="8" width="46" height="5" fill="#1268b3"></rect>
+                <rect x="6" y="18" width="9" height="7" rx="1.5" fill="#ffd43b"></rect>
+                <rect x="20" y="21" width="20" height="2.5" rx="1.25" fill="#eaf6ff"></rect>
+              </svg>
+              <span class="method-text">
+                <strong>{checkoutMethodLabels.card}</strong>
+                <span>Illustration only. No card details are asked for.</span>
+              </span>
+            </label>
+            <label class="method">
+              <input type="radio" name="q-method" value="bank" data-q-method="bank" />
+              <svg class="method-icon" viewBox="0 0 48 32" aria-hidden="true" focusable="false">
+                <path d="M24 2 4 11h40z" fill="#0b2742"></path>
+                <rect x="7" y="13" width="4" height="12" fill="#1268b3"></rect>
+                <rect x="16" y="13" width="4" height="12" fill="#1268b3"></rect>
+                <rect x="28" y="13" width="4" height="12" fill="#1268b3"></rect>
+                <rect x="37" y="13" width="4" height="12" fill="#1268b3"></rect>
+                <rect x="4" y="26" width="40" height="4" rx="1" fill="#0b2742"></rect>
+                <circle cx="24" cy="7.5" r="1.6" fill="#ffd43b"></circle>
+              </svg>
+              <span class="method-text">
+                <strong>{checkoutMethodLabels.bank}</strong>
+                <span>Illustration only. No account or bank login is asked for.</span>
+              </span>
+            </label>
+          </fieldset>
+
+          <div class="method-details" data-q-step="code" hidden>
+            <div class="illustration" data-q-detail="card" hidden>
+              <svg class="demo-card" viewBox="0 0 240 151" aria-hidden="true" focusable="false">
+                <defs>
+                  <linearGradient id="q-demo-card-fill" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#0b2742"></stop>
+                    <stop offset="1" stop-color="#1268b3"></stop>
+                  </linearGradient>
+                </defs>
+                <rect width="240" height="151" rx="14" fill="url(#q-demo-card-fill)"></rect>
+                <text x="18" y="32" fill="#fff" font-size="16" font-weight="700" font-family="Inter, system-ui, sans-serif">BuildTrack</text>
+                <rect x="18" y="46" width="34" height="24" rx="4" fill="#ffd43b"></rect>
+                <text x="18" y="102" fill="#fff" font-size="14" letter-spacing="1" font-family="ui-monospace, Consolas, monospace">DEMO •••• •••• ••••</text>
+                <text x="18" y="133" fill="#eaf6ff" font-size="9" letter-spacing="1" font-family="Inter, system-ui, sans-serif">DEMONSTRATION ONLY</text>
+                <text x="222" y="133" fill="#eaf6ff" font-size="9" letter-spacing="1" text-anchor="end" font-family="Inter, system-ui, sans-serif">NOT A CARD</text>
+              </svg>
+              <p>In a real checkout, card details would be typed only on a payment provider's own secure page. This demonstration asks for none.</p>
+            </div>
+            <div class="illustration" data-q-detail="bank" hidden>
+              <div class="demo-bank" aria-hidden="true">
+                <svg viewBox="0 0 120 80" focusable="false">
+                  <path d="M60 6 10 28h100z" fill="#0b2742"></path>
+                  <rect x="18" y="32" width="10" height="30" rx="1" fill="#1268b3"></rect>
+                  <rect x="40" y="32" width="10" height="30" rx="1" fill="#1268b3"></rect>
+                  <rect x="70" y="32" width="10" height="30" rx="1" fill="#1268b3"></rect>
+                  <rect x="92" y="32" width="10" height="30" rx="1" fill="#1268b3"></rect>
+                  <rect x="10" y="64" width="100" height="9" rx="2" fill="#0b2742"></rect>
+                  <circle cx="60" cy="20" r="4" fill="#ffd43b"></circle>
+                </svg>
+                <span>Fictional demo bank</span>
+              </div>
+              <p>In a real checkout, the payment would be approved on the bank's own site. This demonstration gives no bank details or transfer instructions.</p>
+            </div>
+
+            <div class="code-field">
+              <label for="q-demo-code">{demoCodeLabel}</label>
+              <p class="hint" id="q-demo-code-hint">Checked only in your browser; never sent or stored. It is not a password or a payment.</p>
+              <p class="field-error" id="q-demo-code-error" data-q-code-error hidden></p>
+              <div class="code-row">
+                <input id="q-demo-code" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="8" aria-describedby="q-demo-code-hint" data-q-code />
+                <button type="button" class="button button-secondary" data-q-sample>Use sample code</button>
+              </div>
+            </div>
+            <button type="button" class="button button-primary pay-button" data-q-check>Continue</button>
+          </div>
+
+          <div class="review" data-q-step="outcome" hidden>
+            <h3>Review your demo payment</h3>
+            <dl class="review-list">
+              <div><dt>Method</dt><dd data-q-method-label></dd></div>
+              <div><dt>Amount</dt><dd data-q-review-amount></dd></div>
+            </dl>
+            <button type="button" class="button button-primary pay-button" data-q-outcome="success">Complete demo payment</button>
+            <div class="other-outcomes">
+              <p>Or show another demo result:</p>
+              <div class="actions">
+                <button type="button" class="button button-secondary" data-q-outcome="failure">Simulate a failed payment</button>
+                <button type="button" class="button button-secondary" data-q-outcome="cancelled">Simulate a cancelled payment</button>
+              </div>
+            </div>
+            <button type="button" class="link-button" data-q-back>Change payment method</button>
+          </div>
+
+          <div class="result" data-q-step="result" hidden>
+            <span class="result-icon" aria-hidden="true">
+              <svg class="icon-success" viewBox="0 0 24 24" focusable="false"><path d="m6 12.5 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <svg class="icon-failure" viewBox="0 0 24 24" focusable="false"><path d="m7 7 10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path></svg>
+              <svg class="icon-cancelled" viewBox="0 0 24 24" focusable="false"><path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path></svg>
+            </span>
+            <h3>Demo confirmation</h3>
+            <p class="result-title" tabindex="-1" data-q-result-title></p>
+            <p data-q-result-text></p>
+            <dl class="review-list">
+              <div><dt>Quotation</dt><dd data-q-result-ref></dd></div>
+              <div><dt>Method</dt><dd data-q-result-method></dd></div>
+              <div><dt>Amount</dt><dd data-q-result-amount></dd></div>
+            </dl>
+            <p class="disclaimer"><strong>{resultDisclaimer}</strong></p>
+            <div class="actions">
+              <button type="button" class="button button-secondary" data-q-restart>Start over</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="history" data-q-history hidden>
+        <h3>Demo results recorded</h3>
+        <ul data-q-history-list></ul>
+        <p class="hint">Each is labelled simulated. Your quotation stays accepted; it is never marked as paid.</p>
+      </div>
+    </section>
+  </div>
+</section>
+
+<style>
+  .intro {
+    padding-block: var(--space-8);
+    background-color: var(--color-navy);
+    color: #fff;
+  }
+
+  .intro-inner > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .notice-bar {
+    max-width: 46rem;
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--color-yellow);
+    background: rgb(255 255 255 / 0.08);
+    color: #fff;
+  }
+
+  .quote-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    max-width: 72rem;
+  }
+
+  .panel > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .details {
+    display: grid;
+    grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .details dt {
+    font-weight: 700;
+  }
+
+  .details dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .text {
+    white-space: pre-wrap;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .notice,
+  .confirm {
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--color-yellow);
+    background: var(--color-surface, #f5f7fa);
+  }
+
+  .confirm > * + * {
+    margin-top: var(--space-3);
+  }
+
+  label {
+    display: block;
+    font-weight: 700;
+  }
+
+  .hint {
+    font-size: var(--text-sm);
+  }
+
+  .field-error {
+    color: #b3261e;
+    font-weight: 700;
+  }
+
+  input {
+    font: inherit;
+    padding: var(--space-2) var(--space-3);
+    max-width: 100%;
+    width: 12rem;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+  }
+
+  input:focus-visible,
+  [tabindex='-1']:focus-visible {
+    outline: 3px solid var(--color-yellow);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 40rem) {
+    .details {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .details dd {
+      margin-bottom: var(--space-2);
+    }
+  }
+
+  /* ---- Demo checkout (accepted quotations): a hosted-checkout layout, BuildTrack-branded ---- */
+  .quote-wrap > :not(.checkout) {
+    max-width: 48rem;
+  }
+
+  .checkout {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  /* Single shrinkable tracks: nothing may force the card wider than the screen at enlarged text. */
+  .checkout-head,
+  .pay,
+  .method-details,
+  .review,
+  .result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .checkout h2,
+  .checkout h3,
+  .result-title,
+  .demo-notice {
+    overflow-wrap: anywhere;
+  }
+
+  .checkout-head {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5) var(--space-6);
+    background: var(--color-navy);
+    color: #fff;
+  }
+
+  .checkout-head h2 {
+    color: #fff;
+    font-size: var(--text-2xl);
+  }
+
+  .checkout-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-blue-pale);
+  }
+
+  .brand-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--color-yellow);
+  }
+
+  .demo-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    width: fit-content;
+    max-width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--color-yellow);
+    color: var(--color-ink);
+    font-weight: 600;
+  }
+
+  .notice-icon {
+    flex: none;
+    width: 1.25em;
+    height: 1.25em;
+    margin-top: 0.1em;
+  }
+
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  }
+
+  .summary {
+    padding: var(--space-6);
+    background: var(--color-bg);
+    border-right: 1px solid var(--color-border);
+  }
+
+  .summary > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .summary h3,
+  .review h3,
+  .history h3 {
+    font-size: var(--text-lg);
+  }
+
+  .summary-list,
+  .review-list {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+  }
+
+  .summary-list dt,
+  .review-list dt {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .summary-list dd,
+  .review-list dd {
+    margin: 0;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .summary-scope dd {
+    font-weight: 400;
+  }
+
+  .summary-total {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding-top: var(--space-4);
+    border-top: 2px solid var(--color-navy);
+  }
+
+  .summary-total strong {
+    font-size: var(--text-xl);
+    color: var(--color-navy);
+  }
+
+  .summary-note {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .pay {
+    display: grid;
+    align-content: start;
+    gap: var(--space-5);
+    padding: var(--space-6);
+    min-width: 0;
+  }
+
+  .methods {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .methods[hidden] {
+    display: none;
+  }
+
+  .methods legend {
+    margin-bottom: var(--space-3);
+    padding: 0;
+    font-weight: 700;
+    font-size: var(--text-lg);
+  }
+
+  .method {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+    min-height: var(--target-min);
+    padding: var(--space-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-weight: 400;
+    cursor: pointer;
+    transition:
+      border-color var(--duration-fast),
+      background-color var(--duration-fast);
+  }
+
+  .method:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  .method:has(input:checked) {
+    border-color: var(--color-blue);
+    background: var(--color-blue-pale);
+    box-shadow: inset 0 0 0 1px var(--color-blue);
+  }
+
+  .method:has(input:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  .method input {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--color-blue);
+  }
+
+  .method input:focus-visible {
+    outline: none; /* the whole option shows the focus ring */
+  }
+
+  .method-icon {
+    flex: none;
+    width: 3rem;
+    height: 2rem;
+  }
+
+  .method-text {
+    display: grid;
+    flex: 1 1 10rem;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+
+  .method-text span {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .method-details,
+  .review,
+  .result {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+    min-width: 0;
+  }
+
+  .method-details[hidden],
+  .review[hidden],
+  .result[hidden],
+  .illustration[hidden] {
+    display: none;
+  }
+
+  .illustration {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .illustration p {
+    flex: 1 1 14rem;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .demo-card {
+    flex: none;
+    width: 15rem;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+  }
+
+  .demo-bank {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-1);
+    width: 9rem;
+    max-width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .demo-bank svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .code-field > * + * {
+    margin-top: var(--space-2);
+  }
+
+  .code-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .code-row input {
+    width: 11rem;
+    min-height: var(--target-min);
+    background: var(--color-surface);
+    letter-spacing: 0.1em;
+  }
+
+  .checkout input[type='text']:focus-visible {
+    outline: var(--focus-ring);
+  }
+
+  .pay-button {
+    width: 100%;
+    min-height: 3.25rem;
+    font-size: var(--text-lg);
+  }
+
+  .other-outcomes > * + * {
+    margin-top: var(--space-2);
+  }
+
+  .other-outcomes p {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .link-button {
+    justify-self: start;
+    min-height: var(--target-min);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-blue);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .checkout .link-button:focus-visible,
+  .checkout .button:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .result {
+    justify-items: start;
+    background: var(--color-surface);
+  }
+
+  .result h3 {
+    font-size: var(--text-sm);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .result-title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-navy);
+  }
+
+  /* Focus is moved to these headings for screen readers; they are not controls, so no ring is drawn. */
+  .checkout-head h2:focus,
+  .result-title:focus {
+    outline: none;
+  }
+
+  .result-icon {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 50%;
+    background: var(--color-blue-pale);
+    color: var(--color-blue);
+  }
+
+  .result-icon svg {
+    display: none;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .result[data-outcome='success'] .result-icon {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+  }
+
+  .result[data-outcome='failure'] .result-icon {
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+  }
+
+  .result[data-outcome='cancelled'] .result-icon {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+  }
+
+  .result[data-outcome='success'] .icon-success,
+  .result[data-outcome='failure'] .icon-failure,
+  .result[data-outcome='cancelled'] .icon-cancelled {
+    display: block;
+  }
+
+  .result .review-list {
+    justify-self: stretch;
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-bg);
+  }
+
+  .disclaimer {
+    justify-self: stretch;
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--color-yellow);
+    background: var(--color-warning-bg);
+  }
+
+  .history {
+    padding: var(--space-5) var(--space-6);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .history > * + * {
+    margin-top: var(--space-2);
+  }
+
+  @media (max-width: 52rem) {
+    .checkout-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .summary {
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .checkout-head,
+    .summary,
+    .pay,
+    .history {
+      padding-inline: var(--space-4);
+    }
+
+    .method-details,
+    .review,
+    .result {
+      padding: var(--space-4);
+    }
+  }
+</style>

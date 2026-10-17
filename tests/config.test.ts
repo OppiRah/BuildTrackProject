@@ -30,7 +30,7 @@ describe('site config', () => {
   });
 
   it('keeps the payment demo as a public page outside the main navigation', () => {
-    expect(secondaryPages.map((page) => page.path)).toEqual(['/payment-demo/']);
+    expect(secondaryPages.map((page) => page.path)).toEqual(['/payment-demo/', '/academic-demo/', '/academic-demo/owner/', '/academic-demo/quote/', '/contact/quotation/']);
     expect(pages.map((page) => page.path)).not.toContain('/payment-demo/');
   });
 

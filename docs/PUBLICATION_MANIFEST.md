@@ -1,5 +1,36 @@
 # Publication manifests
 
+## Public academic demo + quotation workflow source (switched off) — 2026-10-17
+
+Published under the owner's active publication authorization and the instruction to publish a public academic demo now (ADR-043, update "public academic demo first"). Base: `4081ac1` (origin/main). The real quotation workflow is included as source but **off** (`QUOTATION_ON = false`; `wrangler.jsonc` unchanged, assets-only). The built site differs from the published `8263494` only by the academic demo, the Pricing link, `_headers`, the sitemap and script chunking (`npm run check:published-build`; PROJECT_STATE). The cutover commit (runbook §7) additionally changes `wrangler.jsonc` and `src/config/quotation.ts` and is listed separately when made.
+
+### Exact source paths (104)
+
+Modified: `.gitignore`, `astro.config.ts`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/PRESENTATION_HANDOFF.md`, `docs/PROJECT_STATE.md`, `docs/PUBLICATION_MANIFEST.md`, `package.json`, `public/_headers`, `src/components/form/InquiryForm.astro`, `src/config/site.ts`, `src/lib/contact-links.ts`, `src/pages/contact.astro`, `src/pages/pricing.astro`, `src/pages/robots.txt.ts`, `tests/browser/home-demo-ui.ts`, `tests/config.test.ts`, `tests/contact-links.test.ts`.
+
+New:
+- Academic demo: `src/lib/academic-demo.ts`, `src/components/quotation/QuotePageBody.astro`, `src/pages/academic-demo/index.astro`, `src/pages/academic-demo/owner.astro`, `src/pages/academic-demo/quote.astro`, `src/scripts/academic-demo/customer.ts`, `src/scripts/academic-demo/owner.ts`, `src/scripts/academic-demo/request.ts`, `tests/academic-demo.test.ts`, `tests/browser/academic-demo.ts`
+- `deploy/owner.wrangler.example.jsonc`, `deploy/public.wrangler.example.jsonc`
+- `docs/CODEX_HANDOFF_QUOTATION.md`, `docs/PROPOSAL_QUOTATION_WORKFLOW.md`, `docs/QUOTATION_RUNBOOK.md`
+- `migrations/0001_quotation_intake.sql`, `migrations/0002_quotation_owner.sql`, `migrations/0003_quotation_email_jobs.sql`, `migrations/0004_email_attempts.sql`, `migrations/0005_quotation_customer.sql`, `migrations/0006_quotation_lifecycle.sql`, `migrations/0007_retention_cap_warning_index.sql`, `migrations/0008_manual_invitations.sql`
+- `scripts/compare-published-build.ts`
+- `src/config/quotation.ts`, `src/integrations/quote-route.ts`, `src/routes/quotation-request.astro`, `src/routes/quote.astro`, `src/scripts/quotation-inquiry.ts`, `src/scripts/quote.ts`
+- `src/lib/quotation/`: `access-jwt.ts`, `body.ts`, `client.ts`, `client-identity.ts`, `customer.ts`, `d1.ts`, `email-templates.ts`, `email-transport.ts`, `escape.ts`, `intake.ts`, `intake-keys.ts`, `invitation.ts`, `log.ts`, `owner-form.ts`, `quote-link.ts`, `quote-page.ts`, `turnstile.ts`
+- `worker/owner/`: `handler.ts`, `index.ts`, `pages.ts`, `retention.ts`, `scheduled.ts`, `sender.ts`, `store.ts`
+- `worker/public/`: `http.ts`, `index.ts`, `intake.ts`, `quote.ts`, `store.ts`
+- `wrangler.owner.local.jsonc`, `wrangler.workflow.jsonc` (local development configs: placeholder ids, workflow off, no secrets)
+- `tests/browser/fixtures/quotation-enabled.ts`, `tests/browser/fixtures/quotation-turnstile.ts`
+- `tests/deploy-templates.test.ts`, `tests/quotation-client.test.ts`, `tests/quotation-customer.test.ts`, `tests/quotation-email.test.ts`, `tests/quotation-intake-worker.test.ts`, `tests/quotation-lifecycle.test.ts`, `tests/quotation-manual.test.ts`, `tests/quotation-owner.test.ts`, `tests/quotation-store-plan.test.ts`, `tests/quotation-turnstile.test.ts`
+- `tests/support/access-jwt.ts`, `tests/support/mock-email.ts`, `tests/support/sqlite-d1.ts`
+- `tests/worker/`: `d1-cost-worker.ts`, `deploy-templates.ts`, `e2e-test-worker.ts`, `owner-test-worker.ts`, `quotation-e2e.ts`, `quotation-intake.ts`, `quotation-owner.ts`, `quotation-walkthrough.ts`, `turnstile-build.ts`, `walkthrough-worker.ts` (test-only; never deployed, never imported by production code)
+
+### Exclusions
+
+- `docs/anotherpromptthatistoolongforclaudecodetoread.md`: personal prompt, untracked, stays uncommitted.
+- `src/layouts/BaseLayout.astro` and `src/scripts/inquiry.ts`: line-ending-only working-copy status (no content change when line endings are ignored; `inquiry.ts` equals the published file).
+- Filled private configs (`wrangler.owner.jsonc`, `wrangler.owner.preview.jsonc`, `wrangler.preview.jsonc`), secrets, `.env*`, `.dev.vars*`: never committed (the filled configs exist locally and are git-ignored).
+- Ignored and temporary artifacts: `design/references/` (screenshots), `dist/`, `.astro/`, `node_modules/`, `.wrangler/`, `.claude/`, scratch builds and local databases.
+
 ## Seven-step simulated payment walkthrough — 2026-10-13
 
 On 2026-10-13 the owner explicitly approved the seven-step simulated payment walkthrough (ADR-042) for publication. Base: published source `4ac95aec376a5a6dca6aa066f2439cef0937a2d0` with its docs-only follow-up `dd59c82dc229e4e10c85d6f22964f6f3ad7f919e` (origin/main). Committed with the owner's configured Git identity and existing conventions (no agent attribution), merged into main without rewriting history, and pushed to origin/main, which authorizes Cloudflare's automatic deployment. Payments and emails stay simulated, provider integration stays deferred, and CE review and both Formspree gates remain pending.

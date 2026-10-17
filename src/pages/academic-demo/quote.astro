@@ -1,0 +1,20 @@
+---
+// /academic-demo/quote/: tab 3 of the public academic demo. The approved customer quotation page and
+// demo checkout (the same component as the real customer page), driven by the browser-only demo record
+// (src/scripts/academic-demo/customer.ts). No request is made to any server; it cannot open real
+// quotation links.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import QuotePageBody from '../../components/quotation/QuotePageBody.astro';
+import { pageMeta } from '../../config/site.ts';
+
+const meta = pageMeta('/academic-demo/quote/');
+---
+
+<BaseLayout title={meta.title} description={meta.description} noindex>
+  <QuotePageBody demo />
+</BaseLayout>
+
+<script>
+  import { startDemoCustomerPage } from '../../scripts/academic-demo/customer.ts';
+  startDemoCustomerPage();
+</script>

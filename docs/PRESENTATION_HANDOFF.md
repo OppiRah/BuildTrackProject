@@ -127,6 +127,31 @@ Other commands:
 
 Do not submit the form from `npm run dev` unless you intend to: the local site posts to the real Formspree endpoint.
 
+## 6a. Quotation workflow (built and tested locally; not live)
+
+The owner approved a small backend for real quotation requests (ADR-043). It is **built and tested on the developer's computer only**. It is switched off, and the public site does not use it. If asked, explain it like this:
+1. A customer fills in the quotation form. The request is stored in a Cloudflare database, and BuildTrack gets an email.
+2. BuildTrack opens a private owner page (protected by a Cloudflare login), prepares the quotation and approves it. The customer gets an email with a private link.
+3. The customer opens the link, accepts or declines, and can try a **simulated** checkout. No money moves, ever.
+4. The owner can withdraw a link, send a new one, dismiss a request or delete it. Records are deleted automatically 90 days after the last activity.
+
+It is not live because it needs:
+- the owner's Cloudflare and email-service setup;
+- a verified sending domain;
+- approval of the privacy wording;
+- a controlled test (docs/QUOTATION_RUNBOOK.md).
+
+An email that has already been sent cannot be taken back; withdrawing only stops its link from working.
+
+## 6b. Academic quotation demo (public; browser-only)
+
+To show the whole quotation flow, use the **academic demo**: Pricing → "Try the academic quotation demo", or `/academic-demo/`. It uses three tabs in one browser:
+1. **Tab 1, website (`/academic-demo/`):** pick a fictional sample customer and a plan, then **Send demo request**. Then **Open demo owner dashboard**.
+2. **Tab 2, demo owner dashboard (`/academic-demo/owner/`):** open the request, write the scope, keep or change the amount and validity, **Save draft and review**, **Approve quotation**. Then **Open demo customer invitation** (this replaces the email).
+3. **Tab 3, customer quotation (`/academic-demo/quote/`):** **Accept quotation**, **Yes, accept this quotation**. Then choose Card — demo or Bank transfer — demo, **Use sample code**, **Continue**, **Complete demo payment**, and see the Demo confirmation. Tab 2 shows "accepted" and the simulated result live.
+
+How to explain it: "This is an academic demonstration of the workflow. The customers are fictional, everything stays in this browser, and no request, email or payment is real. Approval and email delivery are demonstrated." Do not call it a live quotation service. **Reset demo data** on the dashboard starts again.
+
 ## 7. Current limitations
 
 - Delivery of a request sent **from the live site** is not yet confirmed (see section 8).

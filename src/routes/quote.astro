@@ -1,0 +1,20 @@
+---
+// /quote/: the customer quotation page (docs/PROPOSAL_QUOTATION_WORKFLOW.md §4, §5, §8, §18).
+// Not in src/pages: the quoteRoute integration (src/integrations/quote-route.ts) adds it only
+// while the quotation workflow is enabled, so a committed (flag-off) build never processes this
+// page or its script and its output stays identical. The page holds no data: its
+// script reads the link token from the URL fragment, removes it from the address bar, and asks
+// the public Worker for the approved quotation. The Worker serves this page private, uncached,
+// unindexed and with a same-origin-only CSP (worker/public/index.ts).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import QuotePageBody from '../components/quotation/QuotePageBody.astro';
+---
+
+<BaseLayout title="Your quotation | BuildTrack" description="Your BuildTrack quotation." noindex>
+  <QuotePageBody />
+</BaseLayout>
+
+<script>
+  import { startQuotePage } from '../scripts/quote.ts';
+  startQuotePage();
+</script>

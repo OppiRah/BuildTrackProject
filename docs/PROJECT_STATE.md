@@ -1,6 +1,508 @@
 # BuildTrack Project State
 
-Updated: 2026-10-13.
+Updated: 2026-10-17.
+
+## Public academic demo of the quotation workflow (2026-10-17; owner-authorized publication; live verification recorded separately)
+
+The owner changed the immediate release target to a public, browser-only academic demo (DECISIONS ADR-043, update "public academic demo first"; PROPOSAL §18, "Public academic demo"). The quotation workflow source (real Workers, migrations, manual email mode, tests) is committed with it, **switched off** (`QUOTATION_ON = false`; production stays assets-only; the hosted owner and public preview Workers stay disabled).
+- **Three pages:** `/academic-demo/` (demo request with fictional sample customers), `/academic-demo/owner/` (demo owner dashboard: review, approve, "Open demo customer invitation"), `/academic-demo/quote/` (real customer page markup; accept, demo checkout, confirmation). State lives only in the visitor's browser, shared between tabs. Pricing links to it.
+- **Isolation:** no network calls (CSP `connect-src 'none'; form-action 'none'`), no personal-data fields, no D1, secrets, real tokens, email or Formspree.
+- **Checks (2026-10-17, local):**
+  - `npm test` 590/590; `npm run check` 0 errors; `npm run build` 12 pages.
+  - `test:browser:academic-demo` 36/36 (three-tab journey and isolation); `test:browser` 21/21 and 55/55.
+  - `test:worker:e2e` 69/69 (real `/quote/` after the shared-component extraction); `test:worker` 30/30; `test:worker:owner` 25/25; `test:build:turnstile` passed; `test:deploy:templates` 6/6.
+  - `check:published-build` against `8263494` now differs as intended: the three demo pages, the Pricing link, `_headers`, the sitemap (adds `/academic-demo/` only), and script chunking. `contact/` changes only a chunk name; `payment-demo/` loads its unchanged script as a shared chunk instead of inline.
+- **Still pending, unchanged:** real workflow activation (Cloudflare Access for Sunny, production D1 and Workers, the cutover commit), CE validation, Formspree recipient verification and production receipt.
+
+## Manual email release mode, the three outstanding findings, hosted-preview preparation (2026-10-17; local only, uncommitted; awaiting Codex's focused review and owner decisions)
+
+The owner changed the plan: a free hosted academic version on the existing workers.dev site, with invitations sent manually from Sunny's own email. Nothing is provisioned, deployed, committed or sent; switches stay off. Details: PROPOSAL §18, "Manual email release mode"; setup: `docs/QUOTATION_RUNBOOK.md`; review packet: `docs/CODEX_HANDOFF_QUOTATION.md` §0b.
+- **Manual email (release mode):**
+  - Approval creates the link with no email job.
+  - The owner page prepares the invitation (Prepare email / Copy email text / Copy quotation link). It is hash-verified and no-store.
+  - An optional "Marked sent by owner" record (migration `0008`).
+  - No notification emails: the dashboard is the inbox.
+  - The scheduled run never sends; legacy waiting jobs are cancelled and kept as history.
+- **Customer wording:** stored, reviewed, invitation sent manually after approval; no payment or booking.
+- **Retention:** 5 requests per run (38 statements), under the Free plan's 50 D1 queries per invocation.
+- **Findings repaired:**
+  - Interception harness: outstanding and retired IDs.
+  - Workflow-off build: identical to the published commit `8263494` (`npm run check:published-build`). It differed before.
+  - Walkthrough: no `--test-scheduled`.
+- **Templates and runbook:** manual mode, with no mail-provider settings, and a hostname-based Access application.
+- **Checks (2026-10-17):**
+  - `npm test` 582/582; `npm run check` 0 errors.
+  - `test:worker:e2e` 69/69 (manual mode); `test:worker:owner` 25/25; `test:worker` 30/30.
+  - `test:build:turnstile` passed; `test:deploy:templates` 6/6; `check:published-build` identical.
+  - A 44-check browser journey on the manual walkthrough.
+  - Regressions were shown to fail against seven defects.
+- **Not verified (preview only):** real Access and its JWT header, edge `CF-Connecting-IP`, cron CPU time on Cloudflare, real mail-client `mailto:` handling, and whether Zero Trust signup asks for a payment method.
+- **Owner decisions still open:** privacy wording, retention and validity reconfirmation, Turnstile (off), and authorization to provision and publish.
+
+## Local presentation build and demo-checkout redesign (2026-10-17; local only, uncommitted; owner request; not reviewed)
+
+Nothing committed, deployed, provisioned or sent; production switches and configuration unchanged; the committed build is byte-identical (the `/quote/` page exists only in workflow-enabled builds).
+- **Presentation entry point:** `npm run walkthrough:quotation` now serves the complete website (Home, Pricing and all pages, shared header/footer) with the workflow enabled, plus a presentation hub, owner dashboard and captured-email inbox (runbook §0a). Owner and customer origins stay separate; mocked sign-in and email stay in test tooling.
+- **Formspree safeguard:** the committed general Contact form points at the real Formspree endpoint; the presentation build replaces it with the no-endpoint fixture, refuses to start if a Formspree address appears in the built Contact page, and adds `form-action 'self'; connect-src 'self'` to website pages.
+- **Demo checkout** (`src/routes/quote.astro`; UI-only changes in `src/scripts/quote.ts`): branded checkout card with order summary (approved reference, scope, amount), radio-group methods "Card — demo" / "Bank transfer — demo" with local SVG illustrations, method details, review with "Complete demo payment", and a "Demo confirmation" result with the exact disclaimer. No card/CVV/expiry/account fields; the browser-only demo code 12345678 is unchanged. Request fields, pending-action storage, retries, locks and link handling are untouched.
+- **Verified:** a 38-check headless browser pass through the whole journey (desktop, 390 px, 320 px with 32 px text, keyboard, errors, all three results; demo code absent from all requests and storage; no request outside the two local origins), plus the suites listed in the handoff note.
+- **Codex:** the three latest low-severity findings remain recorded and unresolved. The redesigned customer page should be included in the next recheck.
+
+## Quotation workflow: Codex consolidated review findings repaired (2026-10-17; local, uncommitted; stopped for Codex's focused recheck)
+
+All seven findings are repaired in one local pass. The workflow, sending, readiness and Turnstile stay off; production is unchanged; nothing was provisioned, deployed, sent or committed. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Codex consolidated review repairs"; review packet: `docs/CODEX_HANDOFF_QUOTATION.md` §0.
+1. **Stale email completion:** only a job for the quotation's current link generation marks it `emailed`; an older generation's in-flight send keeps its own acceptance record.
+2. **Resend guard:** "latest job" is compared within the link generation, so earlier-generation resends no longer block the new link's resend.
+3. **Retention cost:** migration `0007` (additive partial index) removes the full `email_jobs` scan. Real local D1, realistic history: identical cost at 6,000 and 12,000 jobs (empty pass 6 rows read; full passes 1,477 / 780). Deleted cap warnings are counted from `RETURNING` (D1's change count includes trigger-deleted attempts).
+4. **Expired cap-warning leases:** deleted (with attempts) once the lease has expired, even with sending off; live leases are kept.
+5. **Templates:** filled copies go at the repository root under exact names (runbook, "Where filled configs go"); `npm run test:deploy:templates` checks this with Wrangler itself, with a `deploy/` negative control.
+6. **Reload identity assertions:** exact request counts and identical action/fields; Set comparisons refused; self-test proves different identities fail.
+7. **Cancellation errors:** only the exact error for a browser-confirmed cancelled interception is tolerated; anything else fails the scenario and the run, without skipping assertions.
+
+Evidence: the handoff §0.
+
+Follow-up the same day (owner request; also awaiting the recheck):
+- **Owner email statement:** the main statement now describes the current link generation; older links' emails are listed separately as history. Regression added.
+- **Local walkthrough:** `npm run walkthrough:quotation` (runbook §0a): request → owner review → approve → mock-inbox link → accept → simulated checkout, on loopback with mocked Access/email and Turnstile off. Verified by driving it over HTTP and loading the owner page and inbox in headless Chromium; only 127.0.0.1 listeners.
+
+## Quotation workflow: local implementation complete (2026-10-17; local, uncommitted; awaiting Codex's consolidated review, no independent signoff)
+
+The owner authorized completing the remaining local work in one pass. The review packet is `docs/CODEX_HANDOFF_QUOTATION.md`, and owner setup is in `docs/QUOTATION_RUNBOOK.md`. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Local completion".
+- **Checkpoint 4 reload repair:**
+  - Pending acceptances, declines and checkouts survive a reload through validated, tab-scoped metadata (no demo code or quotation content).
+  - Codex's case now yields exactly one record. Invalid or new links never resurrect an action.
+  - If storage fails, nothing is sent.
+- **Owner lifecycle:** revoke, new link (same immutable snapshot and expiry), dismiss, and delete (refused during an in-flight send). Each is a confirmed POST with the existing guards. Migration `0006`.
+- **Retention:** 90 days after `last_activity_at`, in bounded batches on the owner cron. Reference counters are kept.
+- **Turnstile:** prepared and **off**. Requiring JavaScript for quotation intake is unapproved.
+- **Deployment preparation:** templates in `deploy/` and the runbook. Nothing is provisioned or deployed.
+- **Still off:** the workflow, sending, customer readiness and Turnstile. Production `wrangler.jsonc` and `public/_headers` are unchanged, and the build is byte-identical to the build before checkpoint 2.
+
+Final checks are listed in the handoff, "Test results".
+
+## Quotation workflow checkpoint 4: fourth review recovery defects repaired (2026-10-17; local, uncommitted; stopped for Codex's narrow recheck)
+
+Later checkpoints stay paused. The workflow, sending and readiness stay off, and production is unchanged. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 fourth review repairs".
+- **Display vs recovery:** displaying a link problem is now separate from ending recovery.
+- **Link problems after an action:** after an acceptance, decline or checkout is sent, a link problem on the first answer or a retry shows the problem and the uncertainty, with the phone contact. It keeps the exact request, the lock and "Check again"; retries stay authorized normally.
+- **When recovery ends:** only on a recognised settling answer, a session replacement or a fresh page load.
+- **Unchanged:** the server and its authorized-snapshot SQL; A → B → A isolation; invalid explicit fragments still replace the session.
+- **Browser matrix:** accept, decline and checkout × revoked, expired and superseded × initial and retry response (18 scenarios). All failed against the old page and pass now: problem plus uncertainty, request and lock kept, working retry once the link is valid, exactly one record.
+
+Checks (mocked email; external browser requests blocked):
+- `npm test`: 502/502.
+- `npm run test:worker:e2e`: 60/60 three times in a row.
+- `npm run test:worker:owner`: 19/19. `npm run test:worker`: 30/30.
+- `npm run test:browser`: 21/21 + 55/55.
+- `npm run check`: 0 errors.
+- `npm run build`: byte-identical.
+
+## Quotation workflow checkpoint 4: third review findings repaired (2026-10-16; local, uncommitted; rechecked by Codex, recovery defects repaired above)
+
+Later checkpoints stay paused. The workflow, sending and readiness stay off, and production is unchanged. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 third review repairs".
+1. **Refused checks keep the outcome unknown.**
+   - A refused "Check again" (429, or any other refusal) keeps the exact request, attempt id and action lock, shows the Retry-After wait, and says the check was refused, not that the action failed.
+   - First-request refusals that can follow a write also stay unknown.
+   - **Tested end to end:** a committed checkout, acceptance or decline → lost answer → allowance used up → refused check → next hourly window → reconciled, with exactly one result.
+2. **One authorized snapshot per response.**
+   - All quotation data in a response (view, conflict view, history, stored attempt) comes from one `SELECT`. That statement also enforces the current link and generation, revocation, state and expiry at that time. No later unguarded reads.
+   - **Tested** with revocation, a newer generation with newer history, expiry, and a version change just before the read (unit, and real D1).
+
+The regressions failed against the old code and pass now:
+- End to end: 3 scenarios against the old page script, 2 against the old server.
+- Unit: 10 against the old server.
+
+Checks (mocked email; external browser requests blocked):
+- `npm test`: 500/500.
+- `npm run test:worker:e2e`: 41/41 three times in a row.
+- `npm run test:worker:owner`: 19/19. `npm run test:worker`: 30/30.
+- `npm run test:browser`: 21/21 + 55/55.
+- `npm run check`: 0 errors.
+- `npm run build`: byte-identical.
+
+## Quotation workflow checkpoint 4: second review findings repaired (2026-10-16; local, uncommitted; rechecked by Codex, remaining findings repaired above)
+
+Later checkpoints stay paused. The workflow, sending and readiness stay off, and production is unchanged. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 second review repairs".
+1. **Response uncertainty:** only fully recognised answers count. Interrupted, invalid, empty or mismatched responses, including HTTP 200, are uncertain. "Check again" repeats the exact request (token, action, version, method, outcome, attempt id), and no new decision or attempt starts meanwhile.
+2. **`/quote/#`:** treated as an explicit invalid link. It clears the stored link, the session and the confirmation, on same-document navigation and on reload. A fragment-free reload still recovers.
+3. **Checkout version:** simulated checkouts carry the displayed version, and the insert is bound to it. A change gives 409 with the current view and no row.
+4. **Stored attempts:** a stored result is returned only after re-checking the link, revocation, state, version and expiry at a fresh time.
+5. **Test identities:** one stable identity per customer journey in unit, API and browser tests. A normal journey stays under the limit, and deliberate exhaustion shows the 429 guidance.
+
+Each finding's regressions failed against the defective code and pass now: 6 end-to-end scenarios against the old page script; 6 unit tests against the old server; the journey-bucket test against the old rotating helper.
+
+Checks (mocked email; external browser requests blocked):
+- `npm test`: 481/481.
+- `npm run test:worker:e2e`: 36/36 three times in a row.
+- `npm run test:worker:owner`: 19/19. `npm run test:worker`: 30/30.
+- `npm run test:browser`: 21/21 + 55/55.
+- `npm run check`: 0 errors.
+- `npm run build`: byte-identical.
+
+## Quotation workflow checkpoint 4: review findings repaired (2026-10-16; local, uncommitted; rechecked by Codex, second findings repaired above)
+
+The next checkpoint is not started. The workflow, sending and readiness stay off, and production is unchanged. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 review repairs".
+1. **Page state per link:** every link change aborts requests and discards late responses. Confirmations and checkout clicks use the exact token and version shown.
+2. **Write-time authorization:** customer writes re-check the link, revocation, state, version and expiry (at a freshly read time) inside the write. A failed check leaves no acceptance, event or simulated row.
+3. **Attempt conflicts:** reusing a checkout attempt with a different choice gives 409 and changes nothing. The incorrect unit test was fixed.
+4. **Explicit fragments:** an invalid explicit fragment shows an error, clears the view and confirmation, and never reopens an earlier quotation.
+5. **Uncertain outcomes:** they are stated as unknown, and "Check again" repeats the identical idempotent request. One request runs at a time.
+6. **Runtime expiry:** real workerd/D1 expiry tests use short-lived immutable fixtures, including expiry during delayed actions. The earlier statement is corrected.
+
+**Each finding's regressions failed against the defective code and pass now:** 7 end-to-end scenarios against the old page script; 4 end-to-end scenarios and 9 unit tests against the old server.
+
+Checks (mocked email; external browser requests blocked):
+- `npm test`: 458/458.
+- `npm run test:worker:e2e`: 28/28 three times in a row.
+- `npm run test:worker:owner`: 19/19. `npm run test:worker`: 30/30.
+- `npm run test:browser`: 21/21 + 55/55. The Home/demo part was rerun after a Windows file lock stopped Chromium's start.
+- `npm run check`: 0 errors.
+- `npm run build`: byte-identical.
+
+## Quotation workflow checkpoint 4: customer routes (2026-10-16; local, uncommitted; reviewed by Codex, findings repaired above)
+
+**Checkpoint 3 is signed off by Codex.** **Checkpoint 4 is built locally and stopped for review.** Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4".
+- **`/quote/` shell:**
+  - The fragment token is removed at once, kept for reload in the tab, and sent only in POST bodies.
+  - It shows the approved snapshot and version, and has a persistent no-real-payment disclosure and a no-JS explanation.
+  - It is added only by the `quoteRoute()` integration while the workflow is enabled, so the committed build is byte-identical.
+- **Shell headers:** served `no-store`, `noindex`, `no-referrer`, unframeable, with a same-origin CSP that hashes the inline scripts.
+- **Customer API:**
+  - POST JSON only, from the exact public origin, with no CORS and a per-client hourly limit.
+  - Every action is validated server-side against the stored link hash and the quotation state.
+  - The link states (invalid, expired, revoked, superseded) are clear but detail-free.
+  - Viewing never changes anything.
+  - Acceptance and decline are explicit, version-checked, atomic and idempotent (concurrency tested).
+- **Simulated checkout:** card or bank with the "Demo code — enter 12345678" field and "Use sample code", checked only in the browser and never transmitted. Outcomes need an accepted quotation, are idempotent per attempt and labelled simulated; the quotation is never marked paid.
+- **Origin under `no-referrer`:** tested directly. Fetch POSTs keep the exact Origin, so the owner-form workaround was not applied.
+
+Checks (Node 24.11.1, wrangler 4.147.0, Chromium 151 headless; mocked email only):
+- `npm test`: 445/445 (22 new customer tests).
+- `npm run test:worker:e2e` (new): 15/15 in three consecutive runs. It covers request → owner approval → in-memory invitation → customer acceptance → simulated outcome, plus reload, no-JS, keyboard, mobile, races, and revoked and superseded links.
+- `npm run test:worker:owner`: 19/19. `npm run test:worker`: 30/30. `npm run test:browser`: 21/21 + 55/55.
+- `npm run check`: 0 errors. `npm run check:release`: passed.
+- `npm run build`: byte-identical. Production `wrangler.jsonc` and `public/_headers`: unchanged.
+- The workflow, sending and customer readiness all stay off in committed config.
+
+Activation gates, all pending:
+- Review of checkpoint 4.
+- Customer readiness only after a controlled preview verifies the routes.
+- Cutover config with `/quote/*` in `run_worker_first`.
+- Owner revoke and new-link actions.
+- Sending account, domain and controlled end-to-end test.
+- IP-header preview verification.
+- Turnstile and the no-JS decision.
+- Real Access setup and preview check.
+- Production config.
+- Request retention.
+- Privacy wording.
+
+No email, inquiry, account, provisioning, dependency, commit, push, merge or deployment.
+
+## Quotation workflow checkpoint 3: skipped-call bookkeeping repaired (2026-10-16; local, uncommitted; signed off by Codex)
+
+Customer routes stay paused, and the workflow and sending stay disabled. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 3 skipped-call bookkeeping".
+- **Intent versus invocation:** a lease-checked send intent (`send_intent_at`) is now separate from actual transport invocation (`provider_called_at`, recorded only after a real call).
+- **Skipped calls:** when the final deadline, expiry or lease check prevents the call, the attempt is closed with that reason and the job is stopped or rescheduled. This happens atomically, only while this runner still owns the job, with no false call record and no added ambiguity; earlier ambiguity is kept. If ownership was lost, nothing is overwritten.
+- **Recovery:** a job is marked ambiguous only if the open attempt had recorded an intent. Genuine crashes in the unavoidable database/network gap stay ambiguous.
+- **Cancellation:** the AbortController behaviour is documented as it is; nothing about timeouts changed.
+
+Checks (mocked transport only):
+- `npm test`: 423/423 (new controlled-delay regressions; the key ones fail against the old behaviour).
+- `npm run test:worker:owner`: 19/19 in three consecutive runs (real local Workers/D1, mocked provider).
+- `npm run test:worker`: 30/30.
+- `npm run check`: 0 errors.
+
+## Quotation workflow checkpoint 3: review findings repaired (2026-10-16; local, uncommitted; rechecked by Codex, one bookkeeping defect repaired above)
+
+Customer-route work stays paused, and the workflow and sending stay disabled. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 3 review repairs".
+1. **Send boundary:**
+   - Time is read afresh for each step.
+   - The provider is called only after a lease-checked durable "call started" mark, then a final synchronous check of the 20-hour deadline, the quotation expiry and the remaining lease.
+   - Stale runners never knowingly send. DB checks and an HTTP call cannot be atomic; provider idempotency stays the separate safeguard.
+   - Controlled-clock and lease-loss regressions cover these cases.
+2. **Duplicate warning:** it uses the quotation's whole email history. It holds after an ambiguous send followed by a rejected resend, and authorization stays bound to the latest job.
+3. **Owner wording:** one statement each for queued, not accepted, unknown and accepted. "No email has been sent" never appears when an attempt may have reached the provider, and acceptance is never called delivery.
+4. **Scheduled gate:** the owner pages' full configuration check, including Access and `OWNER_FORM_KEY`, runs before any D1 access. Invalid configuration gives zero D1 calls and zero transport calls.
+5. **Attempt history:** `email_attempts` (migration `0004`) holds ids, times and codes only. It is written with the claim, keeps crashed attempts, and is deleted with its job.
+6. **Readiness:** `customerRoutes.ready` is a committed constant, default false. Quotation emails are never claimed while it is false, whatever the credentials. Turning it on requires verified customer routes.
+
+Checks (mocked transport only; no provider request):
+- `npm test`: 419/419 (14 new tests; the key ones were confirmed to fail against weakened code).
+- `npm run test:worker:owner`: 19/19 three times in a row.
+- `npm run test:worker`: 30/30.
+- `npm run check`: 0 errors.
+
+## Quotation workflow checkpoint 3: durable email jobs (2026-10-16; local, uncommitted; reviewed, findings repaired above)
+
+**Checkpoint 2 is signed off by Codex** and complete as a disabled local foundation. **Checkpoint 3 is built locally and stopped for review.** Customer routes are not started. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 3".
+
+**Runner** (`worker/owner/sender.ts`, `scheduled.ts`; owner Worker cron every 5 minutes):
+- sends owner notifications, approved quotations and at most one cap warning per UTC day;
+- claims jobs atomically with 2-minute leases; an expired lease is retried as ambiguous;
+- retries timeouts, network errors, 5xx and in-progress keys **only with the same key and payload**;
+- stops automatic attempts 20 hours after the first attempt (Resend keeps keys 24 hours); definite rejections stop at once;
+- records "accepted by the email provider" separately from delivery, which stays unknown;
+- after the window, only an explicitly confirmed owner resend creates a new key, with a duplicate warning when an earlier attempt was ambiguous.
+
+**Immutability and secrecy:**
+- Each job's recipient, template version and payload hash are frozen at its first attempt; a payload that would differ is not sent.
+- Triggers (migration `0003`) make job identity, frozen snapshots and approved quotation snapshots immutable.
+- Customer links are rebuilt in memory and checked against the approved hash. They are never stored or logged.
+
+**Sending fails closed.** It needs `SENDING_ENABLED=on`, `EMAIL_MODE=resend` with `RESEND_API_KEY`, `MAIL_FROM`, HTTPS `OWNER_ORIGIN` and `PUBLIC_ORIGIN`, and the owner configuration. The deployable entry has no mock mode. Tests inject an in-memory provider. **No provider request or email was made.**
+
+**Provider facts** were verified against Resend's official docs (2026-10-16). Undocumented points are recorded as assumptions and handled on the safe side: the success status, the error-body field names, whether failures are cached under a key, and when the key period starts.
+
+Checks (Node 24.11.1, wrangler 4.147.0, Chromium 151 headless):
+- `npm test`: 405/405 (43 new email tests).
+- `npm run test:worker:owner`: 19/19 three times in a row, plus one run after the local cron was added. New on the real runtime: concurrent scheduled runs send four due jobs exactly once; rebuilt links match the approved hashes; triggers hold on real D1.
+- `npm run test:worker`: 30/30.
+- `npm run check`: 0 errors. `npm run check:release`: passed.
+- `npm run build`: byte-identical to the pre-checkpoint-2 build.
+- Production config: untouched.
+
+Activation gates, all pending:
+- Review of checkpoint 3.
+- **Sending stays off until the customer routes exist and are reviewed.**
+- A verified sending domain, a sending-only key and a controlled end-to-end test.
+- IP-header preview verification.
+- Turnstile and the no-JS decision.
+- Real Cloudflare Access setup and a preview check of the owner JWT verification.
+- Production config.
+- Request retention.
+- Privacy wording.
+
+No email, inquiry, account, purchase, dependency, commit, push or deployment.
+
+## Quotation workflow checkpoint 2: Codex findings repaired (2026-10-16; local, uncommitted; signed off by Codex)
+
+Checkpoint 3 remains paused; the workflow is disabled and production is unchanged.
+0. **Deployment boundary (recheck finding):** the deployable owner entry now requires a canonical HTTPS `OWNER_ORIGIN`, with no flag or exception.
+   - Loopback HTTP (`localhost`, `127.0.0.1`, `[::1]`) is accepted only by the test-only wrapper `tests/worker/owner-test-worker.ts`, which no production code imports.
+   - The origin is checked first. With a loopback HTTP origin, public HTTPS GET and POST get 503 before any key lookup or D1 access (unit tests through the handler and the deployable entry; a real-runtime check of the fully configured deployable entry).
+   - Checks: `npm test` 362/362 (four new tests that fail on the previous rule); `npm run test:worker:owner` 17/17 in three consecutive runs; `npm run check` 0 errors.
+1. **`OWNER_ORIGIN` is validated** before the JWT check, any route and any D1 access.
+   - The value must be one canonical serialized origin: no credentials, path (not even a trailing `/`), query or fragment; not `null`; not malformed.
+   - HTTPS is required. *(Superseded by item 0: an earlier version accepted HTTP on a loopback host for local tests.)*
+   - An invalid value gets 503 for GET and POST, with zero database calls (unit tests count every D1 call; the real runtime leaves D1 unchanged).
+   - The exact-Origin check, the JWT and the form token are unchanged.
+2. **Referrer-policy record corrected.** The observed `Origin: null` applies to native form submissions under `no-referrer`. Codex's independent Chromium tests found that same-origin `fetch` POSTs kept their actual Origin. The claim that the future `/quote/` fetch API needs the same workaround is withdrawn; its policy stays undecided until it is tested independently.
+
+Checks (Node 24.11.1, Chromium 151 headless, wrangler 4.147.0):
+- `npm test`: 358/358. There are 19 new tests; the 17 invalid-origin cases fail on the previous check.
+- `npm run test:worker:owner`: 16/16 in three consecutive runs and one confirming run on the final files. That includes the new invalid-origin scenario: four values, GET and POST, all 503, D1 unchanged.
+- `npm run check`: 0 errors.
+
+## Quotation workflow checkpoint 2: owner review and approval (2026-10-16; local, uncommitted; reviewed by Codex, findings repaired above)
+
+**Checkpoint 1 is complete as a disabled local foundation.** Its reviewed implementation is finished. The workflow is still disabled, production is unchanged, and every activation gate below is pending.
+
+**Checkpoint 2 is built locally and stopped for review.** Details are in PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 2".
+- **Owner Worker** (`worker/owner/`, local only; `wrangler.owner.local.jsonc` fails closed):
+  - every request needs a Cloudflare Access JWT for the one owner email;
+  - pages: the request list, the request with its draft form (scope, amount in PHP, validity), and an explicit confirmation page;
+  - approval is one atomic D1 batch that freezes the snapshot, records the customer-link hash and expiry, and queues one quotation email job;
+  - **nothing is sent:** there is no sender.
+- **Protections:**
+  - every POST needs the exact owner Origin and a strictly parsed form with the exact field set;
+  - form tokens are signed, single-use and bound to owner, action, target and version, and expire after 10 minutes;
+  - the change only applies at the version the page showed;
+  - a second click, a replayed token or a stale page changes nothing (409);
+  - GET pages write nothing.
+- **Local Access fixtures** exist only in tests (a per-run key pair and a test-only wrapper that serves only 127.0.0.1). The deployable entry trusts only the team domain's published keys.
+- **Decided while building:**
+  - Signed form tokens instead of nonces stored on page view: a stored nonce would make GETs write.
+  - `Referrer-Policy: same-origin` on owner pages: under `no-referrer` Chromium sent `Origin: null` on native form submissions, so every owner POST was refused. *(Corrected: this does not apply to same-origin `fetch`; the `/quote/` policy stays undecided until tested.)*
+  - New owner settings: the secret `OWNER_FORM_KEY` and the vars `OWNER_ORIGIN`, `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD`.
+- **Deferred:** revoke, delete, dismiss and resend; sending and its cron; customer links; retention, including cleanup of used form tokens.
+
+Checks (Node 24.11.1, Chromium 151 headless, wrangler 4.147.0):
+- `npm test`: 339/339 (34 new owner tests, simulated D1).
+- `npm run test:worker:owner` (new): 15/15 three times in a row (real local Workers/D1 plus native-form browser checks).
+- `npm run test:worker`: 30/30.
+- `npm run check`: 0 errors. `npm run check:release`: passed.
+- `npm run build`: every file byte-identical to the pre-checkpoint build.
+- Production config: untouched. `npm run test:browser`: not run (no public page changed).
+
+Activation gates, all pending:
+- Codex's focused recheck of checkpoint 2.
+- IP-header preview verification.
+- Turnstile and the no-JS decision.
+- Owner-warning email.
+- Real Cloudflare Access setup and a preview check of the owner JWT verification.
+- Production config.
+- Request retention.
+- Privacy wording.
+
+No email, inquiry, account, purchase, dependency, commit, push or deployment.
+
+## Quotation workflow checkpoint 1: remaining recheck findings (2026-10-16; local, uncommitted; complete as a disabled local foundation)
+
+Checkpoint 2 remains paused; the workflow is disabled and production config is unchanged. No email, inquiry, account, dependency, commit, push or deployment.
+1. **Leading BOM:** both strict UTF-8 decoders (no-JS form components in `src/lib/quotation/intake.ts`; the request body in `worker/public/intake.ts`) use `ignoreBOM: true`, so U+FEFF is kept instead of stripped. A BOM-prefixed field name is an unknown field (400); a BOM-prefixed value is kept; `privacy_ack` of BOM + `yes` fails before any database access (JSON 422 `privacy_ack`, no-JS 400); a body starting with a BOM is refused (400). Valid Unicode and the earlier strict-decoding refusals are unchanged.
+2. **Test helper:** the routing probe in `tests/worker/quotation-intake.ts` now requires the GET's 405; any other status or a network failure fails the scenario with its cause.
+3. **Cost wording:** observed local results only, none an upper bound or production-billing figure: Codex's independent review measured race losers that reached the batch at 23–30 reads / 2–10 writes and a forced reference-sequence refund at 26 reads / 12 writes; Claude Code's own race scenario sampled 24 reads / 2 writes (same in three runs; it does not force the costlier paths). Production billing stays unmeasured (PROPOSAL §18, "Costs and quotas, corrected").
+4. **Privacy, explicit:** each request's `client_hash` is persistent (not per day) and links all stored requests from one client identity under one key version; request-retention deletion is not implemented, so requests and their hashes stay until deleted by hand. Both remain activation gates (PROPOSAL "Keyed hashes instead of salts"; ADR-043).
+
+Checks (Node 24): `npm test` 305/305 (3 new BOM tests fail on the old decoders); `npm run check` 0 errors; `npm run test:worker` 30/30 in three consecutive runs (real local Workers/D1).
+
+## Quotation workflow checkpoint 1: Codex review findings repaired (2026-10-16; local, uncommitted, awaiting a focused Codex recheck)
+
+Checkpoint 2 remains paused and the workflow remains disabled. Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Codex independent review".
+
+Codex's four findings are repaired:
+1. **Reference numbers** come from a per-year sequence row inside the atomic save, not a scan of the year's requests (about 18,000 rows read before).
+2. **No-JS bodies** are decoded strictly: malformed escapes and invalid UTF-8 are refused before any database access.
+3. **The privacy acknowledgment** must be exactly `yes`.
+4. **Identical retries** reveal the reference only to the same visitor (stored keyed hash); others get a reference-free acknowledgment. Neither uses quota. After a key rotation the retry gets 409.
+
+Measured D1 cost (real local runtime):
+
+| Outcome | Rows read | Rows written |
+|---|---|---|
+| Accepted, empty database | 31 | 23 |
+| Accepted, 36,000 earlier requests | 33 | 22 |
+| Identical retry | 1 | 0 |
+| Client at its limit | 3 | 0 |
+| After the cap | 1 | 0 |
+| Race losers reaching the batch (Codex's independent review; observed, not an upper bound) | 23–30 | 2–10 |
+| Forced reference-sequence refund (Codex's independent review; observed) | 26 | 12 |
+| Race loser, Claude Code's race scenario (sampled) | 24 | 2 |
+
+Accepted-request cost is bounded but not constant. Ordinary refusals write nothing; race compensation does write. No claim is made about which quota runs out first.
+
+Checks:
+- `npm run check`: 0 errors.
+- `npm test`: 302.
+- `npm run test:browser`: 21/21 + 55/55.
+- `npm run test:worker`: 29/29, three times.
+- `npm run check:release`: passed.
+- `git diff --check`: clean.
+- Flag-off build: unchanged.
+- Production config: untouched.
+
+The Turnstile plan now separates submission idempotency from Siteverify retry keys; Siteverify's handling of repeated keys stays unresolved.
+
+Activation gates, all pending:
+- Codex recheck.
+- IP-header preview verification.
+- Turnstile and the no-JS decision.
+- Owner-warning email.
+- Production config.
+- Request retention.
+- Privacy wording.
+
+## Quotation workflow checkpoint 1 second repairs (2026-10-16; local, uncommitted, awaiting Codex's independent review)
+
+Checkpoint 2 remains paused. PROPOSAL_QUOTATION_WORKFLOW.md §18 ("second review" and "second repairs") has the details.
+
+What changed:
+- A one-row daily total replaces the per-request `COUNT(*)`.
+- A read-only pre-check refuses visitors at their limit, and anything after the cap, with no writes.
+- Reservation, storage and notification queueing are one atomic D1 batch. A failed save consumes nothing, and undo writes happen only in races.
+- The cap-reached marker is the hook for one owner warning per day.
+- The key-rotation retry message and the local-config comment are corrected, and the sizes are stated exactly (27,027 / 37,519 bytes).
+- The Turnstile activation plan is written; it is not implemented.
+
+Measured D1 cost (local runtime, D1's own metadata):
+
+| Outcome | Rows read | Rows written |
+|---|---|---|
+| Accepted | 27 | 22 |
+| Identical retry | 1 | 0 |
+| Client at limit | 3 | 0 |
+| After cap | 1 | 0 |
+| Validation | 0 | 0 |
+
+A failed batch leaves nothing behind; its billing in production is unverified. Refusals are bounded, not free. (The claim that Worker invocations are the practical flood ceiling is withdrawn; see the Codex review entry above.)
+
+Checks:
+- `npm run check`: 0 errors.
+- `npm test`: 273.
+- `npm run test:browser`: 21/21 + 55/55.
+- `npm run test:worker`: 27/27, twice.
+- `npm run check:release`: passed.
+- `git diff --check`: clean.
+- Flag-off build: unchanged.
+- Production config: untouched.
+
+Gates before activation:
+- Codex review.
+- Controlled preview verification of the IP header (a rate-limit result alone is not proof).
+- Turnstile, including approval to end no-JS intake.
+- Owner-warning email.
+- Production config.
+- Request retention.
+- Privacy-wording approval.
+
+## Quotation workflow checkpoint 1 repairs (2026-10-16; local, uncommitted, awaiting Codex's independent review)
+
+Checkpoint 2 is paused. The checkpoint 1 review findings are repaired; PROPOSAL_QUOTATION_WORKFLOW.md §18 ("Checkpoint 1 review" and "Checkpoint 1 repairs") has the details and the trust boundary.
+
+What changed:
+- **Rate limits:** IPv6 is grouped by /64. A missing or invalid `CF-Connecting-IP` is refused. A global cap allows 200 new requests per day. (The "at most one refunded increment" claim made here was imprecise; superseded by the second repairs above.)
+- **Keyed hashes:** keyed with an `INTAKE_HMAC_KEY` secret instead of a stored salt. Counters are deleted after 48 hours by a scheduled cleanup.
+- **Body caps:** derived from worst-case encodings, with a useful 413 message.
+- **Body contract:** strict JSON with no repeated keys.
+- **Idempotency:** identical JSON retries return the earlier reference without using quota; a changed payload gets 409.
+- **No-JS duplicates:** keyed on the full payload and the client, and the duplicate page never repeats a reference.
+- **Refusal pages:** explain how to retry and how to call.
+
+Production impact: none. `wrangler.jsonc`, `public/`, the lockfile and dependencies are unchanged. Against a build of the exact `HEAD` commit, the flag-off build differs only in Contact's CSS and script assets and their links; the only other differences are line endings in three public files from the git export.
+
+Checks (Node 24.11.1):
+- `npm run check`: 0 errors and warnings.
+- `npm test`: 15 files, 268 tests (simulated D1).
+- `npm run test:browser`: 21/21 + 55/55.
+- `npm run test:worker`: 25/25 in three consecutive runs, on the real local Workers runtime and D1.
+- `npm run check:release`: automated requirements met.
+- `git diff --check`: clean.
+
+Network, stated precisely: the browser in `test:worker` can reach only the local Worker, and that is enforced. Wrangler itself contacted the npm registry for its update check, and its metrics were off. The earlier claim that no requests left the machine applied to browser traffic only.
+
+Open before enabling:
+- verify Cloudflare's handling of a client-sent `CF-Connecting-IP`
+- set the intake secret
+- privacy-wording approval
+- request-retention purge
+
+Observed local-tooling issue: Wrangler's dev proxy fails the request after a streamed 413 (§18).
+
+## Quotation workflow checkpoint 1: request storage and validation (2026-10-16; local, uncommitted, awaiting independent review)
+
+The owner approved the revision-3 quotation design for local implementation (ADR-043). Approved defaults: 90-day retention, 14-day links, "Bank transfer (simulated)". The privacy wording stays draft. Checkpoint 1 is built and is the stopping point for independent review; PROPOSAL_QUOTATION_WORKFLOW.md §18 has the details and the resolved plan contradictions.
+
+**What it adds** (all disabled in the committed config):
+- A public Worker intake (`worker/public/`) and a local D1 schema (`migrations/`).
+- `/contact/quotation/`, the Contact link card, legacy-link redirects and CTA routing.
+
+**Production impact:** none. `wrangler.jsonc`, the published site and the deploy pipeline are unchanged. With the flag off, every page except Contact is byte-identical. Contact differs only in asset links, two CSS rules that match nothing, and inactive script code.
+
+**Checks** (Node 24.11.1):
+- `npm run check`: 0 errors and warnings.
+- `npm test`: 15 files, 225 tests. This includes 34 new Worker intake tests that run the real migration SQL on node:sqlite, plus new client and link tests.
+- `npm run build`: 9 pages.
+- `npm run test:browser`: 21/21 + 55/55.
+- `npm run test:worker` (new): 15/15, using the pinned wrangler 4.147.0 from the npx cache with real local D1 and Playwright's cached Chromium headless shell. It covers:
+  - JSON intake and duplicates
+  - origin and media-type refusals
+  - validation without echoing values, and the honeypot
+  - the quotation page with and without JS
+  - Contact with the flag on, and legacy redirects
+  - fit at 390 px and at 320 px with 32 px text
+  - stored rows and queued jobs
+  - no off-origin browser requests and no personal data in Worker output
+- `npm run check:release`: automated requirements met.
+- `git diff --check`: clean.
+
+Screenshots (ignored): `design/references/quotation-intake/shots/`.
+
+**Unchanged and still pending:** Formspree recipient verification and production receipt, and CE review.
+
+**Not tested:** Firefox/Safari, real devices, screen readers.
+
+Nothing was emailed, submitted for real, created, bought, committed, pushed or deployed.
 
 ## Seven-step payment walkthrough published and verified live (2026-10-13)
 

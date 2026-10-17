@@ -1,0 +1,43 @@
+// LOCAL DEVELOPMENT ONLY: the public Worker with the quotation workflow (ADR-043,
+// docs/PROPOSAL_QUOTATION_WORKFLOW.md §14). Nothing deploys this file: Workers Builds and
+// `wrangler deploy` use wrangler.jsonc, which stays assets-only, so the published site is
+// unchanged. The D1 id below is a local placeholder; no Cloudflare database exists.
+// Use: npx wrangler@4.147.0 d1 migrations apply DB --local -c wrangler.workflow.jsonc
+//      npx wrangler@4.147.0 dev --local -c wrangler.workflow.jsonc --var WORKFLOW_ENABLED:on --var INTAKE_HMAC_KEY:<base64 of 32 random bytes>
+// INTAKE_HMAC_KEY is a secret: never put it in this file (for a deployment it is set with
+// `wrangler secret put`). Without it the intake answers 503. Locally, `wrangler dev` sets
+// CF-Connecting-IP to the connecting socket's address (127.0.0.1) when a request has none, so all
+// local browser requests share one rate-limit identity, and it passes a client-sent value through
+// unchanged. Local runs therefore say nothing about how Cloudflare's edge sets the header.
+{
+  "name": "buildtrack-workflow-local",
+  "compatibility_date": "2026-10-04",
+  "main": "./worker/public/index.ts",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": ["/api/*", "/quote/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buildtrack-quotes-local",
+      "database_id": "00000000-0000-4000-8000-000000000000",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "vars": {
+    // Off unless a local run turns it on with --var WORKFLOW_ENABLED:on.
+    "WORKFLOW_ENABLED": "off",
+    "PUBLIC_ORIGIN": "http://127.0.0.1:8787",
+    "INTAKE_HMAC_KEY_VERSION": "1"
+  },
+  // Hourly cleanup: rate-limit counters after 48 hours, daily totals after 8 days.
+  "triggers": { "crons": ["17 * * * *"] },
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
+  }
+}

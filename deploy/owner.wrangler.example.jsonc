@@ -1,0 +1,56 @@
+// TEMPLATE — NOT USED BY ANY BUILD OR DEPLOYMENT. Reviewed configuration for the separate OWNER
+// Worker (docs/PROPOSAL_QUOTATION_WORKFLOW.md §2.1, docs/QUOTATION_RUNBOOK.md). It must sit behind
+// Cloudflare Access ("All traffic") before any secret is set. Values in <ANGLE_BRACKETS> come from
+// the owner's real resources; nothing here has been created. Secrets are NEVER written here.
+//
+// WHERE A FILLED COPY GOES: the paths below (main, migrations_dir) are relative to the REPOSITORY
+// ROOT, and Wrangler resolves them relative to the folder of the config file. This template
+// therefore does not work in place (`-c deploy/...` would look for deploy/worker/...). Save filled
+// copies at the repository root under exactly these names (runbook, "Where filled configs go"):
+//   wrangler.owner.preview.jsonc   the preview owner Worker (runbook step 6)
+//   wrangler.owner.jsonc           the production owner Worker (runbook step 3)
+// They hold the owner's address: do not commit them. Checked by `npm run test:deploy:templates`.
+//
+// Secrets for this Worker (`npx wrangler@4.147.0 secret put <NAME> -c wrangler.owner.jsonc`, or the preview file):
+//   OWNER_FORM_KEY      32+ random bytes, base64 (signs owner form tokens)
+//   QUOTE_LINK_KEY_V1   32+ random bytes, base64 (customer link tokens; used for nothing else)
+// No email-provider secret: the release mode is MANUAL email (EMAIL_MODE "manual"); the owner sends
+// each prepared invitation from their own email account.
+{
+  "name": "buildtrack-owner",
+  "compatibility_date": "2026-10-04",
+  "main": "./worker/owner/index.ts",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buildtrack-quotes",
+      // The same database as the public Worker.
+      "database_id": "<D1_DATABASE_ID>",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "vars": {
+    // Kill switch for the owner pages and the scheduled work (503 / nothing while "off").
+    "WORKFLOW_ENABLED": "off",
+    // Exact HTTPS origin of this Worker; HTTP is refused by the deployable entry.
+    "OWNER_ORIGIN": "https://buildtrack-owner.sunnydelacruz.workers.dev",
+    // The one owner address; must equal the Access identity's email.
+    "OWNER_EMAIL": "<OWNER_EMAIL>",
+    // From Zero Trust: the team domain and the Access application's AUD tag.
+    "ACCESS_TEAM_DOMAIN": "<TEAM_NAME>.cloudflareaccess.com",
+    "ACCESS_AUD": "<ACCESS_APPLICATION_AUD_TAG>",
+    "QUOTE_LINK_KEY_CURRENT": "1",
+    // The release mode: BuildTrack sends no email. Approval creates the customer link; the request
+    // page prepares the invitation for the owner to send. ("resend" is retained code, not released.)
+    "EMAIL_MODE": "manual",
+    // The public site, for the customer links in prepared invitations.
+    "PUBLIC_ORIGIN": "https://buildtrack.sunnydelacruz.workers.dev"
+  },
+  // Every 5 minutes: retention (90 days after last activity, at most 5 requests per run); in manual
+  // mode nothing is sent (any waiting automatic-mode job is cancelled and kept as history).
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
+  }
+}

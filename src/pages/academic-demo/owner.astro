@@ -1,0 +1,148 @@
+---
+// /academic-demo/owner/: tab 2 of the public academic demo. A DEMO owner dashboard styled like the
+// real owner pages (worker/owner/pages.ts). It reads and changes only the browser-only demo record
+// (src/lib/academic-demo.ts): it has no access to the real owner Worker, D1, real requests, customer
+// link tokens or secrets, and it sends no email. The real owner dashboard is separate and protected.
+import { pageMeta } from '../../config/site.ts';
+
+const meta = pageMeta('/academic-demo/owner/');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>{meta.title}</title>
+    <meta name="description" content={meta.description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="top">
+      <span class="tag">ACADEMIC DEMO</span>
+      <span>BuildTrack owner: quotation requests</span>
+    </header>
+    <main data-demo-owner>
+      <p class="notice">
+        <strong>Academic demo dashboard.</strong> It shows only the demo requests made in this browser and cannot see real
+        requests or customers. Approval and email delivery are demonstrated: nothing is emailed.
+      </p>
+
+      <section data-view="list">
+        <h1>Quotation requests</h1>
+        <p class="hint">Newest first. Send a request from the <a href="/academic-demo/" target="_blank" rel="noopener">demo request page</a>; it appears here.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th scope="col">Reference</th><th scope="col">Received</th><th scope="col">Name</th><th scope="col">Organization</th><th scope="col">Plan</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody data-rows></tbody>
+          </table>
+        </div>
+        <p data-empty>No demo requests yet.</p>
+        <p><button type="button" class="secondary" data-reset>Reset demo data</button></p>
+      </section>
+
+      <section data-view="detail" hidden>
+        <p><button type="button" class="link" data-back>All requests</button></p>
+        <h1 tabindex="-1" data-detail-heading></h1>
+
+        <div data-part="draft" hidden>
+          <h2>Draft quotation</h2>
+          <form data-draft-form novalidate>
+            <label for="demo-scope">Scope</label>
+            <p class="hint" id="demo-scope-hint">What the quotation covers, as the customer will read it (10 to 2,000 characters).</p>
+            <p class="field-error" id="demo-scope-error" hidden></p>
+            <textarea id="demo-scope" name="scope" rows="5" aria-describedby="demo-scope-hint"></textarea>
+            <label for="demo-amount">Amount (PHP)</label>
+            <p class="hint" data-prefill></p>
+            <p class="field-error" id="demo-amount-error" hidden></p>
+            <input id="demo-amount" name="amount" inputmode="decimal" autocomplete="off" />
+            <label for="demo-validity">Validity (days)</label>
+            <p class="field-error" id="demo-validity-error" hidden></p>
+            <input id="demo-validity" name="validity_days" inputmode="numeric" autocomplete="off" value="14" />
+            <div class="actions"><button type="submit">Save draft and review</button></div>
+          </form>
+        </div>
+
+        <div data-part="confirm" hidden>
+          <h2>Approve demo quotation?</h2>
+          <p>Check every detail. Approving freezes exactly what is shown here and creates the customer's private demo link.</p>
+          <dl data-confirm-details></dl>
+          <div class="actions">
+            <button type="button" data-approve>Approve quotation</button>
+            <button type="button" class="secondary" data-edit>Back to the draft</button>
+          </div>
+        </div>
+
+        <div data-part="approved" hidden>
+          <h2 data-quote-heading></h2>
+          <dl data-quote-details></dl>
+          <h3>Customer invitation</h3>
+          <p class="notice">
+            In the real release, the owner sends this invitation from their own email account. In this academic demo, <strong>Open demo customer invitation</strong>
+            replaces the email step: it opens the customer's quotation in a new
+            tab. Nothing is emailed.
+          </p>
+          <div class="invitation">
+            <div class="actions">
+              <a class="button-link" data-open-invitation target="_blank" rel="noopener">Open demo customer invitation</a>
+              <button type="button" class="secondary" data-copy>Copy email text</button>
+            </div>
+            <p class="hint" data-copy-status role="status" aria-live="polite"></p>
+            <label for="demo-invitation-to">To (fictional)</label>
+            <input id="demo-invitation-to" type="text" readonly />
+            <label for="demo-invitation-subject">Subject</label>
+            <input id="demo-invitation-subject" type="text" readonly />
+            <label for="demo-invitation-text">Email text</label>
+            <textarea id="demo-invitation-text" readonly rows="12"></textarea>
+          </div>
+          <div data-history hidden>
+            <h3>Demo checkout results</h3>
+            <ul data-history-list></ul>
+            <p class="hint">Simulated only. The quotation is never marked as paid.</p>
+          </div>
+        </div>
+
+        <h2>Request</h2>
+        <dl data-request-details></dl>
+      </section>
+    </main>
+
+    <script>
+      import { startDemoOwnerPage } from '../../scripts/academic-demo/owner.ts';
+      startDemoOwnerPage();
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  body { margin: 0; font: 1rem/1.6 system-ui, sans-serif; color: #14213d; background: #f5f7fa; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; background: #14213d; color: #fff; padding: 0.75rem 1rem; font-weight: 600; }
+  .tag { background: #ffd43b; color: #14213d; font-weight: 800; font-size: 0.8rem; padding: 0.15rem 0.5rem; border-radius: 4px; }
+  main { max-width: 52rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.6rem; line-height: 1.2; }
+  h1:focus { outline: none; }
+  a { color: #0b4f9c; font-weight: 600; }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #f5b400; outline-offset: 2px; }
+  .notice { border-left: 4px solid #f5b400; background: #fff8e1; padding: 0.75rem 1rem; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; background: #fff; }
+  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #d6dbe3; vertical-align: top; }
+  dl { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr; gap: 0.25rem 1rem; background: #fff; padding: 1rem; }
+  dt { font-weight: 600; }
+  dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+  label { display: block; font-weight: 600; margin-top: 1rem; }
+  .hint { color: #4a5568; font-size: 0.9rem; margin: 0.25rem 0; }
+  .field-error { color: #b3261e; font-weight: 600; margin: 0.25rem 0; }
+  textarea, input { font: inherit; padding: 0.5rem; border: 1px solid #7a8699; border-radius: 4px; max-width: 100%; box-sizing: border-box; }
+  textarea { width: 100%; min-height: 8rem; }
+  .invitation input { width: 100%; }
+  button, .button-link { font: inherit; font-weight: 700; padding: 0.6rem 1.2rem; border: 0; border-radius: 4px; background: #14213d; color: #fff; cursor: pointer; text-decoration: none; display: inline-block; }
+  button.secondary { background: #fff; color: #14213d; border: 2px solid #14213d; }
+  button.link { background: none; color: #0b4f9c; padding: 0; text-decoration: underline; }
+  .actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 1rem; }
+  .invitation { background: #fff; border: 1px solid #d6dbe3; border-radius: 6px; padding: 1rem; }
+  @media (max-width: 40rem) { dl { grid-template-columns: 1fr; } dt { margin-top: 0.5rem; } }
+</style>

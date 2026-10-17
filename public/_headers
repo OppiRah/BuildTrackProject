@@ -8,6 +8,13 @@
 
 # strict-origin-when-cross-origin keeps the origin in the Referer sent to Formspree,
 # which its optional "Restrict to Domain" setting relies on.
+# Academic demo of the quotation workflow: browser-only by design. The page may not fetch or submit
+# anything anywhere (connect-src/form-action 'none'), so it cannot reach a server, Formspree or any
+# email service, and it cannot be framed.
+/academic-demo/*
+  Content-Security-Policy: connect-src 'none'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'
+  Cache-Control: no-store
+
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

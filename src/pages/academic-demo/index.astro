@@ -1,0 +1,217 @@
+---
+// /academic-demo/: tab 1 of the public academic demo of the quotation workflow
+// (src/lib/academic-demo.ts). A demo quotation request with a FICTIONAL sample customer: no real
+// name, email, phone or project detail is asked for. The request is kept only in this browser; no
+// server, email service or Formspree is contacted. The real quotation workflow is separate and off.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { demoIdentities, demoPlans } from '../../lib/academic-demo.ts';
+import { pageMeta } from '../../config/site.ts';
+
+const meta = pageMeta('/academic-demo/');
+const php = (amount: number) => `₱${amount.toLocaleString('en-PH')}`;
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <section class="intro on-dark" aria-labelledby="demo-heading">
+    <div class="container intro-inner">
+      <p class="eyebrow">Academic demo · Quotation workflow</p>
+      <h1 id="demo-heading">Request a quotation (academic demo)</h1>
+      <p class="lead">
+        This demonstration shows how a BuildTrack quotation request would be reviewed, approved and accepted. It uses
+        fictional sample customers and keeps everything in this browser. No request, email or payment is real.
+      </p>
+      <ol class="tabs-guide">
+        <li><strong>Tab 1 (this page):</strong> send a demo request.</li>
+        <li><strong>Tab 2:</strong> the demo owner dashboard reviews and approves it.</li>
+        <li><strong>Tab 3:</strong> the demo customer invitation opens the quotation and the demo checkout.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container demo-wrap" data-demo-request>
+      <form class="panel" data-demo-form novalidate>
+        <fieldset class="identities">
+          <legend>Choose a fictional sample customer</legend>
+          <p class="hint">The demo never asks for your own details. These people and companies are made up.</p>
+          {
+            demoIdentities.map((identity, index) => (
+              <label class="identity">
+                <input type="radio" name="identity" value={identity.id} checked={index === 0} />
+                <span class="identity-text">
+                  <strong>{identity.name}</strong>
+                  <span>{identity.organization} · {identity.organizationType}</span>
+                  <span>{identity.email}</span>
+                  <span class="need">{identity.projectNeed}</span>
+                </span>
+              </label>
+            ))
+          }
+        </fieldset>
+        <label for="demo-plan">Plan of interest</label>
+        <select id="demo-plan" name="plan">
+          {demoPlans.map((plan) => <option value={plan.id}>{plan.name} (proposed {php(plan.amountPhp)})</option>)}
+        </select>
+        <p class="note">Academic demo: the request is stored only in this browser. Nothing is sent to BuildTrack or anyone else.</p>
+        <button type="submit" class="button button-primary">Send demo request</button>
+      </form>
+
+      <div class="panel confirmation" data-demo-confirmation hidden>
+        <h2 tabindex="-1" data-demo-confirmation-heading>Demo request received</h2>
+        <p>Demo reference <strong data-demo-reference></strong>, kept in this browser.</p>
+        <p>
+          In the real service, BuildTrack would review the request and send a quotation invitation by email. Here, open the
+          demo owner dashboard to play that part.
+        </p>
+        <div class="actions">
+          <a class="button button-primary" href="/academic-demo/owner/" target="_blank" rel="noopener">Open demo owner dashboard</a>
+          <button type="button" class="button button-secondary" data-demo-again>Send another demo request</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { startDemoRequestPage } from '../../scripts/academic-demo/request.ts';
+  startDemoRequestPage();
+</script>
+
+<style>
+  .intro {
+    padding-block: var(--space-8);
+    background-color: var(--color-navy);
+    color: #fff;
+  }
+
+  .intro-inner > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .intro .lead {
+    max-width: 46rem;
+    color: var(--color-blue-pale);
+  }
+
+  .tabs-guide {
+    max-width: 46rem;
+    padding-left: 1.25rem;
+    color: var(--color-blue-pale);
+  }
+
+  .demo-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    max-width: 44rem;
+  }
+
+  .panel > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .identities {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .identities legend {
+    margin-bottom: var(--space-2);
+    padding: 0;
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .identity {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    cursor: pointer;
+  }
+
+  .identity:has(input:checked) {
+    border-color: var(--color-blue);
+    background: var(--color-blue-pale);
+  }
+
+  .identity:has(input:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  .identity input {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0.2rem 0 0;
+    accent-color: var(--color-blue);
+  }
+
+  .identity-text {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .identity-text span {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .identity-text .need {
+    color: var(--color-ink);
+  }
+
+  label[for='demo-plan'] {
+    display: block;
+    font-weight: 700;
+  }
+
+  select {
+    font: inherit;
+    min-height: var(--target-min);
+    max-width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+  }
+
+  select:focus-visible,
+  .button:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .hint,
+  .note {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .note {
+    padding: var(--space-3) var(--space-4);
+    border-left: 4px solid var(--color-yellow);
+    background: var(--color-warning-bg);
+    color: var(--color-ink);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .confirmation h2:focus {
+    outline: none;
+  }
+</style>

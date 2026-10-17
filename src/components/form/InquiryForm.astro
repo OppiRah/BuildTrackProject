@@ -2,19 +2,28 @@
 // Inquiry form (docs/ARCHITECTURE.md §6, UX_BRAND.md §5). Rendered only when an
 // endpoint is configured. Without JavaScript it is a plain POST to the provider;
 // src/scripts/inquiry.ts adds preselection, validation messages and fetch submission.
+// The "quotation" variant (/contact/quotation/, docs/PROPOSAL_QUOTATION_WORKFLOW.md §6) posts
+// to the BuildTrack quotation endpoint instead: natively without JavaScript, as JSON with it.
+// While the quotation workflow is enabled, the general variant omits the quotation type.
 import Field from './Field.astro';
 import Icon from '../site/Icon.astro';
 import { contact, customerSegments } from '../../config/business.ts';
 import { fieldLimits, formProvider, otherOrganizationType, privacyNotice, requestTypes } from '../../config/inquiry.ts';
 import { planLabel, plans } from '../../config/pricing.ts';
+import { quotationPrivacyNotice, quotationWorkflow } from '../../config/quotation.ts';
 import { capabilityServices, supportingServices } from '../../config/services.ts';
 import { PHONE_PATTERN } from '../../lib/inquiry-validate.ts';
 
 interface Props {
   endpoint: string;
+  variant?: 'general' | 'quotation';
 }
 
-const { endpoint } = Astro.props;
+const { endpoint, variant = 'general' } = Astro.props;
+const isQuotation = variant === 'quotation';
+const shownTypes = quotationWorkflow.enabled ? requestTypes.filter((type) => type.id !== 'quotation') : requestTypes;
+const privacy = isQuotation ? quotationPrivacyNotice : privacyNotice;
+const timeoutMs = isQuotation ? quotationWorkflow.timeoutMs : formProvider.timeoutMs;
 const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> = {
   demo: 'See a walkthrough of the proposed platform.',
   quotation: 'Get proposed pricing for your project needs.',
@@ -24,13 +33,18 @@ const telHref = contact.phoneHref ?? undefined;
 const hasAlternative = Boolean(contact.phone || contact.publicEmail);
 ---
 
-<div class="inquiry" data-inquiry>
+<div
+  class="inquiry"
+  data-inquiry
+  data-quotation-page={!isQuotation && quotationWorkflow.enabled ? quotationWorkflow.pagePath : undefined}
+>
   <form
     class="inquiry-form"
     action={endpoint}
     method="POST"
     data-inquiry-form
-    data-timeout={formProvider.timeoutMs}
+    data-submit-mode={isQuotation ? 'json' : undefined}
+    data-timeout={timeoutMs}
     aria-describedby="inquiry-required-note"
   >
     <!-- A named group: focusing it announces the heading (name) and message (description) once; no live region. -->
@@ -70,26 +84,39 @@ const hasAlternative = Boolean(contact.phone || contact.publicEmail);
 
     <p id="inquiry-required-note" class="muted">Fields marked (required) must be completed.</p>
 
-    <fieldset class="field" data-field="request_type">
-      <legend>What would you like to do? <span class="field-need">(required)</span></legend>
-      <div class="type-options">
-        {
-          requestTypes.map((type) => (
-            <label class="type-option">
-              <input type="radio" id={`inquiry-request_type-${type.id}`} name="request_type" value={type.id} required />
-              <span class="type-check" aria-hidden="true">
-                <Icon name="check" size={16} />
-              </span>
-              <span class="type-label">{type.label}</span>
-              <span class="type-desc">{requestDescriptions[type.id]}</span>
-            </label>
-          ))
-        }
-      </div>
-      <p class="field-error" id="inquiry-request_type-error" hidden>
-        <Icon name="alert" size={18} /><span data-error-text></span>
-      </p>
-    </fieldset>
+    {
+      isQuotation ? (
+        <input type="hidden" name="request_type" value="quotation" />
+      ) : (
+        <fieldset class="field" data-field="request_type">
+          <legend>What would you like to do? <span class="field-need">(required)</span></legend>
+          {
+            // Quotation workflow on: two request types remain. Emitted only then, so a workflow-off build
+            // keeps the published stylesheet.
+            shownTypes.length === 2 && (
+              <style is:inline set:html="@media (min-width: 48rem) { .type-options[data-columns='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }" />
+            )
+          }
+          <div class="type-options" data-columns={shownTypes.length === 3 ? undefined : shownTypes.length}>
+            {
+              shownTypes.map((type) => (
+                <label class="type-option">
+                  <input type="radio" id={`inquiry-request_type-${type.id}`} name="request_type" value={type.id} required />
+                  <span class="type-check" aria-hidden="true">
+                    <Icon name="check" size={16} />
+                  </span>
+                  <span class="type-label">{type.label}</span>
+                  <span class="type-desc">{requestDescriptions[type.id]}</span>
+                </label>
+              ))
+            }
+          </div>
+          <p class="field-error" id="inquiry-request_type-error" hidden>
+            <Icon name="alert" size={18} /><span data-error-text></span>
+          </p>
+        </fieldset>
+      )
+    }
 
     <Field name="service" label="Service of interest" control="select">
       <option value="">Not sure yet</option>
@@ -162,8 +189,8 @@ const hasAlternative = Boolean(contact.phone || contact.publicEmail);
 
     <div class="field field-check" data-field="privacy_ack">
       <p class="field-hint" id="inquiry-privacy_ack-hint">
-        {privacyNotice.guidance}
-        {privacyNotice.status === 'draft' && <em class="pending"> Draft privacy wording pending review.</em>}
+        {privacy.guidance}
+        {privacy.status === 'draft' && <em class="pending"> Draft privacy wording pending review.</em>}
       </p>
       <label for="inquiry-privacy_ack" class="check-label">
         <input
@@ -174,7 +201,7 @@ const hasAlternative = Boolean(contact.phone || contact.publicEmail);
           required
           aria-describedby="inquiry-privacy_ack-hint"
         />
-        <span>{privacyNotice.acknowledgment} <span class="field-need">(required)</span></span>
+        <span>{privacy.acknowledgment} <span class="field-need">(required)</span></span>
       </label>
       <p class="field-error" id="inquiry-privacy_ack-error" hidden>
         <Icon name="alert" size={18} /><span data-error-text></span>
@@ -184,7 +211,7 @@ const hasAlternative = Boolean(contact.phone || contact.publicEmail);
     <div class="hp" aria-hidden="true">
       <label>Leave this field empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" /></label>
     </div>
-    <input type="hidden" name="subject" value="BuildTrack: Website request" />
+    {!isQuotation && <input type="hidden" name="subject" value="BuildTrack: Website request" />}
 
     <p class="visually-hidden" aria-live="polite" data-status></p>
     <button type="submit" class="button button-primary submit" data-submit>
@@ -194,15 +221,32 @@ const hasAlternative = Boolean(contact.phone || contact.publicEmail);
   </form>
 
   <div class="confirmation" data-confirmation hidden>
-    <h2 tabindex="-1" data-confirmation-heading>Request submitted</h2>
-    <p>
-      Thank you. Our form service has accepted your <span data-confirm-noun>request</span> for the BuildTrack contact,
-      who will follow up using the details you provided.
-    </p>
-    <p>
-      This confirms that the form service received your request. It does not confirm that the request has reached or
-      been read by the contact.
-    </p>
+    {
+      isQuotation ? (
+        <>
+          <h2 tabindex="-1" data-confirmation-heading>Quotation request received</h2>
+          <p data-confirm-reference-line hidden>
+            Your reference is <strong data-confirm-reference></strong>.
+          </p>
+          <p>
+            Your request is stored, and BuildTrack will review it. If BuildTrack approves a quotation, it sends you an email invitation with a private link to view it. Invitations are written and sent manually, so this can take some time.
+          </p>
+          <p><strong>Submitting a request creates no payment, booking or subscription.</strong></p>
+        </>
+      ) : (
+        <>
+          <h2 tabindex="-1" data-confirmation-heading>Request submitted</h2>
+          <p>
+            Thank you. Our form service has accepted your <span data-confirm-noun>request</span> for the BuildTrack
+            contact, who will follow up using the details you provided.
+          </p>
+          <p>
+            This confirms that the form service received your request. It does not confirm that the request has reached
+            or been read by the contact.
+          </p>
+        </>
+      )
+    }
     {
       hasAlternative && (
         <p>
@@ -245,8 +289,13 @@ const hasAlternative = Boolean(contact.phone || contact.publicEmail);
 </div>
 
 <script>
+  import { QUOTATION_ON } from '../../config/quotation.ts';
   import { initInquiry } from '../../scripts/inquiry.ts';
-  initInquiry();
+  import { initQuotationInquiry } from '../../scripts/quotation-inquiry.ts';
+  // QUOTATION_ON is a literal: a workflow-off build folds this to the published initInquiry() and
+  // contains none of the quotation-only client code.
+  if (QUOTATION_ON) initQuotationInquiry();
+  else initInquiry();
 </script>
 
 <style>

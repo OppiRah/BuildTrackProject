@@ -16,6 +16,21 @@ describe('contactHref', () => {
     );
   });
 
+  it('keeps quotation links on Contact while the quotation workflow is off (the committed default)', () => {
+    expect(contactHref({ type: 'quotation', service: 'custom-integration' })).toBe(
+      '/contact/?type=quotation&service=custom-integration',
+    );
+  });
+
+  it('sends quotation links to the quotation page with only service and plan while the workflow is on', () => {
+    expect(contactHref({ type: 'quotation', service: 'custom-integration', plan: 'enterprise' }, true)).toBe(
+      '/contact/quotation/?service=custom-integration&plan=enterprise',
+    );
+    expect(contactHref({ type: 'quotation' }, true)).toBe('/contact/quotation/');
+    expect(contactHref({ type: 'demo' }, true)).toBe('/contact/?type=demo');
+    expect(contactHref({ type: 'service', plan: 'starter' }, true)).toBe('/contact/?type=service&plan=starter');
+  });
+
   it('produces only allowlisted values for every configured option', () => {
     const allowed = {
       type: new Set<string>(requestTypes.map((item) => item.id)),

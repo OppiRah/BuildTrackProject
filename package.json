@@ -13,6 +13,14 @@
     "check": "astro check",
     "test": "vitest run",
     "test:browser": "node tests/browser/inquiry-form.ts && node tests/browser/home-demo-ui.ts",
+    "test:browser:academic-demo": "node tests/browser/academic-demo.ts",
+    "test:worker": "node tests/worker/quotation-intake.ts",
+    "test:worker:owner": "node tests/worker/quotation-owner.ts",
+    "test:worker:e2e": "node tests/worker/quotation-e2e.ts",
+    "test:build:turnstile": "node tests/worker/turnstile-build.ts",
+    "test:deploy:templates": "node tests/worker/deploy-templates.ts",
+    "walkthrough:quotation": "node tests/worker/quotation-walkthrough.ts",
+    "check:published-build": "node scripts/compare-published-build.ts",
     "check:release": "node scripts/check-release.ts"
   },
   "dependencies": {

@@ -53,3 +53,8 @@ npm-debug.log*
 
 # Owner reference recordings and local browser review evidence are never deployed/committed.
 /design/references/
+
+# Filled deployment configs (owner address, real ids): never committed (docs/QUOTATION_RUNBOOK.md)
+/wrangler.owner.jsonc
+/wrangler.owner.preview.jsonc
+/wrangler.preview.jsonc

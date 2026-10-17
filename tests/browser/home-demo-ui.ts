@@ -1688,18 +1688,20 @@ if (process.env.EVIDENCE_DIR) await scenario('payment demo: capture each step (1
   await open('/payment-demo/', { width: 1440, height: 900, js: false }); await capture('1440-no-javascript.png');
 });
 
-await scenario('pricing: "Try the payment demo" opens /payment-demo/ while Avail and quotation links still open inquiries; the sitemap lists the eight public pages', async () => {
+await scenario('pricing: "Try the payment demo" opens /payment-demo/, "Try the academic quotation demo" opens /academic-demo/, while Avail and quotation links still open inquiries; the sitemap lists the nine public pages', async () => {
   await open('/pricing/', { width: 1440, height: 900 });
-  const links = await evaluate<{ demo: string[]; avail: string[]; quote: string[] }>(`({
+  const links = await evaluate<{ demo: string[]; academic: string[]; avail: string[]; quote: string[] }>(`({
     demo: [...document.querySelectorAll('main a')].filter((a) => /Try the payment demo/.test(a.textContent)).map((a) => a.getAttribute('href')),
+    academic: [...document.querySelectorAll('main a')].filter((a) => /Try the academic quotation demo/.test(a.textContent)).map((a) => a.getAttribute('href')),
     avail: [...document.querySelectorAll('main a')].filter((a) => /^Avail/.test(a.textContent.trim())).map((a) => a.getAttribute('href')),
-    quote: [...document.querySelectorAll('main a')].filter((a) => /Quotation/i.test(a.textContent)).map((a) => a.getAttribute('href')) })`);
+    quote: [...document.querySelectorAll('main a')].filter((a) => /Quotation/i.test(a.textContent) && !/academic/i.test(a.textContent)).map((a) => a.getAttribute('href')) })`);
   expectEqual(links.demo, ['/payment-demo/'], 'payment demo link');
+  expectEqual(links.academic, ['/academic-demo/'], 'academic quotation demo link');
   if (!links.avail.length || !links.avail.every((h) => h.startsWith('/contact/?type=service'))) throw new Error(`Avail links: ${JSON.stringify(links.avail)}`);
   if (!links.quote.length || !links.quote.every((h) => h.startsWith('/contact/?type=quotation'))) throw new Error(`quotation links: ${JSON.stringify(links.quote)}`);
   const sitemap = await (await fetch(origin + '/sitemap-0.xml')).text();
   const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]!).pathname).sort();
-  expectEqual(paths, ['/', '/about/', '/contact/', '/how-it-works/', '/payment-demo/', '/pricing/', '/product-demo/', '/solutions/'], 'sitemap pages (no 404)');
+  expectEqual(paths, ['/', '/about/', '/academic-demo/', '/contact/', '/how-it-works/', '/payment-demo/', '/pricing/', '/product-demo/', '/solutions/'], 'sitemap pages (no 404)');
   expectEqual((await fetch(origin + '/payment-demo/')).status, 200, '/payment-demo/ served');
 });
 

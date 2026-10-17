@@ -1,0 +1,83 @@
+---
+// /contact/quotation/: the canonical quotation request page (docs/PROPOSAL_QUOTATION_WORKFLOW.md §6).
+// Not in src/pages: the quoteRoute integration (src/integrations/quote-route.ts) adds it only while
+// the quotation workflow is enabled, so a committed (flag-off) build never processes this page, its
+// styles or its script, and its output matches the published site. The form posts to the public
+// Worker natively without JavaScript, and as JSON with it.
+import InquiryForm from '../components/form/InquiryForm.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { quotationTurnstile, quotationWorkflow } from '../config/quotation.ts';
+import { contact } from '../config/business.ts';
+import { pageMeta } from '../config/site.ts';
+
+const meta = pageMeta('/contact/quotation/');
+---
+
+<BaseLayout title={meta.title} description={meta.description}>
+  <section class="intro on-dark" aria-labelledby="quotation-heading">
+    <div class="container intro-inner">
+      <p class="eyebrow">Contact · Quotation</p>
+      <h1 id="quotation-heading">Request a quotation</h1>
+      <p class="lead">
+        Tell BuildTrack about your project. BuildTrack reviews every request; if it approves a quotation, it emails you a
+        private link to view it. A request is not a payment, booking or subscription.
+      </p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container form-wrap">
+      <h2 class="form-heading">Your project</h2>
+      <InquiryForm endpoint={quotationWorkflow.endpoint} variant="quotation" />
+      {
+        quotationTurnstile.enabled && quotationTurnstile.siteKey && (
+          <>
+            {/* Challenge-gated mode (off by default): the widget adds a token the page script sends. */}
+            <div class="cf-turnstile" data-sitekey={quotationTurnstile.siteKey} data-action="quotation-request" data-turnstile-widget></div>
+            <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+            <noscript>
+              <p class="other-requests">
+                This form uses a security check that needs JavaScript. Turn on JavaScript to send it
+                {contact.phone ? <>, or call BuildTrack at <a class="text-link" href={contact.phoneHref ?? undefined}>{contact.phone}</a></> : null}.
+              </p>
+            </noscript>
+          </>
+        )
+      }
+      <p class="other-requests">
+        Want a demo or to avail a service instead? Use the <a class="text-link" href="/contact/">Contact page</a>.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* Intro matches the payment demo page's dark blueprint band. */
+  .intro {
+    padding-block: var(--space-8);
+    background-color: var(--color-navy);
+    background-image: var(--blueprint-grid), radial-gradient(60rem 30rem at 85% 10%, rgb(32 164 243 / 0.18), transparent 60%);
+    background-size: var(--blueprint-grid-size), auto;
+    color: #fff;
+  }
+
+  .intro-inner > * + * {
+    margin-top: var(--space-4);
+  }
+
+  .intro .lead {
+    max-width: 46rem;
+    color: var(--color-blue-pale);
+  }
+
+  .form-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    max-width: 44rem;
+  }
+
+  .form-heading {
+    font-size: var(--text-2xl);
+  }
+</style>

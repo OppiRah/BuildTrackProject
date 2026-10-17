@@ -293,6 +293,148 @@ Decision: the owner dropped PayMongo setup for this academic project. No provide
 Role labels distinguish owner, customer and illustrated provider steps. The persistent notice reads "Academic payment demonstration — no real payment or email is sent." Email previews send nothing, contain no addresses or links, and are not connected to Contact inquiries. The unused provider-sandbox box, `src/config/payment-sandbox.ts` and `src/lib/payment-sandbox.ts` were removed with their tests; nothing else used them.
 Consequence: `payment-walkthrough.ts`, `PaymentDemo.astro`, `payment-demo.ts`, the page intro and meta description, and the payment disclosure ("nothing is collected, charged or emailed") changed. Pricing's demo link and inquiry CTAs are unchanged. A future real process would need a separate decision: provider account and eligibility, the owner's verification, and live activation documents. Details UX_BRAND §16; handoff PRESENTATION_HANDOFF; checks PROJECT_STATE.
 
+## ADR-043 — Small backend authorized for the quotation workflow (design approved for local implementation)
+Status: **Owner authorization 2026-10-16 for a small backend. The revision-3 design was approved the same day for local implementation (dedicated `/contact/quotation/` form, separate Access-protected owner Worker). Approved defaults: 90-day retention, 14-day link validity, "Bank transfer (simulated)". The privacy wording remains draft. No purchase, account, billing, real email, deployment, push or merge is authorized.** Supersedes ADR-009's no-backend/database/auth/admin restriction **for the quotation workflow only** and amends ADR-016 (assets-only hosting). ADR-014 (no new runtime dependency) and ADR-042 for `/payment-demo/` remain in force.
+Decision: a quotation request may be stored, Sunny notified, a quotation reviewed and explicitly approved on an owner-only page, emailed to the customer with a unique link, explicitly accepted by the customer, and followed by a clearly simulated checkout. No real payment, payment provider, financial-data collection, payment instructions or QR codes.
+Consequence: the design, costs, checkpoints and implementation record are in docs/PROPOSAL_QUOTATION_WORKFLOW.md. Production `wrangler.jsonc` stays assets-only until a separately authorized cutover; local work uses `wrangler.workflow.jsonc`. The workflow is disabled in the committed config (`src/config/quotation.ts`). The sending domain and the service accounts remain undecided.
+Update 2026-10-16 (checkpoint 1 review repairs):
+- Rate-limit identity: from `CF-Connecting-IP` only. IPv4 is kept whole and IPv6 is grouped by /64, as an abuse-control heuristic. A missing or malformed value is refused.
+- Pseudonymous values: keyed with a dedicated `INTAKE_HMAC_KEY` secret (versioned) instead of a salt stored in D1. Counters are deleted after 48 hours by a scheduled cleanup.
+- Limits: a global cap of 200 new requests per UTC day, enforced atomically in the insert.
+- Body caps: derived from worst-case encodings of the field limits.
+- Duplicates: JSON retries are idempotent only for an identical payload, and a changed payload gets 409. No-JS de-duplication covers the full payload and the client, and never repeats a reference.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18.
+Update 2026-10-16 (second review repairs):
+- A one-row daily total replaces per-request counting.
+- Refusals are decided by a read-only pre-check, with the client limit checked before the global cap.
+- Quota reservation, request storage and notification queueing are one D1 batch; a failed save consumes nothing.
+- The global cap stays as a safety ceiling.
+- Planned, not implemented: Turnstile before activation. With it, no-JS quotation intake would end and needs approval.
+- One owner warning per UTC day when the cap is reached, sent once email exists (data hook in place).
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18.
+Update 2026-10-16 (Codex review repairs):
+- References come from a per-year sequence row inside the save batch.
+- No-JS bodies are decoded strictly.
+- The privacy acknowledgment must be exactly "yes".
+- Identical retries disclose the reference only to the same visitor (keyed client hash stored with the request, pseudonymous, deleted with it). The hash is not per day, so it links every stored request from the same client identity under one key version; request-retention deletion is not implemented yet, so those links persist until the retention checkpoint (an activation gate).
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18.
+Update 2026-10-16 (checkpoint 1 complete; checkpoint 2 built locally, awaiting review):
+- Checkpoint 1 is complete as a disabled local foundation. All activation gates stay pending.
+- Owner Worker (`worker/owner/`, local only): an Access JWT check on every request, then review, draft editing, an explicit confirmation page, and approval. Approval queues one quotation email job in the same atomic batch. Nothing is sent.
+- Owner form tokens are signed with a dedicated `OWNER_FORM_KEY` and recorded as used inside the change batch, so owner GET pages write nothing. This replaces nonces stored when a page is shown.
+- Owner pages use `Referrer-Policy: same-origin`, not `no-referrer`: in Chromium, native form submissions under `no-referrer` carried `Origin: null`, which the exact-Origin rule refuses. In Codex's independent Chromium tests, same-origin `fetch` POSTs kept their actual Origin. The planned `/quote/` policy therefore stays as designed and undecided until it is tested in its own checkpoint (an earlier claim that it needed the same change is withdrawn).
+- `OWNER_ORIGIN` must be one canonical serialized HTTPS origin in the deployable owner entry, with no flag or exception. Otherwise the owner Worker answers 503 before any key lookup, route or database access (Codex checkpoint-2 findings). Loopback HTTP is accepted only by the test-only wrapper (`tests/worker/owner-test-worker.ts`), which no production code imports.
+- Local Access fixtures exist only in tests; the deployable entry trusts only the team domain's published keys.
+- Revoke, delete, dismiss, resend, sending, customer links and retention are deferred.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 2".
+Update 2026-10-16 (checkpoint 2 signed off by Codex; checkpoint 3 built locally, awaiting review):
+- Durable email jobs are sent by the owner Worker's scheduled runner: atomic claims with 2-minute leases, expired-lease recovery as ambiguous, and automatic retries only with the same key and payload. Attempts stop 20 hours after the first one, inside Resend's documented 24-hour idempotency window. Definite rejections stop at once.
+- The recipient, template version and payload hash are frozen at the first attempt; a payload that would differ is not sent. Database triggers make job identity, frozen snapshots and approved quotation snapshots immutable.
+- Customer links are rebuilt from the recorded key version and generation and must match the approved hash; they are never stored or logged.
+- "Accepted by the email provider" is recorded and shown separately from delivery, which stays unknown.
+- One cap-warning job per UTC day, by idempotency key.
+- After the window, only an explicitly confirmed owner resend creates a new key. Its page warns about possible duplicates when an earlier attempt was ambiguous.
+- Sending fails closed without full configuration. The deployable entry has only a Resend transport and no mock mode; tests inject an in-memory provider. The `mock_mailbox` D1 table is dropped from the plan because it would store customer links.
+- Provider behaviour follows Resend's official docs (read 2026-10-16). Undocumented points are recorded as assumptions, handled on the safe (ambiguous) side.
+- New activation gates: sending stays off until the customer routes exist and are reviewed, and until a verified domain, a sending-only key and a controlled end-to-end test exist.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 3".
+Update 2026-10-16 (checkpoint 3 review repairs, awaiting Codex's focused recheck):
+- **Send boundary.** The runner reads its clock for each step. It calls the provider only after a durable, lease-checked "call started" mark, then a final check with no await before the call: the 20-hour deadline, the quotation expiry, and enough lease for the call. Database checks and an HTTP request cannot be one atomic step, so the provider's idempotency key stays a separate safeguard.
+- **Duplicate warning.** It considers every email job of the quotation; authorization stays bound to the latest job and version.
+- **Owner wording.** One statement per state: queued, not accepted, unknown, accepted. Acceptance is never called delivery.
+- **Scheduled gate.** The scheduled run uses the owner pages' full configuration check (`ownerConfigured`, including Access settings and `OWNER_FORM_KEY`) before any database access.
+- **Attempt history.** `email_attempts` holds ids, times and outcome codes only. It is written with the claim, closed on lease recovery, and deleted with its job.
+- **Readiness.** Quotation emails need the committed constant `customerRoutes.ready` (default false). Credentials never enable them. Turning it on requires verified customer routes.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 3 review repairs".
+Update 2026-10-16 (skipped-call bookkeeping, awaiting Codex's narrow recheck):
+- Attempts record a lease-checked send intent (`send_intent_at`) separately from actual transport invocation (`provider_called_at`).
+- A call skipped by the final checks closes its attempt with the reason, atomically and only under ownership. The job is stopped (deadline, expiry) or rescheduled (too little lease), with no added ambiguity; earlier ambiguity is kept.
+- Lease recovery marks a job ambiguous only when its open attempt had recorded an intent. Genuine crashes in the database/network gap therefore stay ambiguous, and provider idempotency stays the separate safeguard.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 3 skipped-call bookkeeping".
+Update 2026-10-16 (checkpoint 3 signed off by Codex; checkpoint 4 built locally, awaiting review):
+- **`/quote/` shell:** a static page added only by the `quoteRoute()` integration while the workflow is enabled, so committed builds are unchanged. The token comes from the URL fragment, is removed from the address bar at once, is kept in the tab's session storage, and is sent only in POST bodies.
+- **Shell headers:** the public Worker serves the shell `no-store`, `noindex`, `no-referrer`, unframeable, with a same-origin CSP that hashes the page's inline scripts.
+- **Customer API** (`/api/quote/view|accept|decline|simulate`): POST JSON only from the exact public origin, with a per-client hourly limit. Every request is checked server-side against the stored link hash (`quote_links`) and the quotation's state.
+- **Link states:** invalid, expired, revoked and superseded are told apart only to holders of a genuine 256-bit token, with no quotation details. This deliberately departs from §4's single neutral 404.
+- **Decisions:** accept and decline are explicit, version-checked, atomic and idempotent.
+- **Simulated outcomes:** they need an accepted quotation, are idempotent per attempt, are labelled simulated, and never change the quotation's status.
+- **Demo code:** "Demo code — enter 12345678" is checked only in the browser and never transmitted.
+- **Origin under `no-referrer`:** the page's same-origin fetch POSTs were observed to keep their exact Origin, so the owner pages' referrer workaround was not applied to `/quote/`.
+- **Readiness:** customer readiness stays off until a controlled preview verifies the routes.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4".
+Update 2026-10-16 (checkpoint 4 review repairs, awaiting Codex's focused recheck):
+- **Page state:** the `/quote/` page binds all state to a per-link session and discards responses from earlier sessions. Confirmations and checkout clicks carry their own token and version.
+- **Fragments:** an explicit fragment never falls back to the tab's stored link.
+- **Uncertain outcomes:** these are stated as unknown, and "Check again" repeats the identical idempotent request.
+- **Write-time authorization:** every customer write re-checks inside its own statement the current link hash and generation, link and quotation revocation, state and version, and expiry. Expiry is evaluated at a time read immediately before the write, and a failed check writes nothing.
+- **Attempt conflicts:** reusing a checkout attempt with a different choice is a 409 and changes nothing.
+- **Runtime expiry:** tested on real workerd/D1 with short-lived immutable fixtures.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 review repairs".
+Update 2026-10-16 (checkpoint 4 second review repairs, awaiting Codex's focused recheck):
+- **Recognised answers only:** the page treats only a fully recognised response as an answer. Unreadable, malformed or mismatched responses, even with HTTP 200, are uncertain. "Check again" repeats the exact request, and nothing new starts until it is resolved.
+- **Empty fragment:** `/quote/#` is an explicit (invalid) link.
+- **Checkout version:** simulated checkouts carry and are bound to the displayed version.
+- **Stored results:** a stored attempt is returned only after re-checking current authorization at a fresh time.
+- **Test identities:** tests use one stable client identity per customer journey, never per-request rotation.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 second review repairs".
+Update 2026-10-16 (checkpoint 4 third review repairs, awaiting Codex's narrow recheck):
+- **Refused checks:** a refused "Check again" (429 or any other refusal) settles nothing. The page keeps the exact request and the action lock, shows the Retry-After wait, and says the check was refused, not that the action failed.
+- **One snapshot per response:** every customer API response takes all its quotation data (view, conflict views, history, stored attempt result) from one `SELECT`. That statement also enforces the current link, generation, revocation, state and expiry at the read time.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 third review repairs".
+Update 2026-10-17 (checkpoint 4 fourth review repairs, awaiting Codex's narrow recheck):
+- **Link problems after an action:** once an acceptance, decline or checkout has been sent, a link problem (revoked, expired, superseded) on the first answer or a retry shows the problem together with truthful uncertainty and the phone contact. It keeps the exact request, the lock and "Check again". Retries stay under normal link authorization.
+- **When recovery ends:** only on a recognised settling answer, a session replacement (a new or explicitly invalid link) or a fresh page load.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Checkpoint 4 fourth review repairs".
+Update 2026-10-17 (local implementation completed; uncommitted; awaiting Codex's consolidated review, no independent signoff yet):
+- **Reload:** the customer page keeps minimal, validated, tab-scoped pending-action metadata (never the demo code or quotation content) and restores the exact request, lock and uncertainty after a reload. If storage fails, nothing is sent. The private `no-store` headers are kept.
+- **Owner lifecycle:**
+  - revoke (approved or emailed only);
+  - new link (the next generation with the same immutable snapshot and expiry, none after expiry);
+  - dismiss (a received request without a quotation);
+  - delete (whole request; refused while a send is in flight).
+
+  Each is a confirmed POST under the existing Access, Origin, single-use token and version guards. Already-dispatched emails are never described as recallable.
+- **Retention:** 90 days after `last_activity_at`, which only owner actions and state-changing customer actions move. Bounded batches run on the owner cron. Reference counters are kept. Backups, provider logs and mailboxes are stated as outside the application's control.
+- **Turnstile:** server-side validation is implemented and fails closed, but stays disabled (literal `TURNSTILE_ON = false`, `TURNSTILE_ENABLED=off`). **Requiring JavaScript for quotation intake is not approved.**
+- **Deployment:** templates and `docs/QUOTATION_RUNBOOK.md` are prepared; nothing is provisioned, and production stays assets-only.
+
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Local completion"; review packet: docs/CODEX_HANDOFF_QUOTATION.md.
+Update 2026-10-17 (Codex consolidated review repairs; local, uncommitted; awaiting Codex's focused recheck):
+- **Email state per link generation:** only a job for the quotation's current link generation marks it `emailed`, and resend ordering is compared within a generation. An older generation's acceptance stays recorded on its own job.
+- **Migration `0007`** (additive): a partial index for cap-warning jobs, so retention never scans the email history. Retention deletes old cap warnings whose lease has expired (live leases are kept), also while sending is off.
+- **Filled deployment configs live at the repository root** under exact names (`wrangler.owner.jsonc`, `wrangler.owner.preview.jsonc`, `wrangler.preview.jsonc`; `wrangler.jsonc` at the cutover), because Wrangler resolves paths from the config file's folder. Templates stay in `deploy/` and are not used in place.
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Codex consolidated review repairs".
+Update 2026-10-17 (owner decision: free hosted academic release with MANUAL email; local, uncommitted, not deployed):
+- **Release mode is manual email.** BuildTrack sends no email.
+  - Approval creates the customer link and no email job.
+  - The owner page prepares the invitation (mailto, copyable text, and the link rebuilt and hash-verified in the authenticated, no-store page) for Sunny to send from his own email account.
+  - An optional "Mark as manually sent" is recorded as the owner's statement only.
+  - No owner-notification emails: the dashboard is the request inbox.
+  - No domain, Resend account or other integration. The Resend code is retained, tested and not released (`EMAIL_MODE=resend`).
+- **Migration `0008`** (additive): the owner's "marked sent" record on `quotes`.
+- **Retention bound:** lowered to 5 requests per run, to stay under the Workers Free limit of 50 D1 queries per invocation.
+- **Workflow-off build preserved exactly:** a literal compile-time `QUOTATION_ON`, and `/contact/quotation/` injected only when enabled. `npm run check:published-build` compares the build with the published commit `8263494`.
+- **Owner authentication on hosted environments:** a hostname-based Cloudflare Access application for the owner workers.dev hostname, because the owner Worker verifies the Access JWT header. Stop if Zero Trust asks for a payment method.
+- **Still the owner's decisions:** the privacy wording, reconfirming retention and validity, and Turnstile (which stays off).
+
+Update 2026-10-17 (owner decisions for publication):
+- **Publication authorized:** free Cloudflare services only.
+- **Release mode:** manual email only.
+- **Retention and validity confirmed:** 90-day request retention; 14-day default quotation validity.
+- **Turnstile:** OFF for this initial academic review version. Server validation and rate limits stay.
+- **Privacy wording approved verbatim, including the seven-day backup clarification** (`quotationPrivacyNotice`, status `approved`, version `2026-10-17-manual`): "I understand my details will be stored by BuildTrack on Cloudflare and used to review my request and, if a quotation is approved, to email me a private link to it from BuildTrack's own email account. BuildTrack deletes its quotation records 90 days after the last activity; Cloudflare's automatic database backups may keep a copy for up to 7 more days, and emails already sent stay in the sender's and my mailboxes."
+- **Owner-dashboard login:** Sunny's Gmail. It is kept in the git-ignored deployment configs and the Access policy, not in committed files.
+
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Manual email release mode"; runbook docs/QUOTATION_RUNBOOK.md.
+
+**Update 2026-10-17 (owner instruction): public academic demo first.**
+- **Immediate release target:** a public, browser-only academic demo of the whole flow (request → owner approval → customer acceptance → demo checkout) at `/academic-demo/`, `/academic-demo/owner/` and `/academic-demo/quote/`. It needs no Cloudflare Access.
+- **Supersedes** the requirement to finish real owner authentication before publishing the presentation. Real quotation-workflow activation (Access for Sunny, D1, Workers, the cutover) remains separate and pending.
+- **Isolation rules:** fictional sample identities only, no personal-data fields; demo state only in the visitor's browser; no D1, owner secrets, real link tokens, emails, Formspree or provider calls (enforced by a `connect-src 'none'; form-action 'none'` policy); real owner Workers stay disabled; test wrappers and mocked-authentication backends are never deployed.
+- **Wording:** labelled "Academic demo"; approval and email delivery are described as demonstrated. The demo is never described as a live operational quotation service.
+
+Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Public academic demo".
+
 ## Deferred release/design decisions
 
 Formspree spam settings; review of proposed font/tokens/layouts (ADR-020; logo supplied, ADR-027); hosting/domain/budget; final image assets/licenses. These do not reopen the settled product scope. They must not be presented as completed or silently fabricated.
