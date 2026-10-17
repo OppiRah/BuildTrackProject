@@ -12,7 +12,10 @@ import {
   emptyDemoState,
   findDemoByToken,
   parseDemoState,
+  planOf,
   recordDemoSimulation,
+  serviceOf,
+  suggestedScope,
   type DemoState,
 } from '../src/lib/academic-demo.ts';
 
@@ -21,7 +24,7 @@ const values = { scope: 'Starter setup for two sites with staff training.', amou
 const token = 'AAAAAAAAAAAAAAAAAAAAAA';
 
 function approved(): { state: DemoState; requestId: string } {
-  const { state, request } = addDemoRequest(emptyDemoState(), 'maria', 'starter', now, 'request-0001');
+  const { state, request } = addDemoRequest(emptyDemoState(), 'maria', { plan: 'starter', service: 'delivery-monitoring' }, now, 'request-0001');
   return { state: approveDemoQuote(state, request.id, values, now, token), requestId: request.id };
 }
 
@@ -29,7 +32,24 @@ describe('academic demo state', () => {
   it('uses only fictional sample identities (example.test addresses) and asks for no personal data', () => {
     expect(demoIdentities.every((identity) => identity.email.endsWith('@example.test'))).toBe(true);
     const page = readFileSync(new URL('../src/pages/academic-demo/index.astro', import.meta.url), 'utf8');
-    expect(page).not.toMatch(/type="(text|email|tel)"|<textarea/);
+    expect(page).not.toMatch(/<input(?![^>]*type="checkbox")|<textarea/);
+  });
+
+  it('carries the plan and service through, allows "Not sure yet", and suggests a scope from them', () => {
+    const { state, requestId } = approved();
+    const request = state.requests.find((item) => item.id === requestId)!;
+    expect([planOf(request)?.name, serviceOf(request)?.name]).toEqual(['Starter', 'Delivery monitoring']);
+    expect(suggestedScope(request)).toBe(
+      'BuildTrack Starter plan with delivery monitoring for Sample Builders Co. (fictional). Track cement and rebar deliveries across two sites. Includes onboarding and staff training.',
+    );
+    const unsure = addDemoRequest(emptyDemoState(), 'ana', { plan: null, service: null }, now, 'request-0002').request;
+    expect([planOf(unsure), serviceOf(unsure)]).toEqual([null, null]);
+    expect(suggestedScope(unsure)).toMatch(/^BuildTrack setup for Example Homes/);
+    expect(() => addDemoRequest(emptyDemoState(), 'ana', { plan: 'gold', service: null }, now, 'request-0003')).toThrow('E_DEMO_INPUT');
+    expect(() => addDemoRequest(emptyDemoState(), 'ana', { plan: null, service: 'mining' }, now, 'request-0003')).toThrow('E_DEMO_INPUT');
+    // A record saved before services were added still reads, as "Not sure yet".
+    const legacy = JSON.stringify(state).replace('"service":"delivery-monitoring",', '');
+    expect(parseDemoState(legacy).requests[0]).toMatchObject({ service: null, plan: 'starter' });
   });
 
   it('numbers requests and quotations, approves once, and builds the customer view from the approved values', () => {
@@ -62,6 +82,8 @@ describe('academic demo state', () => {
     for (const bad of [
       'not json',
       good.replace('"maria"', '"someone-real"'),
+      good.replace('"delivery-monitoring"', '"<script>"'),
+      good.replace('"starter"', '"platinum"'),
       good.replace('"DEMO-Q-0001"', '"<img src=x>"'),
       good.replace('"approved"', '"paid"'),
       good.replace('"version":1', '"version":-1'),

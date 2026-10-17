@@ -8,8 +8,11 @@ import {
   decideDemoQuote,
   demoQuoteView,
   findDemoByToken,
+  NOT_SURE,
   parseDemoState,
+  planOf,
   recordDemoSimulation,
+  serviceOf,
   type DemoState,
 } from '../../lib/academic-demo.ts';
 import { checkoutMethodLabels, DEMO_CODE, demoCodeError, isDemoCode, type CheckoutMethod, type CheckoutOutcome, type QuoteView } from '../../lib/quotation/customer.ts';
@@ -122,6 +125,9 @@ export function startDemoCustomerPage(): void {
       return false;
     }
     render(demoQuoteView(request));
+    // The plan and service chosen on the website, carried into the quotation summary.
+    $('[data-q-service]').textContent = serviceOf(request)?.name ?? NOT_SURE;
+    $('[data-q-plan]').textContent = planOf(request)?.name ?? NOT_SURE;
     return true;
   }
   /** Applies a change to the demo record, then shows the result (re-read, never assumed). */

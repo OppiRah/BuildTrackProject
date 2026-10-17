@@ -3,7 +3,7 @@ import { requestTypes } from '../src/config/inquiry.ts';
 import { plans } from '../src/config/pricing.ts';
 import { services } from '../src/config/services.ts';
 import { primaryCta } from '../src/config/site.ts';
-import { contactHref } from '../src/lib/contact-links.ts';
+import { contactHref, quotationJourneyHref } from '../src/lib/contact-links.ts';
 
 describe('contactHref', () => {
   it('links to the bare Contact page without a selection', () => {
@@ -51,5 +51,17 @@ describe('contactHref', () => {
         expect(allowed[key as keyof typeof allowed].has(value)).toBe(true);
       }
     }
+  });
+});
+
+describe('quotationJourneyHref (Home and Pricing quotation CTAs)', () => {
+  it('opens the academic quotation demo with service and plan while the workflow is off (the committed default)', () => {
+    expect(quotationJourneyHref()).toBe('/academic-demo/');
+    expect(quotationJourneyHref({ plan: 'professional' })).toBe('/academic-demo/?plan=professional');
+    expect(quotationJourneyHref({ plan: 'starter', service: 'delivery-monitoring' })).toBe('/academic-demo/?service=delivery-monitoring&plan=starter');
+  });
+
+  it('opens the real quotation page while the workflow is on', () => {
+    expect(quotationJourneyHref({ plan: 'enterprise' }, true)).toBe('/contact/quotation/?plan=enterprise');
   });
 });

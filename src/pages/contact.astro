@@ -6,6 +6,7 @@ import { contact, coverage } from '../config/business.ts';
 import { formProvider, requestTypes } from '../config/inquiry.ts';
 import { quotationWorkflow } from '../config/quotation.ts';
 import { pageMeta } from '../config/site.ts';
+import { ACADEMIC_DEMO_PATH } from '../lib/contact-links.ts';
 
 const meta = pageMeta('/contact/');
 const hasContact = Boolean(contact.location || contact.phone || contact.publicEmail);
@@ -41,6 +42,22 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
                 Request a quotation <Icon name="arrow" size={20} />
               </a>
             </p>
+          )
+        }
+        {
+          !quotationWorkflow.enabled && (
+            <section class="demo-quotation" aria-labelledby="demo-quotation-heading">
+              <p class="demo-tag">Academic demo</p>
+              <h2 id="demo-quotation-heading">Request a quotation — academic demo</h2>
+              <p>
+                Follow the full quotation journey with a fictional sample customer: request, BuildTrack's review and approval,
+                the customer invitation and a demo checkout. It runs in your browser only; nothing is sent.
+              </p>
+              <a class="button button-primary" href={ACADEMIC_DEMO_PATH} data-quotation-demo-link>
+                Request a quotation — academic demo
+              </a>
+              <p class="demo-note">To contact BuildTrack for real, use the request form below.</p>
+            </section>
           )
         }
         <h2 class="form-heading">Send a request</h2>
@@ -120,7 +137,52 @@ const requestDescriptions: Record<(typeof requestTypes)[number]['id'], string> =
   </section>
 </BaseLayout>
 
+<script>
+  // The academic quotation demo keeps the service and plan chosen on Home/Pricing (?service=, ?plan=).
+  import { quotationJourneyHref } from '../lib/contact-links.ts';
+  import { parsePreselection } from '../lib/inquiry-params.ts';
+
+  const link = document.querySelector<HTMLAnchorElement>('[data-quotation-demo-link]');
+  if (link) {
+    const { service, plan } = parsePreselection(location.search);
+    link.href = quotationJourneyHref({ service, plan }, false);
+  }
+</script>
+
 <style>
+  /* ---- Academic quotation demo entry ------------------------------------------------- */
+  .demo-quotation {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: start;
+    margin-bottom: var(--space-8);
+    padding: var(--space-5);
+    border: 2px solid var(--color-blue);
+    border-left-width: 6px;
+    border-radius: var(--radius-md);
+    background: var(--color-blue-pale);
+  }
+
+  .demo-quotation h2 {
+    font-size: var(--text-xl);
+  }
+
+  .demo-tag {
+    padding: 0.1rem 0.5rem;
+    border-radius: var(--radius-sm);
+    background: var(--color-yellow);
+    color: var(--color-navy);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .demo-note {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
   /* ---- Layout ----------------------------------------------------------------------- */
   .contact {
     isolation: isolate;

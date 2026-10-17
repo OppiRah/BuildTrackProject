@@ -21,21 +21,22 @@ const meta = pageMeta('/academic-demo/owner/');
   <body>
     <header class="top">
       <span class="tag">ACADEMIC DEMO</span>
-      <span>BuildTrack owner: quotation requests</span>
+      <span>BuildTrack · Demo owner dashboard</span>
     </header>
     <main data-demo-owner>
       <p class="notice">
-        <strong>Academic demo dashboard.</strong> It shows only the demo requests made in this browser and cannot see real
-        requests or customers. Approval and email delivery are demonstrated: nothing is emailed.
+        <strong>Demo owner dashboard.</strong> This page represents Sunny's review and approval as BuildTrack's owner. It
+        shows only the demo requests made in this browser and cannot see real requests or customers. Approval and email
+        delivery are demonstrated: nothing is emailed.
       </p>
 
       <section data-view="list">
         <h1>Quotation requests</h1>
-        <p class="hint">Newest first. Send a request from the <a href="/academic-demo/" target="_blank" rel="noopener">demo request page</a>; it appears here.</p>
+        <p class="hint">Newest first. Send a request from the <a href="/academic-demo/" target="_blank" rel="noopener">demo quotation form</a>; it appears here.</p>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th scope="col">Reference</th><th scope="col">Received</th><th scope="col">Name</th><th scope="col">Organization</th><th scope="col">Plan</th><th scope="col">Status</th></tr>
+              <tr><th scope="col">Reference</th><th scope="col">Received</th><th scope="col">Name</th><th scope="col">Organization</th><th scope="col">Service</th><th scope="col">Plan</th><th scope="col">Status</th></tr>
             </thead>
             <tbody data-rows></tbody>
           </table>
@@ -81,9 +82,9 @@ const meta = pageMeta('/academic-demo/owner/');
           <dl data-quote-details></dl>
           <h3>Customer invitation</h3>
           <p class="notice">
-            In the real release, the owner sends this invitation from their own email account. In this academic demo, <strong>Open demo customer invitation</strong>
-            replaces the email step: it opens the customer's quotation in a new
-            tab. Nothing is emailed.
+            In the real service, Sunny emails this invitation with the customer's private quotation link. In this academic
+            demo, <strong>Open demo customer invitation</strong> represents that emailed link: it opens the customer's
+            quotation in a new tab. No email is sent.
           </p>
           <div class="invitation">
             <div class="actions">

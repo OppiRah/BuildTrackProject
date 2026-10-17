@@ -435,6 +435,12 @@ Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Manual email release mode"; runbo
 
 Details: PROPOSAL_QUOTATION_WORKFLOW.md §18, "Public academic demo".
 
+**Update 2026-10-17 (owner instruction): the demo is the website's quotation journey.**
+- While the real workflow is off, Home and Pricing "Request a Quotation" open the academic demo with the plan carried over. Contact offers "Request a quotation — academic demo", carrying the service and plan.
+- Contact's real request form, including its quotation option, is unchanged and still sends through Formspree. A real inquiry is never turned into a simulation.
+- Solutions' quotation links still open the real Contact form; they were outside this request.
+- The demo pages say "Academic demo" before anything is sent. The owner page is labelled "Demo owner dashboard" and represents Sunny's review and approval. The invitation button represents the emailed link; no email is sent.
+
 ## Deferred release/design decisions
 
 Formspree spam settings; review of proposed font/tokens/layouts (ADR-020; logo supplied, ADR-027); hosting/domain/budget; final image assets/licenses. These do not reopen the settled product scope. They must not be presented as completed or silently fabricated.

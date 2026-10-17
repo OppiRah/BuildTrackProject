@@ -67,6 +67,7 @@ const { demo = false } = Astro.props;
       <p data-q-greeting></p>
       <dl class="details">
         <dt>Request</dt><dd data-q-request></dd>
+        {demo && <><dt>Service</dt><dd data-q-service></dd><dt>Plan</dt><dd data-q-plan></dd></>}
         <dt>Scope</dt><dd class="text" data-q-scope></dd>
         <dt>Amount</dt><dd data-q-amount></dd>
         <dt>Valid until</dt><dd data-q-expires></dd>

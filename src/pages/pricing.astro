@@ -1,5 +1,5 @@
 ---
-import { contactHref } from '../lib/contact-links.ts';
+import { contactHref, quotationJourneyHref } from '../lib/contact-links.ts';
 import CtaBand from '../components/site/CtaBand.astro';
 import Icon from '../components/site/Icon.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -115,7 +115,7 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
                   <a class="button button-primary" href={contactHref({ type: 'service', plan: plan.id })}>
                     Avail {plan.name}
                   </a>
-                  <a class="text-link" href={contactHref({ type: 'quotation', plan: plan.id })}>
+                  <a class="text-link" href={quotationJourneyHref({ plan: plan.id })}>
                     Request a quotation<span class="visually-hidden"> for {plan.name}</span>
                   </a>
                 </div>
@@ -285,7 +285,7 @@ const comparisonGroups: { id: string; title: string; rows: { id: string; label: 
     title="Interested in a package?"
     lead="Send a service request or ask for a quotation based on your project."
     primary={{ label: 'Avail a Service', href: contactHref({ type: 'service' }) }}
-    secondary={{ label: 'Request a Quotation', href: contactHref({ type: 'quotation' }) }}
+    secondary={{ label: 'Request a Quotation', href: quotationJourneyHref() }}
   />
 </BaseLayout>
 

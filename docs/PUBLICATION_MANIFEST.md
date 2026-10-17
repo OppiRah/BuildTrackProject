@@ -1,5 +1,17 @@
 # Publication manifests
 
+## Academic quotation demo: website journey integration — 2026-10-17
+
+Owner-authorized focused change under the existing publication authorization. Base: `7187fcb` (origin/main). The real quotation workflow stays off (`QUOTATION_ON = false`; `wrangler.jsonc` unchanged).
+
+### Exact source paths (21, all modified)
+
+`docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/PRESENTATION_HANDOFF.md`, `docs/PROJECT_STATE.md`, `docs/PROPOSAL_QUOTATION_WORKFLOW.md`, `docs/PUBLICATION_MANIFEST.md`, `src/components/quotation/QuotePageBody.astro`, `src/lib/academic-demo.ts`, `src/lib/contact-links.ts`, `src/pages/academic-demo/index.astro`, `src/pages/academic-demo/owner.astro`, `src/pages/contact.astro`, `src/pages/index.astro`, `src/pages/pricing.astro`, `src/scripts/academic-demo/customer.ts`, `src/scripts/academic-demo/owner.ts`, `src/scripts/academic-demo/request.ts`, `tests/academic-demo.test.ts`, `tests/browser/academic-demo.ts`, `tests/browser/home-demo-ui.ts`, `tests/contact-links.test.ts`.
+
+### Exclusions
+
+The same as the section below: the personal prompt file; the line-ending-only `src/layouts/BaseLayout.astro` and `src/scripts/inquiry.ts`; the git-ignored filled configs; secrets; screenshots and other evidence; build output.
+
 ## Public academic demo + quotation workflow source (switched off) — 2026-10-17
 
 Published under the owner's active publication authorization and the instruction to publish a public academic demo now (ADR-043, update "public academic demo first"). Base: `4081ac1` (origin/main). The real quotation workflow is included as source but **off** (`QUOTATION_ON = false`; `wrangler.jsonc` unchanged, assets-only). The built site differs from the published `8263494` only by the academic demo, the Pricing link, `_headers`, the sitemap and script chunking (`npm run check:published-build`; PROJECT_STATE). The cutover commit (runbook §7) additionally changes `wrangler.jsonc` and `src/config/quotation.ts` and is listed separately when made.

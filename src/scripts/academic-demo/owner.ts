@@ -9,8 +9,11 @@ import {
   demoToken,
   emptyDemoState,
   identityOf,
+  NOT_SURE,
   parseDemoState,
   planOf,
+  serviceOf,
+  suggestedScope,
   type DemoRequest,
   type DemoState,
 } from '../../lib/academic-demo.ts';
@@ -21,6 +24,18 @@ import { outcomeMessages } from '../../lib/payment-walkthrough.ts';
 
 const when = (ms: number) => new Date(ms).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' });
 const statusText: Record<'approved' | 'accepted' | 'declined', string> = { approved: 'approved', accepted: 'accepted', declined: 'declined' };
+/** The request open in this tab, so a reload returns to it. */
+const VIEW_KEY = 'buildtrack-academic-demo-owner-view';
+const planName = (request: DemoRequest) => planOf(request)?.name ?? NOT_SURE;
+const serviceName = (request: DemoRequest) => serviceOf(request)?.name ?? NOT_SURE;
+function remember(id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(VIEW_KEY, id);
+    else sessionStorage.removeItem(VIEW_KEY);
+  } catch {
+    // Without session storage a reload shows the list.
+  }
+}
 
 function readState(): DemoState {
   try {
@@ -105,7 +120,7 @@ export function startDemoOwnerPage(): void {
       ref.append(open);
       const identity = identityOf(request);
       const status = request.quote ? `Quotation ${request.quote.ref}: ${statusText[request.quote.status]}` : 'Received, no quotation yet';
-      const cells = [when(request.createdAt), identity.name, identity.organization, planOf(request).name, status].map((text) => {
+      const cells = [when(request.createdAt), identity.name, identity.organization, serviceName(request), planName(request), status].map((text) => {
         const td = document.createElement('td');
         td.textContent = text;
         return td;
@@ -119,6 +134,7 @@ export function startDemoOwnerPage(): void {
 
   function openRequest(id: string) {
     current = id;
+    remember(id);
     pending = null;
     form.reset();
     for (const name of ['scope', 'amount', 'validity'] as const) fieldError(name, undefined);
@@ -131,6 +147,7 @@ export function startDemoOwnerPage(): void {
     const request = readState().requests.find((item) => item.id === current);
     if (!request) {
       current = null;
+      remember(null);
       show('list');
       renderList();
       return;
@@ -144,15 +161,20 @@ export function startDemoOwnerPage(): void {
       ['Email (fictional)', identity.email],
       ['Organization', identity.organization],
       ['Organization type', identity.organizationType],
-      ['Plan', planOf(request).name],
+      ['Service of interest', serviceName(request)],
+      ['Plan of interest', planName(request)],
       ['Project need', identity.projectNeed],
     ]);
     if (request.quote) return renderApproved(request);
     if (pending?.requestId === request.id) return showPart('confirm');
     const plan = planOf(request);
+    const scope = form.elements.namedItem('scope') as HTMLTextAreaElement;
     const amount = form.elements.namedItem('amount') as HTMLInputElement;
-    if (!amount.value) amount.value = plan.amountPhp.toLocaleString('en-PH');
-    $('[data-prefill]').textContent = `Prefilled from the proposed ${plan.name} price; change it as needed.`;
+    if (!scope.value) scope.value = suggestedScope(request);
+    if (!amount.value && plan) amount.value = plan.amountPhp.toLocaleString('en-PH');
+    $('[data-prefill]').textContent = plan
+      ? `Prefilled from the proposed ${plan.name} price; change it as needed.`
+      : 'No plan was chosen: enter the amount for this quotation.';
     showPart('draft');
   }
 
@@ -162,6 +184,8 @@ export function startDemoOwnerPage(): void {
     $('[data-quote-heading]').textContent = `Quotation ${quote.ref}: ${statusText[quote.status]}`;
     fillList($('[data-quote-details]'), [
       ['Recipient (fictional)', `${identityOf(request).name} <${identityOf(request).email}>`],
+      ['Service', serviceName(request)],
+      ['Plan', planName(request)],
       ['Scope', quote.scope],
       ['Amount', formatAmount(quote.amountCentavos)],
       ['Approved', when(quote.approvedAt)],
@@ -199,7 +223,10 @@ export function startDemoOwnerPage(): void {
     fieldError('validity', 'errors' in checked ? checked.errors.validity_days : undefined);
     if ('errors' in checked || !current) return;
     pending = { requestId: current, values: checked.values };
+    const request = readState().requests.find((item) => item.id === current);
     fillList($('[data-confirm-details]'), [
+      ['Service', request ? serviceName(request) : NOT_SURE],
+      ['Plan', request ? planName(request) : NOT_SURE],
       ['Scope', checked.values.scope],
       ['Amount', formatAmount(checked.values.amountCentavos)],
       ['Validity', `${checked.values.validityDays} days after approval`],
@@ -233,6 +260,7 @@ export function startDemoOwnerPage(): void {
   });
   $('[data-back]').addEventListener('click', () => {
     current = null;
+    remember(null);
     pending = null;
     renderList();
     show('list');
@@ -255,4 +283,12 @@ export function startDemoOwnerPage(): void {
   });
   renderList();
   show('list');
+  // A reload returns to the request that was open in this tab, while it still exists.
+  let reopen: string | null = null;
+  try {
+    reopen = sessionStorage.getItem(VIEW_KEY);
+  } catch {
+    // Storage unavailable: the list is shown.
+  }
+  if (reopen && readState().requests.some((item) => item.id === reopen)) openRequest(reopen);
 }

@@ -24,3 +24,20 @@ export function contactHref({ type, service, plan }: ContactSelection = {}, work
   const path = toQuotationPage ? quotationWorkflow.pagePath : '/contact/';
   return query ? `${path}?${query}` : path;
 }
+
+/** The public academic quotation demo, with the service and plan carried over. */
+export const ACADEMIC_DEMO_PATH = '/academic-demo/';
+
+/**
+ * Quotation CTAs on Home and Pricing: the real quotation page while the workflow is enabled,
+ * otherwise the public academic quotation demo (docs/DECISIONS.md ADR-043). The demo page labels
+ * itself before anything is entered, and the Contact page's real request form is unchanged.
+ */
+export function quotationJourneyHref({ service, plan }: Omit<ContactSelection, 'type'> = {}, workflowEnabled = quotationWorkflow.enabled): string {
+  if (workflowEnabled) return contactHref({ type: 'quotation', service, plan }, true);
+  const params = new URLSearchParams();
+  if (service) params.set('service', service);
+  if (plan) params.set('plan', plan);
+  const query = params.toString();
+  return query ? `${ACADEMIC_DEMO_PATH}?${query}` : ACADEMIC_DEMO_PATH;
+}

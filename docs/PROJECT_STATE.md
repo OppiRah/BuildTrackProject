@@ -2,6 +2,22 @@
 
 Updated: 2026-10-17.
 
+## Academic quotation demo integrated into the website journey (2026-10-17; owner-authorized publication; live verification recorded separately)
+
+The owner asked for the published demo to follow the main-website journey from their recording (DECISIONS ADR-043, update "the demo is the website's quotation journey"; PROPOSAL §18). The real workflow stays off; no backend was set up.
+- **Entry points:**
+  - Home and Pricing "Request a Quotation" open the demo quotation form; a plan's link carries the plan.
+  - Contact has a prominent "Request a quotation — academic demo" box that carries the service and plan. Contact's real form is unchanged.
+- **Request page:** laid out like the recorded quotation form (website header and footer, navy banner, "Your project", request-received panel). It uses fictional sample customers shown as plain text and a required academic-demo acknowledgment. Service and plan carry through the receipt, the owner review and approval, and the customer quotation.
+- **Owner page:** labelled "Demo owner dashboard", representing Sunny's review and approval. The invitation button represents the emailed link; no email is sent.
+- **Checks (local):**
+  - `npm test` 593/593; `npm run check` 0 errors; build 12 pages.
+  - `test:browser:academic-demo` 61/61: from Home, service/plan continuity, three-tab updates, reloads, reset, keyboard, 390 px, isolation, and the real Contact form unchanged.
+  - `test:browser` 21/21 and 55/55.
+  - `test:worker:e2e` 69/69; `test:worker` 30/30; `test:worker:owner` 25/25; `test:build:turnstile` passed.
+  - Compared with the published `8263494`, Home now differs only in its two quotation link targets, and Contact only adds the demo box.
+- **Not changed:** the Solutions page's quotation links still open the real Contact form (outside this request).
+
 ## Public academic demo of the quotation workflow (2026-10-17; published in `f42f9ec` and verified live)
 
 **Live verification (2026-10-17):** Workers Builds deployed `f42f9ec` to `buildtrack` as version `2c01b847-3617-4577-a539-5e9ca1825900` (07:41 UTC).

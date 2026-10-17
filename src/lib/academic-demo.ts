@@ -9,6 +9,7 @@
 // the pages' scripts do the storage access.
 
 import { plans } from '../config/pricing.ts';
+import { services } from '../config/services.ts';
 import type { CheckoutMethod, CheckoutOutcome, QuoteView } from './quotation/customer.ts';
 import { checkoutMethods, checkoutOutcomes, firstName } from './quotation/customer.ts';
 import { validateQuote, type QuoteErrors } from './quotation/owner-form.ts';
@@ -46,6 +47,9 @@ export const demoIdentities = [
 ] as const;
 export type DemoIdentityId = (typeof demoIdentities)[number]['id'];
 export const demoPlans = plans.filter((plan) => plan.amountPhp !== null).map((plan) => ({ id: plan.id, name: plan.name, amountPhp: plan.amountPhp! }));
+export const demoServices = services.map((service) => ({ id: service.id, name: service.name }));
+/** Shown wherever a request has no plan or service ("Not sure yet" on the form). */
+export const NOT_SURE = 'Not sure yet';
 
 export interface DemoQuote {
   ref: string;
@@ -66,7 +70,9 @@ export interface DemoRequest {
   ref: string;
   createdAt: number;
   identity: DemoIdentityId;
-  plan: string;
+  /** Plan and service of interest, carried from Home/Pricing/Contact; null is "Not sure yet". */
+  plan: string | null;
+  service: string | null;
   quote: DemoQuote | null;
 }
 export interface DemoState {
@@ -141,11 +147,21 @@ export function parseDemoState(text: string | null): DemoState {
         !isText(r.ref, 20, /^DEMO-R-\d{4}$/) ||
         !isInt(r.createdAt, ...TIME) ||
         !demoIdentities.some((identity) => identity.id === r.identity) ||
-        !demoPlans.some((plan) => plan.id === r.plan) ||
+        !(r.plan === null || demoPlans.some((plan) => plan.id === r.plan)) ||
+        // Records saved before the service was added have none: read as "Not sure yet".
+        !(r.service === undefined || r.service === null || demoServices.some((service) => service.id === r.service)) ||
         quote === undefined
       )
         return emptyDemoState();
-      requests.push({ id: r.id as string, ref: r.ref as string, createdAt: r.createdAt as number, identity: r.identity as DemoIdentityId, plan: r.plan as string, quote });
+      requests.push({
+        id: r.id as string,
+        ref: r.ref as string,
+        createdAt: r.createdAt as number,
+        identity: r.identity as DemoIdentityId,
+        plan: r.plan as string | null,
+        service: (r.service ?? null) as string | null,
+        quote,
+      });
     }
     return { v: 1, requestSeq: raw.requestSeq as number, quoteSeq: raw.quoteSeq as number, requests };
   } catch {
@@ -155,13 +171,36 @@ export function parseDemoState(text: string | null): DemoState {
 
 const pad = (n: number) => String(n).padStart(4, '0');
 export const identityOf = (request: DemoRequest) => demoIdentities.find((identity) => identity.id === request.identity)!;
-export const planOf = (request: DemoRequest) => demoPlans.find((plan) => plan.id === request.plan)!;
+export const planOf = (request: DemoRequest) => demoPlans.find((plan) => plan.id === request.plan) ?? null;
+export const serviceOf = (request: DemoRequest) => demoServices.find((service) => service.id === request.service) ?? null;
 
-/** A new demo request (fictional identity and a plan). Oldest records drop off beyond the limit. */
-export function addDemoRequest(state: DemoState, identity: DemoIdentityId, plan: string, now: number, id: string): { state: DemoState; request: DemoRequest } {
-  if (!demoIdentities.some((item) => item.id === identity) || !demoPlans.some((item) => item.id === plan)) throw new Error('E_DEMO_INPUT');
+/** A suggested scope for the owner's draft, from the request's plan, service and sample project need. */
+export function suggestedScope(request: DemoRequest): string {
+  const plan = planOf(request);
+  const service = serviceOf(request);
+  const identity = identityOf(request);
+  const what = plan ? `BuildTrack ${plan.name} plan` : 'BuildTrack setup';
+  const focus = service ? ` with ${service.name.toLowerCase()}` : '';
+  return `${what}${focus} for ${identity.organization}. ${identity.projectNeed} Includes onboarding and staff training.`;
+}
+
+/** A new demo request (fictional identity, optional plan and service). Oldest records drop off beyond the limit. */
+export function addDemoRequest(
+  state: DemoState,
+  identity: DemoIdentityId,
+  selection: { plan: string | null; service: string | null },
+  now: number,
+  id: string,
+): { state: DemoState; request: DemoRequest } {
+  const { plan, service } = selection;
+  if (
+    !demoIdentities.some((item) => item.id === identity) ||
+    !(plan === null || demoPlans.some((item) => item.id === plan)) ||
+    !(service === null || demoServices.some((item) => item.id === service))
+  )
+    throw new Error('E_DEMO_INPUT');
   const requestSeq = (state.requestSeq % 9999) + 1;
-  const request: DemoRequest = { id, ref: `DEMO-R-${pad(requestSeq)}`, createdAt: now, identity, plan, quote: null };
+  const request: DemoRequest = { id, ref: `DEMO-R-${pad(requestSeq)}`, createdAt: now, identity, plan, service, quote: null };
   return { state: { ...state, requestSeq, requests: [...state.requests, request].slice(-DEMO_MAX_REQUESTS) }, request };
 }
 

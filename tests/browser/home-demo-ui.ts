@@ -1688,7 +1688,7 @@ if (process.env.EVIDENCE_DIR) await scenario('payment demo: capture each step (1
   await open('/payment-demo/', { width: 1440, height: 900, js: false }); await capture('1440-no-javascript.png');
 });
 
-await scenario('pricing: "Try the payment demo" opens /payment-demo/, "Try the academic quotation demo" opens /academic-demo/, while Avail and quotation links still open inquiries; the sitemap lists the nine public pages', async () => {
+await scenario('pricing: "Try the payment demo" opens /payment-demo/, "Try the academic quotation demo" opens /academic-demo/, quotation links open the academic quotation demo with the plan, Avail links still open service inquiries; the sitemap lists the nine public pages', async () => {
   await open('/pricing/', { width: 1440, height: 900 });
   const links = await evaluate<{ demo: string[]; academic: string[]; avail: string[]; quote: string[] }>(`({
     demo: [...document.querySelectorAll('main a')].filter((a) => /Try the payment demo/.test(a.textContent)).map((a) => a.getAttribute('href')),
@@ -1698,7 +1698,8 @@ await scenario('pricing: "Try the payment demo" opens /payment-demo/, "Try the a
   expectEqual(links.demo, ['/payment-demo/'], 'payment demo link');
   expectEqual(links.academic, ['/academic-demo/'], 'academic quotation demo link');
   if (!links.avail.length || !links.avail.every((h) => h.startsWith('/contact/?type=service'))) throw new Error(`Avail links: ${JSON.stringify(links.avail)}`);
-  if (!links.quote.length || !links.quote.every((h) => h.startsWith('/contact/?type=quotation'))) throw new Error(`quotation links: ${JSON.stringify(links.quote)}`);
+  // Quotation workflow off: quotation CTAs open the academic quotation demo (each plan's carries its plan).
+  if (!links.quote.length || !links.quote.every((h) => /^\/academic-demo\/(\?plan=(starter|professional|enterprise))?$/.test(h))) throw new Error(`quotation links: ${JSON.stringify(links.quote)}`);
   const sitemap = await (await fetch(origin + '/sitemap-0.xml')).text();
   const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]!).pathname).sort();
   expectEqual(paths, ['/', '/about/', '/academic-demo/', '/contact/', '/how-it-works/', '/payment-demo/', '/pricing/', '/product-demo/', '/solutions/'], 'sitemap pages (no 404)');

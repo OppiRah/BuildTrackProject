@@ -1,5 +1,5 @@
 ---
-import { contactHref } from '../lib/contact-links.ts';
+import { contactHref, quotationJourneyHref } from '../lib/contact-links.ts';
 import Icon from '../components/site/Icon.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { customerSegments } from '../config/business.ts';
@@ -7,7 +7,7 @@ import { plans, priceBasis, priceLabel, pricingNote, tierLabels } from '../confi
 import { pageMeta, primaryCta } from '../config/site.ts';
 
 const meta = pageMeta('/');
-const quotationHref = contactHref({ type: 'quotation' });
+const quotationHref = quotationJourneyHref();
 
 // Capability showcase (scroll-driven on desktop, stacked otherwise). Each image is a screen
 // captured from the Interactive Platform Demo (fictional fixtures); each link opens that section.

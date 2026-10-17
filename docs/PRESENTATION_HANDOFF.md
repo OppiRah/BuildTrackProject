@@ -145,12 +145,24 @@ An email that has already been sent cannot be taken back; withdrawing only stops
 
 ## 6b. Academic quotation demo (public; browser-only)
 
-To show the whole quotation flow, use the **academic demo**: Pricing → "Try the academic quotation demo", or `/academic-demo/`. It uses three tabs in one browser:
-1. **Tab 1, website (`/academic-demo/`):** pick a fictional sample customer and a plan, then **Send demo request**. Then **Open demo owner dashboard**.
-2. **Tab 2, demo owner dashboard (`/academic-demo/owner/`):** open the request, write the scope, keep or change the amount and validity, **Save draft and review**, **Approve quotation**. Then **Open demo customer invitation** (this replaces the email).
-3. **Tab 3, customer quotation (`/academic-demo/quote/`):** **Accept quotation**, **Yes, accept this quotation**. Then choose Card — demo or Bank transfer — demo, **Use sample code**, **Continue**, **Complete demo payment**, and see the Demo confirmation. Tab 2 shows "accepted" and the simulated result live.
+The website's quotation buttons lead into the **academic demo**: Home and Pricing "Request a Quotation" (a plan's link carries the plan), and on Contact the **Request a quotation — academic demo** box (it carries `?service=` and `?plan=`). Contact's own request form stays real (Formspree). Record in one browser window; the demo uses three tabs that update each other.
 
-How to explain it: "This is an academic demonstration of the workflow. The customers are fictional, everything stays in this browser, and no request, email or payment is real. Approval and email delivery are demonstrated." Do not call it a live quotation service. **Reset demo data** on the dashboard starts again.
+**Recording steps** (start at `https://buildtrack.sunnydelacruz.workers.dev/`):
+1. **Tab 1, website.** On Home, click **Pricing** in the menu. Under **Professional**, click **Request a quotation**. The quotation form opens with Plan of interest: Professional.
+   - Choose **Service of interest: Delivery monitoring** and a **Sample customer** (for example Jose Reyes). The sample details fill in; they are fictional.
+   - Tick **I understand this is an academic demo…**, then click **Send demo quotation request**.
+   - "Quotation request received (academic demo)" shows the reference, service and plan. Click **Open demo owner dashboard** (a new tab).
+   - Alternative start: Home → **Contact** → **Request a quotation — academic demo**.
+2. **Tab 2, Demo owner dashboard** (it represents Sunny's review and approval). Click the request reference (DEMO-R-0001). The scope and amount are prefilled from the plan and service; edit them if you like.
+   - Click **Save draft and review**, then **Approve quotation**.
+   - Click **Open demo customer invitation** (a new tab). It represents the link that would be emailed; no email is sent.
+3. **Tab 3, customer quotation.** The summary shows the service, plan, scope and amount. Click **Accept quotation**, then **Yes, accept this quotation**.
+   - Choose **Card — demo** or **Bank transfer — demo**, click **Use sample code**, **Continue**, then **Complete demo payment**.
+   - **Demo confirmation** shows "Simulated—no money moved. Not a payment receipt."
+   - Switch to tab 2: it shows "accepted" and the simulated result, never paid.
+4. To record again: in tab 2, **All requests** → **Reset demo data**. Tab 1's **Send another demo request** starts a new request.
+
+Reloading any tab keeps its place (request received, the open request, the quotation). How to explain it: "This is an academic demonstration of the workflow. The customers are fictional, everything stays in this browser, and no request, email or payment is real. Approval and email delivery are demonstrated." Do not call it a live quotation service.
 
 ## 7. Current limitations
 
