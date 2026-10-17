@@ -2,7 +2,12 @@
 
 Updated: 2026-10-17.
 
-## Academic quotation demo integrated into the website journey (2026-10-17; owner-authorized publication; live verification recorded separately)
+## Academic quotation demo integrated into the website journey (2026-10-17; published in `9a2943d` and verified live)
+
+**Live verification (2026-10-17):** Workers Builds deployed `9a2943d` as version `9e61a1ea-5a29-4ef6-b82f-647b4bca93aa` (08:12 UTC).
+- `ACADEMIC_DEMO_SITE=https://buildtrack.sunnydelacruz.workers.dev npm run test:browser:academic-demo` passed 61/61 against the deployed site, starting from Home.
+- The three demo pages carry the `connect-src 'none'` policy, and the eight public pages return 200. One `/product-demo/` request got no response, then returned 200 on three retries.
+- `/quote/` and `/contact/quotation/` return 404; `buildtrack-owner` and `buildtrack-owner-preview` return 503.
 
 The owner asked for the published demo to follow the main-website journey from their recording (DECISIONS ADR-043, update "the demo is the website's quotation journey"; PROPOSAL §18). The real workflow stays off; no backend was set up.
 - **Entry points:**

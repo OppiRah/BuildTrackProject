@@ -2,7 +2,7 @@
 
 ## Academic quotation demo: website journey integration — 2026-10-17
 
-Owner-authorized focused change under the existing publication authorization. Base: `7187fcb` (origin/main). The real quotation workflow stays off (`QUOTATION_ON = false`; `wrangler.jsonc` unchanged).
+Owner-authorized focused change under the existing publication authorization. Base: `7187fcb` (origin/main). **Published:** source commit `9a2943d`, deployed as version `9e61a1ea-5a29-4ef6-b82f-647b4bca93aa` and verified live 2026-10-17 (PROJECT_STATE). The live record is a separate docs-only commit. The real quotation workflow stays off (`QUOTATION_ON = false`; `wrangler.jsonc` unchanged).
 
 ### Exact source paths (21, all modified)
 
