@@ -4,6 +4,8 @@
 
 Published under the owner's active publication authorization and the instruction to publish a public academic demo now (ADR-043, update "public academic demo first"). Base: `4081ac1` (origin/main). The real quotation workflow is included as source but **off** (`QUOTATION_ON = false`; `wrangler.jsonc` unchanged, assets-only). The built site differs from the published `8263494` only by the academic demo, the Pricing link, `_headers`, the sitemap and script chunking (`npm run check:published-build`; PROJECT_STATE). The cutover commit (runbook §7) additionally changes `wrangler.jsonc` and `src/config/quotation.ts` and is listed separately when made.
 
+**Published:** source commit `f42f9ec` (fast-forward of origin/main from `4081ac1`), deployed by Workers Builds as version `2c01b847-3617-4577-a539-5e9ca1825900` and verified live 2026-10-17 (PROJECT_STATE). The live record is a separate docs-only commit.
+
 ### Exact source paths (104)
 
 Modified: `.gitignore`, `astro.config.ts`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/PRESENTATION_HANDOFF.md`, `docs/PROJECT_STATE.md`, `docs/PUBLICATION_MANIFEST.md`, `package.json`, `public/_headers`, `src/components/form/InquiryForm.astro`, `src/config/site.ts`, `src/lib/contact-links.ts`, `src/pages/contact.astro`, `src/pages/pricing.astro`, `src/pages/robots.txt.ts`, `tests/browser/home-demo-ui.ts`, `tests/config.test.ts`, `tests/contact-links.test.ts`.

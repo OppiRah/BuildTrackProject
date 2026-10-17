@@ -2,7 +2,14 @@
 
 Updated: 2026-10-17.
 
-## Public academic demo of the quotation workflow (2026-10-17; owner-authorized publication; live verification recorded separately)
+## Public academic demo of the quotation workflow (2026-10-17; published in `f42f9ec` and verified live)
+
+**Live verification (2026-10-17):** Workers Builds deployed `f42f9ec` to `buildtrack` as version `2c01b847-3617-4577-a539-5e9ca1825900` (07:41 UTC).
+- `/academic-demo/`, `/academic-demo/owner/` and `/academic-demo/quote/` return 200, each with `Content-Security-Policy: connect-src 'none'; form-action 'none'; frame-ancestors 'none'; base-uri 'none'` and `Cache-Control: no-store`.
+- The three-tab journey against the live site passed 36/36 (same checks as `test:browser:academic-demo`, including only same-origin GET requests, no `/api/` call, no other origin, and the demo code never stored).
+- The eight existing pages, `sitemap-0.xml` and `robots.txt` return 200. The sitemap adds only `/academic-demo/`; Pricing shows "Try the academic quotation demo". `/quote/`, `/contact/quotation/` and `/api/quotation-requests` return 404 on production.
+- The real-workflow Workers stay off: `buildtrack-owner` and `buildtrack-owner-preview` return 503. `buildtrack-preview` serves its earlier static preview pages, but its intake refuses requests (503, "Nothing was sent or stored").
+
 
 The owner changed the immediate release target to a public, browser-only academic demo (DECISIONS ADR-043, update "public academic demo first"; PROPOSAL §18, "Public academic demo"). The quotation workflow source (real Workers, migrations, manual email mode, tests) is committed with it, **switched off** (`QUOTATION_ON = false`; production stays assets-only; the hosted owner and public preview Workers stay disabled).
 - **Three pages:** `/academic-demo/` (demo request with fictional sample customers), `/academic-demo/owner/` (demo owner dashboard: review, approve, "Open demo customer invitation"), `/academic-demo/quote/` (real customer page markup; accept, demo checkout, confirmation). State lives only in the visitor's browser, shared between tabs. Pricing links to it.
